@@ -1,0 +1,5 @@
+[2025-12-12T19:13:41.016Z] Initializing Scheduler...
+[2025-12-12T19:13:41.020Z] Loaded 2 tasks from schedule.json
+[2025-12-12T19:13:41.021Z] Scheduling 'task_a' with cron: '* * * * *'
+[2025-12-12T19:13:41.035Z] Scheduling 'task_b' with cron: '*/2 * * * *'
+[2025-12-12T19:13:41.037Z] Scheduler is running. Press Ctrl+C to stop.
