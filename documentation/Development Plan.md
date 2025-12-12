@@ -50,43 +50,94 @@
 > 3. Run `node verify-session.js`.
 > 4. **Result:** The browser should open and **already be logged in** without asking for a password.
 
----
+-----
 
-### Phase 4: Task Automation Logic
-**Goal:** Implement the specific clicks and navigation on the target website.
+### Phase 4: Modular "Record & Replay" Architecture
 
-* **Task 4.1:** Create the main worker script (e.g., `taskExecutor.js`).
-* **Task 4.2:** Implement navigation to the target "Anti-Bot" website.
-* **Task 4.3:** Implement "Human-like" interactions:
-    * Add random delays between clicks (e.g., 2s - 5s).
-    * Ensure the script handles page load timeouts gracefully.
-* **Task 4.4:** Implement the specific button clicking logic required by the business rule.
+**Goal:** Create a system where you can easily "record" a session, save it as a new module, and instruct the bot to run that specific module later.
+
+  * **Task 4.1: The Task Registry System**
+
+      * Create a `/tasks` directory in the project.
+      * Create a standard **Task Template** (`template.js`). This file should export a simple function like `async function run(page) { ... }`.
+      * **Requirement:** The main bot runner must be updated to accept an argument (e.g., `npm run bot -- --task=buy_ticket`) so it knows which file from the `/tasks` folder to execute.
+
+  * **Task 4.2: The "Observer" Script (Custom Recorder)**
+
+      * The developer must create a script named `record-new-task.js`.
+      * **Crucial:** This script must launch **Playwright Codegen**, but it must pass the following arguments to ensure it sees what the bot sees:
+        1.  `--load-storage=state.json` (or point to the user data dir).
+        2.  `--viewport-size=1920,1080` (to match the bot's screen).
+      * **The Workflow:** When you run this script, a browser opens. You click around. Playwright generates code in a side window. You simply copy that code.
+
+  * **Task 4.3: The Integration Logic**
+
+      * The developer must document the workflow:
+        1.  Run "Observer".
+        2.  Perform actions manually.
+        3.  Copy the generated code.
+        4.  Duplicate `template.js`, rename it (e.g., `instagram_like.js`), and paste the code inside.
+      * The main bot `index.js` must be dynamic: It loads the browser (Stealth Mode) -\> loads the specific task file requested -\> executes the steps -\> closes.
 
 > **✅ Verification Method:**
-> Run `node taskExecutor.js`.
-> 1. Watch the browser open.
-> 2. It should navigate to the target site (already logged in via Google if required).
-> 3. **Result:** It performs the required clicks without crashing or getting a "Bot Detected" block.
+>
+> 1.  **Test Recording:** Run `npm run record`. The browser opens with a "Playwright Inspector" window next to it.
+> 2.  **Action:** Go to https://www.google.com/search?q=Google.com and search for "Ferrari". Close the recorder.
+> 3.  **Creation:** Create a file `tasks/search_test.js` using the template and paste the code generated in the Inspector.
+> 4.  **Test Replay:** Run `npm run start --task=search_test`.
+> 5.  **Result:** The bot opens, searches for "Ferrari" automatically, and finishes.
 
----
+-----
 
-### Phase 5: Scheduling (Cron Job) & Logging
-**Goal:** Automate the execution so it runs without manual intervention.
+### Revised Phase 5: Advanced Scheduler & Command Center
 
-* **Task 5.1:** Create `scheduler.js` using `node-cron`.
-* **Task 5.2:** Configure the Cron syntax (e.g., `0 9 * * *` for 9:00 AM daily) - allow this to be configurable via a `.env` file.
-* **Task 5.3:** Implement basic logging. The system should append to a file named `activity.log` with timestamps:
-    * `[2023-10-27 09:00:01] Job Started`
-    * `[2023-10-27 09:00:15] Task Completed Successfully`
-    * `[2023-10-27 09:00:15] Error: Selector not found`
+**Goal:** Since you now have *multiple* tasks, the Cron Job needs to know *what* to run and *when*.
+
+  * **Task 5.1: The `schedule.json` Configuration**
+
+      * Instead of hardcoding cron jobs in the code, create a `schedule.json` file.
+      * Structure:
+        ```json
+        [
+          { "task": "daily_login", "cron": "0 8 * * *" },
+          { "task": "check_prices", "cron": "*/30 * * * *" }
+        ]
+        ```
+
+  * **Task 5.2: Dynamic Scheduler Logic**
+
+      * Update the `scheduler.js` to read this JSON file.
+      * It should loop through the array and schedule a Cron Job for every entry found.
+
+  * **Task 5.3: Error Handling per Task**
+
+      * If "Task A" fails (site is down), it should not stop "Task B" from running later.
+      * Implement `try/catch` blocks around the dynamic task execution.
+      * Update logging to include the Task Name: `[09:00] Task 'daily_login' Failed`.
 
 > **✅ Verification Method:**
-> 1. Edit the `.env` to run the cron job 1 minute from now.
-> 2. Run `node scheduler.js`.
-> 3. Wait 1 minute.
-> 4. **Result:** The browser opens automatically, performs the task, closes, and a new line appears in `activity.log` confirming success.
+>
+> 1.  Create two simple tasks: `task_a.js` (logs "A") and `task_b.js` (logs "B").
+> 2.  Edit `schedule.json` to run Task A every minute and Task B every 2 minutes.
+> 3.  Run `node scheduler.js`.
+> 4.  **Result:** Watch the console/logs for 3 minutes. You should see Task A execute 3 times and Task B execute 1 or 2 times effectively.
 
----
+-----
+
+### Summary for the Developer
+
+You can copy and paste this summary to your developer to explain the change in scope:
+
+> "I have updated the requirements for **Phase 4**. I do not want a hardcoded single-purpose bot.
+>
+> **New Requirement:** I need a 'Record & Replay' architecture.
+>
+> 1.  **Recording:** Provide an npm script that launches Playwright Codegen *with* my persistent profile loaded, so I can manually click through a workflow and generate the code.
+> 2.  **Modularity:** I need a `/tasks` folder. I will paste the generated code into new files there.
+> 3.  **Execution:** The main script needs to be able to run specific tasks by name (e.g., `node bot.js --task=my_new_task`).
+> 4.  **Scheduling:** The scheduler should read a JSON file to know which tasks to run at what times."
+
+-----
 
 ### Phase 6: Handover & Documentation
 **Goal:** Ensure the code is maintainable and you know how to use it.
