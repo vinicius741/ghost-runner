@@ -2,7 +2,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 // Configuration matching browserConfig.js
-const userDataDir = path.resolve(__dirname, 'user_data');
+const userDataDir = path.resolve(__dirname, '../../user_data');
 
 console.log('Starting Playwright Recorder...');
 console.log(`Loading Profile from: ${userDataDir}`);

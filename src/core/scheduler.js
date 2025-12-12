@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
-const LOG_FILE = path.join(__dirname, 'scheduler.log');
-const CONFIG_FILE = path.join(__dirname, 'schedule.json');
+const LOG_FILE = path.resolve(__dirname, '../../scheduler.log');
+const CONFIG_FILE = path.resolve(__dirname, '../../schedule.json');
 
 /**
  * Logs a message with a timestamp to the console and a file.
@@ -25,7 +25,7 @@ function runTask(taskName) {
   log(`Starting task: '${taskName}'`);
 
   const child = spawn('node', ['index.js', `--task=${taskName}`], {
-    cwd: __dirname,
+    cwd: __dirname, // Current directory is now src/core where index.js is
     stdio: 'inherit', // Pipe output so we see it in the main console
     shell: true
   });

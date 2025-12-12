@@ -1,4 +1,4 @@
-const { launchBrowser } = require('./browserConfig');
+const { launchBrowser } = require('../config/browserConfig');
 
 (async () => {
   try {

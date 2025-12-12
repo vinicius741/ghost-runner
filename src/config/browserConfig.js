@@ -10,7 +10,7 @@ chromium.use(stealth());
  * This handles the persistent user data directory and stealth configurations.
  */
 const launchBrowser = async () => {
-  const userDataDir = path.resolve(__dirname, 'user_data');
+  const userDataDir = path.resolve(__dirname, '../../user_data');
   const executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
   console.log(`Launching Chrome from: ${executablePath}`);

@@ -1,4 +1,4 @@
-const { launchBrowser } = require('./browserConfig');
+const { launchBrowser } = require('../config/browserConfig');
 const fs = require('fs');
 const path = require('path');
 
@@ -10,12 +10,12 @@ async function main() {
   if (!taskArg) {
     console.error('Error: No task specified.');
     console.error('Usage: node index.js --task=task_name');
-    console.error('Available tasks:', fs.readdirSync(path.join(__dirname, 'tasks')).join(', '));
+    console.error('Available tasks:', fs.readdirSync(path.resolve(__dirname, '../../tasks')).join(', '));
     process.exit(1);
   }
 
   const taskName = taskArg.split('=')[1];
-  const taskPath = path.resolve(__dirname, 'tasks', `${taskName}.js`);
+  const taskPath = path.resolve(__dirname, '../../tasks', `${taskName}.js`);
 
   if (!fs.existsSync(taskPath)) {
     console.error(`Error: Task file not found at ${taskPath}`);
