@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost Runner Command Center</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Ghost Runner <span class="accent">Command Center</span></h1>
+            <p class="subtitle">Advanced Automation & Task Management</p>
+        </header>
+
+        <main>
+            <div class="dashboard-grid">
+                <!-- Control Panel -->
+                <section class="card control-panel">
+                    <h2>Global Controls</h2>
+                    <div class="controls-grid">
+                        <button id="record-btn" class="btn primary-btn">
+                            <span class="icon">●</span> Record New Task
+                        </button>
+                        <div class="scheduler-controls">
+                            <h3>Scheduler</h3>
+                            <div class="btn-group">
+                                <button id="start-scheduler-btn" class="btn success-btn">Start</button>
+                                <button id="stop-scheduler-btn" class="btn danger-btn">Stop</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Task List -->
+                <section class="card task-list-section">
+                    <h2>Available Tasks</h2>
+                    <div id="task-list" class="task-grid">
+                        <!-- Tasks will be injected here -->
+                        <div class="loading">Loading tasks...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Logs Console -->
+            <section class="card logs-section">
+                <div class="logs-header">
+                    <h2>System Logs</h2>
+                    <button id="clear-logs-btn" class="btn sm-btn">Clear Logs</button>
+                </div>
+                <div id="logs-container" class="logs-container">
+                    <div class="log-entry system">Waiting for activity...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

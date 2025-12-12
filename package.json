@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/core/index.js",
     "bot": "node src/core/index.js",
     "record": "node src/core/record-new-task.js",
-    "schedule": "node src/core/scheduler.js"
+    "schedule": "node src/core/scheduler.js",
+    "ui": "node src/server/index.js"
   },
   "repository": {
     "type": "git",
@@ -24,9 +24,11 @@
   "homepage": "https://github.com/vinicius741/ghost-runner#readme",
   "dependencies": {
     "dotenv": "^17.2.3",
+    "express": "^5.2.1",
     "node-cron": "^4.2.1",
     "playwright": "^1.57.0",
     "playwright-extra": "^4.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "socket.io": "^4.8.1"
   }
 }
