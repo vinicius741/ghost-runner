@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +10,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="app.js" defer></script>
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -43,6 +45,22 @@
                         <div class="loading">Loading tasks...</div>
                     </div>
                 </section>
+
+                <!-- Schedule Builder -->
+                <section class="card schedule-builder">
+                    <h2>Schedule Builder</h2>
+                    <div class="schedule-controls">
+                        <select id="schedule-task-select" class="input-select">
+                            <option value="" disabled selected>Select Task...</option>
+                        </select>
+                        <input type="text" id="schedule-cron-input" class="input-text"
+                            placeholder="CRON Expression (e.g. * * * * *)">
+                        <button id="add-schedule-btn" class="btn primary-btn sm-btn">Add to Schedule</button>
+                    </div>
+                    <div id="schedule-list" class="schedule-list">
+                        <!-- Scheduled items injected here -->
+                    </div>
+                </section>
             </div>
 
             <!-- Logs Console -->
@@ -58,4 +76,5 @@
         </main>
     </div>
 </body>
+
 </html>

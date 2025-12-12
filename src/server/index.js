@@ -129,6 +129,46 @@ app.get('/api/logs', (req, res) => {
     }
 });
 
+// --- Schedule Management ---
+const SCHEDULE_FILE = path.resolve(__dirname, '../../schedule.json');
+
+// Get Schedule
+app.get('/api/schedule', (req, res) => {
+    if (fs.existsSync(SCHEDULE_FILE)) {
+        fs.readFile(SCHEDULE_FILE, 'utf8', (err, data) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to read schedule file.' });
+            }
+            try {
+                const schedule = JSON.parse(data);
+                res.json({ schedule });
+            } catch (e) {
+                res.status(500).json({ error: 'Invalid JSON in schedule file.' });
+            }
+        });
+    } else {
+        res.json({ schedule: [] });
+    }
+});
+
+// Save Schedule
+app.post('/api/schedule', (req, res) => {
+    const { schedule } = req.body;
+    if (!Array.isArray(schedule)) {
+        return res.status(400).json({ error: 'Invalid schedule format. Expected an array.' });
+    }
+
+    fs.writeFile(SCHEDULE_FILE, JSON.stringify(schedule, null, 2), (err) => {
+        if (err) {
+            return res.status(500).json({ error: 'Failed to save schedule.' });
+        }
+        res.json({ message: 'Schedule updated successfully.' });
+        // Notify clients about the update if needed
+        io.emit('log', '[System] Schedule updated via UI.');
+    });
+});
+
+
 
 server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

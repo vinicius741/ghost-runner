@@ -26,7 +26,7 @@ body {
     display: flex;
     justify-content: center;
     padding: 2rem;
-    background-image: 
+    background-image:
         radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
         radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.1) 0px, transparent 50%);
 }
@@ -49,6 +49,7 @@ h1 {
     font-weight: 600;
     letter-spacing: -0.05em;
     background: linear-gradient(to right, #fff, #94a3b8);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -90,7 +91,8 @@ h1 {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-h2, h3 {
+h2,
+h3 {
     margin-bottom: 1rem;
     color: var(--text-main);
     font-weight: 400;
@@ -260,4 +262,98 @@ h2, h3 {
 
 .logs-container::-webkit-scrollbar-thumb:hover {
     background: #475569;
+}
+
+/* Schedule Builder Styles */
+.schedule-builder {
+    margin-top: 1.5rem;
+}
+
+.schedule-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.input-select,
+.input-text {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.5);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-select:focus,
+.input-text:focus {
+    border-color: var(--primary);
+}
+
+.input-select {
+    min-width: 150px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1rem;
+    appearance: none;
+    padding-right: 2.5rem;
+}
+
+.input-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.schedule-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    transition: background 0.2s;
+}
+
+.schedule-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.cron-badge {
+    display: inline-block;
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent);
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+}
+
+.delete-btn {
+    background: transparent;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1.2rem;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.delete-btn:hover {
+    opacity: 1;
+    background: rgba(239, 68, 68, 0.1);
 }
