@@ -9,12 +9,21 @@ const clearLogsBtn = document.getElementById('clear-logs-btn');
 
 // Schedule Builder Elements
 const scheduleTaskSelect = document.getElementById('schedule-task-select');
-const scheduleCronInput = document.getElementById('schedule-cron-input');
 const addScheduleBtn = document.getElementById('add-schedule-btn');
 const scheduleList = document.getElementById('schedule-list');
 
+// Cron Builder Elements
+const cronTabs = document.querySelectorAll('.cron-tab');
+const cronViews = document.querySelectorAll('.cron-view');
+const cronPreviewText = document.getElementById('cron-preview-text');
+
+const cronMinutesInput = document.getElementById('cron-minutes-input');
+const cronHourlyInput = document.getElementById('cron-hourly-input');
+const cronDailyInput = document.getElementById('cron-daily-input');
+
 let availableTasks = [];
 let currentSchedule = [];
+let currentCronTab = 'minutes';
 
 // Fetch and display tasks
 async function loadTasks() {
@@ -173,16 +182,57 @@ async function saveSchedule() {
     }
 }
 
+// --- Cron Builder Logic ---
+
+function updateCronPreview() {
+    let cron = '* * * * *';
+
+    if (currentCronTab === 'minutes') {
+        const minutes = Math.max(1, Math.min(59, parseInt(cronMinutesInput.value) || 1));
+        cron = `*/${minutes} * * * *`;
+    } else if (currentCronTab === 'hourly') {
+        const minute = Math.max(0, Math.min(59, parseInt(cronHourlyInput.value) || 0));
+        cron = `${minute} * * * *`;
+    } else if (currentCronTab === 'daily') {
+        const time = cronDailyInput.value || '12:00';
+        const [hour, minute] = time.split(':');
+        cron = `${parseInt(minute)} ${parseInt(hour)} * * *`;
+    }
+
+    cronPreviewText.textContent = cron;
+    return cron;
+}
+
+// Tab Switching
+cronTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        cronTabs.forEach(t => t.classList.remove('active'));
+        cronViews.forEach(v => v.classList.remove('active'));
+
+        tab.classList.add('active');
+        const tabName = tab.dataset.tab;
+        document.getElementById(`cron-${tabName}-view`).classList.add('active');
+
+        currentCronTab = tabName;
+        updateCronPreview();
+    });
+});
+
+// Input Listeners
+[cronMinutesInput, cronHourlyInput, cronDailyInput].forEach(input => {
+    input.addEventListener('input', updateCronPreview);
+    input.addEventListener('change', updateCronPreview);
+});
+
+// Initial Update
+updateCronPreview();
+
 addScheduleBtn.addEventListener('click', () => {
     const task = scheduleTaskSelect.value;
-    const cron = scheduleCronInput.value.trim();
+    const cron = updateCronPreview(); // Get current valid cron
 
     if (!task) {
         alert('Please select a task.');
-        return;
-    }
-    if (!cron) {
-        alert('Please enter a cron expression.');
         return;
     }
 
@@ -190,9 +240,14 @@ addScheduleBtn.addEventListener('click', () => {
     renderSchedule();
     saveSchedule();
 
-    // Reset inputs
+    // Reset inputs to default state
     scheduleTaskSelect.value = '';
-    scheduleCronInput.value = '';
+
+    // Reset cron builder to minutes default
+    currentCronTab = 'minutes';
+    cronTabs[0].click();
+    cronMinutesInput.value = 15;
+    updateCronPreview();
 });
 
 // Expose to window for inline onclick

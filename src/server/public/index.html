@@ -50,12 +50,48 @@
                 <section class="card schedule-builder">
                     <h2>Schedule Builder</h2>
                     <div class="schedule-controls">
-                        <select id="schedule-task-select" class="input-select">
+                        <select id="schedule-task-select" class="input-select"
+                            style="width: 100%; margin-bottom: 1rem;">
                             <option value="" disabled selected>Select Task...</option>
                         </select>
-                        <input type="text" id="schedule-cron-input" class="input-text"
-                            placeholder="CRON Expression (e.g. * * * * *)">
-                        <button id="add-schedule-btn" class="btn primary-btn sm-btn">Add to Schedule</button>
+
+                        <!-- Interactive Cron Builder -->
+                        <div class="cron-builder">
+                            <div class="cron-tabs">
+                                <button class="cron-tab active" data-tab="minutes">Minutes</button>
+                                <button class="cron-tab" data-tab="hourly">Hourly</button>
+                                <button class="cron-tab" data-tab="daily">Daily</button>
+                            </div>
+
+                            <div class="cron-content">
+                                <!-- Minutes View -->
+                                <div id="cron-minutes-view" class="cron-view active">
+                                    <label>Every <input type="number" id="cron-minutes-input"
+                                            class="input-text inline-input" min="1" max="59" value="15"> minutes</label>
+                                </div>
+
+                                <!-- Hourly View -->
+                                <div id="cron-hourly-view" class="cron-view">
+                                    <label>Every hour at <input type="number" id="cron-hourly-input"
+                                            class="input-text inline-input" min="0" max="59" value="0"> minutes past the
+                                        hour</label>
+                                </div>
+
+                                <!-- Daily View -->
+                                <div id="cron-daily-view" class="cron-view">
+                                    <label>Every day at <input type="time" id="cron-daily-input"
+                                            class="input-text inline-input" value="12:00"></label>
+                                </div>
+                            </div>
+
+                            <div class="cron-preview">
+                                <span>Preview: </span>
+                                <code id="cron-preview-text">* * * * *</code>
+                            </div>
+                        </div>
+
+                        <button id="add-schedule-btn" class="btn primary-btn sm-btn"
+                            style="width: 100%; margin-top: 1rem;">Add to Schedule</button>
                     </div>
                     <div id="schedule-list" class="schedule-list">
                         <!-- Scheduled items injected here -->
