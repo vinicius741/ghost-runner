@@ -1,0 +1,4 @@
+[
+  { "task": "task_a", "cron": "* * * * *" },
+  { "task": "task_b", "cron": "*/2 * * * *" }
+]

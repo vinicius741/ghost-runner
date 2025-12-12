@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
     "bot": "node index.js",
-    "record": "node record-new-task.js"
+    "record": "node record-new-task.js",
+    "schedule": "node scheduler.js"
   },
   "repository": {
     "type": "git",
