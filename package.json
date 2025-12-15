@@ -8,6 +8,8 @@
     "bot": "node src/core/index.js",
     "record": "node src/core/record-new-task.js",
     "schedule": "node src/core/scheduler.js",
+    "setup-login": "node src/utils/run-setup-login.js",
+    "verify-login": "node src/utils/verify-session.js",
     "ui": "node src/server/index.js"
   },
   "repository": {

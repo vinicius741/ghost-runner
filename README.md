@@ -31,7 +31,7 @@ To enable Google Login and persistent sessions, you must manually log in once.
 1.  **Run the Login Setup Script:**
 
     ```bash
-    node run-setup-login.js
+    npm run setup-login
     ```
 
 2.  **Log In Manually:**
@@ -46,7 +46,7 @@ To enable Google Login and persistent sessions, you must manually log in once.
 4.  **Verify Session:**
     *   Run the verification script:
         ```bash
-        node verify-session.js
+        npm run verify-login
         ```
     *   The browser should open and you should be already logged in (e.g., at `myaccount.google.com`).
 
