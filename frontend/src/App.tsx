@@ -4,6 +4,8 @@ import { ControlPanel } from "@/components/dashboard/ControlPanel";
 import { TaskList } from "@/components/dashboard/TaskList";
 import { ScheduleBuilder } from "@/components/dashboard/ScheduleBuilder";
 import { LogsConsole } from "@/components/dashboard/LogsConsole";
+import { TaskCalendar } from "@/components/dashboard/TaskCalendar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { io } from "socket.io-client";
 
 interface LogEntry {
@@ -142,12 +144,18 @@ function App() {
   };
 
   const handleDeleteSchedule = async (index: number) => {
-    if (confirm('Are you sure?')) {
-      const newSchedule = [...schedule];
-      newSchedule.splice(index, 1);
-      setSchedule(newSchedule);
-      await saveSchedule(newSchedule);
-    }
+    // Confirmation handled by UI or we can skip it if the component already asked
+    // The calendar component asks for confirmation. ScheduleBuilder asks for confirmation.
+    // So we can assume if this is called, it is confirmed or we just do it.
+    // However, the original code had a confirm() here.
+    // I will remove the confirm here if I handle it in the components, or keep it.
+    // But since TaskCalendar calls this after its own dialog, I should avoid double confirmation.
+    // Let's rely on the caller to confirm.
+
+    const newSchedule = [...schedule];
+    newSchedule.splice(index, 1);
+    setSchedule(newSchedule);
+    await saveSchedule(newSchedule);
   };
 
   const saveSchedule = async (newSchedule: ScheduleItem[]) => {
@@ -171,27 +179,46 @@ function App() {
       <div className="max-w-7xl mx-auto space-y-8">
         <Header />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1 space-y-6">
-             <ControlPanel
-               onStartScheduler={handleStartScheduler}
-               onStopScheduler={handleStopScheduler}
-               onRecordTask={handleRecordTask}
-               schedulerStatus={schedulerStatus}
-             />
-             <ScheduleBuilder
-               tasks={tasks}
-               schedule={schedule}
-               onAddSchedule={handleAddSchedule}
-               onDeleteSchedule={handleDeleteSchedule}
-             />
+        <Tabs defaultValue="dashboard" className="w-full space-y-6">
+          <div className="flex justify-center">
+            <TabsList className="bg-slate-900/50 border border-slate-800">
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+            </TabsList>
           </div>
 
-          <div className="lg:col-span-2 space-y-6">
-             <TaskList tasks={tasks} onRunTask={handleRunTask} />
-             <LogsConsole logs={logs} onClearLogs={() => setLogs([])} />
-          </div>
-        </div>
+          <TabsContent value="dashboard" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 space-y-6">
+                <ControlPanel
+                  onStartScheduler={handleStartScheduler}
+                  onStopScheduler={handleStopScheduler}
+                  onRecordTask={handleRecordTask}
+                  schedulerStatus={schedulerStatus}
+                />
+                <ScheduleBuilder
+                  tasks={tasks}
+                  schedule={schedule}
+                  onAddSchedule={handleAddSchedule}
+                  onDeleteSchedule={(index) => {
+                    if (confirm('Are you sure you want to delete this schedule?')) {
+                        handleDeleteSchedule(index);
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="lg:col-span-2 space-y-6">
+                <TaskList tasks={tasks} onRunTask={handleRunTask} />
+                <LogsConsole logs={logs} onClearLogs={() => setLogs([])} />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="calendar">
+            <TaskCalendar schedule={schedule} onDeleteSchedule={handleDeleteSchedule} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
