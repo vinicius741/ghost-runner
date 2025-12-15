@@ -24,6 +24,7 @@ function App() {
   const [tasks, setTasks] = useState<string[]>([]);
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [schedulerStatus, setSchedulerStatus] = useState<boolean>(false);
 
   const addLog = (message: string, type: 'normal' | 'error' | 'system' = 'normal') => {
     setLogs(prev => [...prev, {
@@ -36,13 +37,19 @@ function App() {
   useEffect(() => {
     fetchTasks();
     fetchSchedule();
+    fetchSchedulerStatus();
 
     socket.on('log', (message: string) => {
       addLog(message);
     });
 
+    socket.on('scheduler-status', (status: boolean) => {
+      setSchedulerStatus(status);
+    });
+
     return () => {
       socket.off('log');
+      socket.off('scheduler-status');
     };
   }, []);
 
@@ -63,6 +70,16 @@ function App() {
       setSchedule(data.schedule || []);
     } catch (e) {
       addLog('Error fetching schedule', 'error');
+    }
+  };
+
+  const fetchSchedulerStatus = async () => {
+    try {
+      const res = await fetch('/api/scheduler/status');
+      const data = await res.json();
+      setSchedulerStatus(data.running);
+    } catch (e) {
+      // Quiet fail or log
     }
   };
 
@@ -160,6 +177,7 @@ function App() {
                onStartScheduler={handleStartScheduler}
                onStopScheduler={handleStopScheduler}
                onRecordTask={handleRecordTask}
+               schedulerStatus={schedulerStatus}
              />
              <ScheduleBuilder
                tasks={tasks}
