@@ -74,3 +74,76 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* React Big Calendar Overrides for Dark Mode */
+.dark-calendar .rbc-toolbar {
+    @apply text-slate-100 mb-4;
+}
+
+.dark-calendar .rbc-toolbar button {
+    @apply text-slate-100 border-slate-700 hover:bg-slate-800;
+}
+
+.dark-calendar .rbc-toolbar button.rbc-active {
+    @apply bg-blue-600 border-blue-600 text-white hover:bg-blue-700 shadow-none;
+}
+
+.dark-calendar .rbc-header {
+    @apply border-slate-700 text-slate-400 font-medium py-2;
+}
+
+.dark-calendar .rbc-month-view {
+    @apply border-slate-700 rounded-lg overflow-hidden;
+}
+
+.dark-calendar .rbc-day-bg {
+    @apply border-slate-800;
+}
+
+.dark-calendar .rbc-off-range-bg {
+    @apply bg-slate-900/50;
+}
+
+.dark-calendar .rbc-date-cell {
+    @apply text-slate-400 p-2;
+}
+
+.dark-calendar .rbc-now {
+    @apply text-blue-400 font-bold;
+}
+
+.dark-calendar .rbc-event {
+    @apply bg-blue-600/80 border-none rounded text-white text-xs p-1;
+}
+
+.dark-calendar .rbc-time-view {
+    @apply border-slate-700 rounded-lg;
+}
+
+.dark-calendar .rbc-time-header {
+    @apply border-slate-700;
+}
+
+.dark-calendar .rbc-time-content {
+    @apply border-slate-700;
+}
+
+.dark-calendar .rbc-timeslot-group {
+    @apply border-slate-800;
+}
+
+.dark-calendar .rbc-time-slot {
+    @apply border-slate-800;
+}
+
+.dark-calendar .rbc-time-gutter .rbc-timeslot-group {
+    @apply border-slate-800 text-slate-500 text-xs;
+}
+
+.dark-calendar .rbc-day-slot .rbc-time-slot {
+    @apply border-slate-800;
+}
+
+.dark-calendar .rbc-today {
+    @apply bg-slate-800/30;
+}
