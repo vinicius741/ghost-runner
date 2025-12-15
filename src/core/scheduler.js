@@ -99,11 +99,10 @@ function startScheduler() {
         }
 
         if (delay <= 0) {
-            log(`Skipping one-time task '${task}' scheduled for ${executeAt} (Time passed)`);
-            return;
+            log(`Task '${task}' scheduled for ${executeAt} is past due. Executing immediately.`);
+        } else {
+            log(`Scheduling '${task}' once at ${executeAt} (in ${Math.round(delay / 60000)} minutes)`);
         }
-
-        log(`Scheduling '${task}' once at ${executeAt} (in ${Math.round(delay / 60000)} minutes)`);
 
         setTimeout(() => {
             try {
@@ -120,7 +119,7 @@ function startScheduler() {
             } catch (err) {
                 log(`Unexpected error triggering task '${task}': ${err.message}`);
             }
-        }, delay);
+        }, Math.max(0, delay));
 
     } else {
         log(`Skipping invalid config entry (no cron or executeAt): ${JSON.stringify(item)}`);
