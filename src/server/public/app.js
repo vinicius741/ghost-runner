@@ -76,10 +76,53 @@ async function runTask(taskName) {
 }
 
 // Record new task
-recordBtn.addEventListener('click', async () => {
-    appendLog('Starting Recorder...', 'system');
+const recordModal = document.getElementById('record-modal');
+const closeModal = document.getElementById('close-modal');
+const startRecordingBtn = document.getElementById('start-recording-btn');
+const newTaskNameInput = document.getElementById('new-task-name');
+const newTaskTypeInput = document.getElementById('new-task-type');
+
+recordBtn.addEventListener('click', () => {
+    recordModal.classList.remove('hidden');
+    newTaskNameInput.focus();
+});
+
+closeModal.addEventListener('click', () => {
+    recordModal.classList.add('hidden');
+});
+
+window.addEventListener('click', (event) => {
+    if (event.target == recordModal) {
+        recordModal.classList.add('hidden');
+    }
+});
+
+startRecordingBtn.addEventListener('click', async () => {
+    const taskName = newTaskNameInput.value.trim();
+    const type = newTaskTypeInput.value;
+
+    if (!taskName) {
+        alert('Please enter a task name.');
+        return;
+    }
+
+    // Basic validation for filename (alphanumeric + dashes/underscores)
+    if (!/^[a-zA-Z0-9-_]+$/.test(taskName)) {
+        alert('Task name should only contain letters, numbers, dashes, and underscores.');
+        return;
+    }
+
+    recordModal.classList.add('hidden');
+    appendLog(`Starting Recorder for task: ${taskName} (${type})...`, 'system');
+
     try {
-        await fetch('/api/record', { method: 'POST' });
+        await fetch('/api/record', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskName, type })
+        });
+        // Clear input
+        newTaskNameInput.value = '';
     } catch (error) {
         appendLog(`Error starting recorder: ${error.message}`, 'system');
     }

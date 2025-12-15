@@ -53,18 +53,26 @@ To enable Google Login and persistent sessions, you must manually log in once.
 ## 🛠 Usage
 
 ### 1. Recording New Tasks
+    
+You can create **Public** or **Private** tasks. Private tasks are git-ignored and safe for personal scripts.
 
-The easiest way to create a new automation is to record yourself.
+1.  **Via UI (Recommended)**:
+    *   Open `http://localhost:3000`.
+    *   Click "Record New Task".
+    *   Enter a name (e.g., `login-flow`) and select **Public** or **Private**.
+    *   The recorder will launch, and a file will be created at `tasks/public/` or `tasks/private/`.
 
-1.  Run the recorder:
+2.  **Via CLI**:
     ```bash
-    npm run record
+    npm run record -- --name=mytask --type=private
     ```
-2.  A browser window (logged in as you) and a "Playwright Inspector" window will open.
-3.  Perform the actions you want to automate.
-4.  Copy the code generated in the Inspector window.
-5.  Create a new file in the `tasks/` folder (e.g., `tasks/mytask.js`) using the `tasks/template.js` as a base.
-6.  Paste your recorded steps into the `run` function.
+
+3.  **Recording Process**:
+    *   A browser window (logged in as you) and a "Playwright Inspector" window will open.
+    *   Perform the actions you want to automate.
+    *   Copy the code generated in the Inspector window.
+    *   Open the newly created file (e.g., `tasks/private/mytask.js`).
+    *   Paste your recorded steps into the `run` function.
 
 ### 2. Running a Single Task
 
@@ -111,9 +119,9 @@ The project now includes a Web UI for easier management of tasks and schedules.
 
 ### UI Features
 
-*   **Task Dashboard**: View all available tasks, run them manually, and see real-time execution logs.
-*   **Recorder**: Launch the recording tool directly from the browser.
-*   **Schedule Builder**: A visual interface to manage your `schedule.json`. Add, edit, or remove scheduled tasks without touching the JSON file manually.
+*   **Task Dashboard**: View all available tasks (Public & Private), run them manually, and see real-time execution logs.
+*   **Recorder**: Launch the recording tool directly from the browser, with support for creating **Public** or **Private** tasks.
+*   **Schedule Builder**: A visual interface to manage your `schedule.json`. Add, edit, or remove scheduled tasks without touching the JSON file manually. Supports Cron presets (Minutes, Hourly, Daily).
 *   **Live Logs**: Watch the bot's activity stream in real-time.
 
 ---

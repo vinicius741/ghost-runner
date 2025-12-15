@@ -111,6 +111,27 @@
             </section>
         </main>
     </div>
+    <!-- Task Creation Modal -->
+    <div id="record-modal" class="modal hidden">
+        <div class="modal-content">
+            <span id="close-modal" class="close">&times;</span>
+            <h2>Create New Task</h2>
+            <div class="form-group">
+                <label for="new-task-name">Task Name</label>
+                <input type="text" id="new-task-name" class="input-text" placeholder="e.g., login-flow">
+            </div>
+            <div class="form-group">
+                <label for="new-task-type">Task Type</label>
+                <select id="new-task-type" class="input-select">
+                    <option value="private">Private</option>
+                    <option value="public">Public</option>
+                </select>
+            </div>
+            <button id="start-recording-btn" class="btn primary-btn" style="width: 100%; margin-top: 1rem;">
+                Start Recording
+            </button>
+        </div>
+    </div>
 </body>
 
 </html>

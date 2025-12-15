@@ -20,13 +20,33 @@ app.use(express.json());
 
 // Get all tasks
 app.get('/api/tasks', (req, res) => {
-    fs.readdir(TASKS_DIR, (err, files) => {
-        if (err) {
-            return res.status(500).json({ error: 'Failed to read tasks directory.' });
+    // Helper to read tasks from a directory
+    const getTasksFromDir = (dirName) => {
+        const dirPath = path.join(TASKS_DIR, dirName);
+        if (fs.existsSync(dirPath)) {
+            return fs.readdirSync(dirPath)
+                .filter(f => f.endsWith('.js'))
+                .map(f => f.replace('.js', ''));
         }
-        const tasks = files.filter(f => f.endsWith('.js')).map(f => f.replace('.js', ''));
-        res.json({ tasks });
-    });
+        return [];
+    };
+
+    try {
+        const publicTasks = getTasksFromDir('public');
+        const privateTasks = getTasksFromDir('private');
+
+        // Also check root for backward compatibility (optional, but good to have)
+        const rootTasks = fs.readdirSync(TASKS_DIR)
+            .filter(f => f.endsWith('.js'))
+            .map(f => f.replace('.js', ''));
+
+        // distinct tasks
+        const allTasks = [...new Set([...publicTasks, ...privateTasks, ...rootTasks])];
+        res.json({ tasks: allTasks });
+    } catch (err) {
+        console.error('Error reading tasks:', err);
+        res.status(500).json({ error: 'Failed to read tasks directory.' });
+    }
 });
 
 // Run a specific task
@@ -59,7 +79,18 @@ app.post('/api/run-task', (req, res) => {
 
 // Record a new task
 app.post('/api/record', (req, res) => {
-    const child = spawn('npm', ['run', 'record'], {
+    const { taskName, type } = req.body;
+
+    const args = ['run', 'record'];
+
+    // If name and type provided, pass them as arguments
+    if (taskName && type) {
+        args.push('--');
+        args.push(`--name=${taskName}`);
+        args.push(`--type=${type}`);
+    }
+
+    const child = spawn('npm', args, {
         cwd: path.resolve(__dirname, '../../'),
         shell: true
     });
