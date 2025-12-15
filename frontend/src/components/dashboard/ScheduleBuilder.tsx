@@ -8,13 +8,14 @@ import { X } from 'lucide-react';
 
 interface ScheduleItem {
   task: string;
-  cron: string;
+  cron?: string;
+  executeAt?: string;
 }
 
 interface ScheduleBuilderProps {
   tasks: string[];
   schedule: ScheduleItem[];
-  onAddSchedule: (task: string, cron: string) => void;
+  onAddSchedule: (task: string, cron?: string, executeAt?: string) => void;
   onDeleteSchedule: (index: number) => void;
 }
 
@@ -27,6 +28,10 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
   const [hourlyMinute, setHourlyMinute] = useState(0);
   const [dailyTime, setDailyTime] = useState('12:00');
   const [cronPreview, setCronPreview] = useState('* * * * *');
+
+  // One-time inputs
+  const [delayHours, setDelayHours] = useState(0);
+  const [delayMinutes, setDelayMinutes] = useState(30);
 
   useEffect(() => {
     let cron = '* * * * *';
@@ -45,7 +50,15 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
 
   const handleAdd = () => {
     if (!selectedTask) return;
-    onAddSchedule(selectedTask, cronPreview);
+
+    if (cronTab === 'once') {
+        const now = new Date();
+        const executeAt = new Date(now.getTime() + (delayHours * 60 * 60 * 1000) + (delayMinutes * 60 * 1000));
+        onAddSchedule(selectedTask, undefined, executeAt.toISOString());
+    } else {
+        onAddSchedule(selectedTask, cronPreview, undefined);
+    }
+
     setSelectedTask('');
   };
 
@@ -71,6 +84,7 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
                 <TabsTrigger value="minutes">Minutes</TabsTrigger>
                 <TabsTrigger value="hourly">Hourly</TabsTrigger>
                 <TabsTrigger value="daily">Daily</TabsTrigger>
+                <TabsTrigger value="once">One-Time</TabsTrigger>
               </TabsList>
 
               <div className="py-4 text-slate-200">
@@ -113,12 +127,46 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
                     />
                   </div>
                 </TabsContent>
+                <TabsContent value="once" className="mt-0">
+                  <div className="flex items-center gap-2">
+                    Run once in
+                    <Input
+                      type="number"
+                      min={0}
+                      value={delayHours}
+                      onChange={(e) => setDelayHours(parseInt(e.target.value) || 0)}
+                      className="w-16 inline-block bg-slate-900 border-slate-700 text-center"
+                      placeholder="HH"
+                    />
+                    h
+                    <Input
+                      type="number"
+                      min={0}
+                      max={59}
+                      value={delayMinutes}
+                      onChange={(e) => setDelayMinutes(parseInt(e.target.value) || 0)}
+                      className="w-16 inline-block bg-slate-900 border-slate-700 text-center"
+                      placeholder="MM"
+                    />
+                    m
+                  </div>
+                </TabsContent>
               </div>
             </Tabs>
 
             <div className="pt-4 border-t border-slate-800 flex items-center gap-2 text-sm text-slate-400">
-              <span>Preview:</span>
-              <code className="text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded font-mono">{cronPreview}</code>
+              {cronTab === 'once' ? (
+                 <div className="text-slate-400">
+                   Task will run at approx: <span className="text-blue-400">
+                     {new Date(Date.now() + (delayHours * 3600000) + (delayMinutes * 60000)).toLocaleTimeString()}
+                   </span>
+                 </div>
+              ) : (
+                <>
+                  <span>Preview:</span>
+                  <code className="text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded font-mono">{cronPreview}</code>
+                </>
+              )}
             </div>
           </div>
 
@@ -135,9 +183,16 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
               <div key={idx} className="flex justify-between items-center p-3 bg-white/5 border border-slate-800 rounded-lg group">
                 <div>
                   <span className="font-medium text-slate-200">{item.task}</span>
-                  <span className="ml-3 inline-block bg-purple-500/20 text-purple-300 text-xs font-mono px-2 py-0.5 rounded">
-                    {item.cron}
-                  </span>
+                  {item.cron && (
+                      <span className="ml-3 inline-block bg-purple-500/20 text-purple-300 text-xs font-mono px-2 py-0.5 rounded">
+                        {item.cron}
+                      </span>
+                  )}
+                  {item.executeAt && (
+                      <span className="ml-3 inline-block bg-green-500/20 text-green-300 text-xs font-mono px-2 py-0.5 rounded">
+                        Once: {new Date(item.executeAt).toLocaleString()}
+                      </span>
+                  )}
                 </div>
                 <button
                   onClick={() => onDeleteSchedule(idx)}
