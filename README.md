@@ -97,7 +97,27 @@ npm run bot -- --task=task_name
 
 A `run_bot.command` file is included. You can double-click this file from Finder to launch the scheduler without opening a terminal manually.
 
+
+## 💻 Web UI
+
+The project now includes a Web UI for easier management of tasks and schedules.
+
+1.  **Start the UI Server:**
+    ```bash
+    npm run ui
+    ```
+2.  **Open in Browser:**
+    Navigate to `http://localhost:3000`.
+
+### UI Features
+
+*   **Task Dashboard**: View all available tasks, run them manually, and see real-time execution logs.
+*   **Recorder**: Launch the recording tool directly from the browser.
+*   **Schedule Builder**: A visual interface to manage your `schedule.json`. Add, edit, or remove scheduled tasks without touching the JSON file manually.
+*   **Live Logs**: Watch the bot's activity stream in real-time.
+
 ---
+
 
 ## Project Structure
 
