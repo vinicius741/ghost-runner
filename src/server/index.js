@@ -125,6 +125,10 @@ app.post('/api/record', (req, res) => {
 // Scheduler Control
 let schedulerProcess = null;
 
+app.get('/api/scheduler/status', (req, res) => {
+    res.json({ running: !!schedulerProcess });
+});
+
 app.post('/api/scheduler/start', (req, res) => {
     if (schedulerProcess) {
         return res.json({ message: 'Scheduler is already running.' });
@@ -134,6 +138,8 @@ app.post('/api/scheduler/start', (req, res) => {
         cwd: path.resolve(__dirname, '../../'),
         shell: true
     });
+
+    io.emit('scheduler-status', true);
 
     schedulerProcess.stdout.on('data', (data) => {
         io.emit('log', `[Scheduler] ${data.toString()}`);
@@ -146,6 +152,7 @@ app.post('/api/scheduler/start', (req, res) => {
     schedulerProcess.on('close', (code) => {
         io.emit('log', `[Scheduler] process exited with code ${code}`);
         schedulerProcess = null;
+        io.emit('scheduler-status', false);
     });
 
     res.json({ message: 'Scheduler started.' });
@@ -156,6 +163,7 @@ app.post('/api/scheduler/stop', (req, res) => {
         schedulerProcess.kill();
         schedulerProcess = null;
         io.emit('log', '[Scheduler] Stopped manually.');
+        io.emit('scheduler-status', false);
         res.json({ message: 'Scheduler stopped.' });
     } else {
         res.json({ message: 'Scheduler is not running.' });
