@@ -79,31 +79,47 @@ app.post('/api/run-task', (req, res) => {
 
 // Record a new task
 app.post('/api/record', (req, res) => {
-    const { taskName, type } = req.body;
+    try {
+        const { taskName, type } = req.body;
 
-    const args = ['run', 'record'];
+        const args = ['run', 'record'];
 
-    // If name and type provided, pass them as arguments
-    if (taskName && type) {
-        args.push('--');
-        args.push(`--name=${taskName}`);
-        args.push(`--type=${type}`);
+        // If name and type provided, pass them as arguments
+        if (taskName && type) {
+            args.push('--');
+            args.push(`--name=${taskName}`);
+            args.push(`--type=${type}`);
+        }
+
+        const child = spawn('npm', args, {
+            cwd: path.resolve(__dirname, '../../'),
+            shell: true
+        });
+
+        child.stdout.on('data', (data) => {
+            io.emit('log', `[Recorder] ${data.toString()}`);
+        });
+
+        child.stderr.on('data', (data) => {
+            io.emit('log', `[Recorder ERROR] ${data.toString()}`);
+        });
+
+        child.on('error', (err) => {
+            console.error('Spawn error:', err);
+            io.emit('log', `[Recorder SYSTEM ERROR] Failed to spawn process: ${err.message}`);
+        });
+
+        child.on('close', (code) => {
+            if (code !== 0) {
+                io.emit('log', `[Recorder] Process exited with code ${code}`);
+            }
+        });
+
+        res.json({ message: 'Recorder started.' });
+    } catch (error) {
+        console.error('Error in /api/record:', error);
+        res.status(500).json({ error: `Internal Server Error: ${error.message}` });
     }
-
-    const child = spawn('npm', args, {
-        cwd: path.resolve(__dirname, '../../'),
-        shell: true
-    });
-
-    child.stdout.on('data', (data) => {
-        io.emit('log', `[Recorder] ${data.toString()}`);
-    });
-
-    child.stderr.on('data', (data) => {
-        io.emit('log', `[Recorder ERROR] ${data.toString()}`);
-    });
-
-    res.json({ message: 'Recorder started.' });
 });
 
 // Scheduler Control
@@ -200,6 +216,22 @@ app.post('/api/schedule', (req, res) => {
 });
 
 
+
+// --- Global Error Handlers ---
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION:', err);
+    // Try to emit to socket if possible, though process might be unstable
+    try {
+        if (io) io.emit('log', `[SYSTEM CRASH] Uncaught Exception: ${err.message}`);
+    } catch (e) { /* ignore */ }
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('UNHANDLED REJECTION:', reason);
+    try {
+        if (io) io.emit('log', `[SYSTEM CRASH] Unhandled Rejection: ${reason}`);
+    } catch (e) { /* ignore */ }
+});
 
 server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
