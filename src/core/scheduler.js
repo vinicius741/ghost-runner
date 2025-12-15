@@ -63,28 +63,68 @@ function startScheduler() {
   log(`Loaded ${scheduleConfig.length} tasks from schedule.json`);
 
   scheduleConfig.forEach((item) => {
-    const { task, cron: cronExpression } = item;
+    const { task, cron: cronExpression, executeAt } = item;
 
-    if (!task || !cronExpression) {
-      log(`Skipping invalid config entry: ${JSON.stringify(item)}`);
-      return;
+    if (!task) {
+        log(`Skipping invalid config entry (no task name): ${JSON.stringify(item)}`);
+        return;
     }
 
-    if (!cron.validate(cronExpression)) {
-      log(`Invalid cron expression for task '${task}': ${cronExpression}`);
-      return;
+    if (cronExpression) {
+        // Handle Cron Schedule
+        if (!cron.validate(cronExpression)) {
+            log(`Invalid cron expression for task '${task}': ${cronExpression}`);
+            return;
+        }
+
+        log(`Scheduling '${task}' with cron: '${cronExpression}'`);
+
+        cron.schedule(cronExpression, () => {
+            try {
+                runTask(task);
+            } catch (err) {
+                log(`Unexpected error triggering task '${task}': ${err.message}`);
+            }
+        });
+
+    } else if (executeAt) {
+        // Handle One-time Schedule
+        const executeTime = new Date(executeAt);
+        const now = new Date();
+        const delay = executeTime.getTime() - now.getTime();
+
+        if (isNaN(delay)) {
+            log(`Invalid date format for task '${task}': ${executeAt}`);
+            return;
+        }
+
+        if (delay <= 0) {
+            log(`Skipping one-time task '${task}' scheduled for ${executeAt} (Time passed)`);
+            return;
+        }
+
+        log(`Scheduling '${task}' once at ${executeAt} (in ${Math.round(delay / 60000)} minutes)`);
+
+        setTimeout(() => {
+            try {
+                runTask(task);
+                // Remove from schedule.json
+                try {
+                    const currentConfig = JSON.parse(fs.readFileSync(CONFIG_FILE));
+                    const newConfig = currentConfig.filter(t => t.task !== task || t.executeAt !== executeAt);
+                    fs.writeFileSync(CONFIG_FILE, JSON.stringify(newConfig, null, 2));
+                    log(`Removed one-time task '${task}' from schedule.`);
+                } catch (ioErr) {
+                    log(`Error removing task from schedule: ${ioErr.message}`);
+                }
+            } catch (err) {
+                log(`Unexpected error triggering task '${task}': ${err.message}`);
+            }
+        }, delay);
+
+    } else {
+        log(`Skipping invalid config entry (no cron or executeAt): ${JSON.stringify(item)}`);
     }
-
-    log(`Scheduling '${task}' with cron: '${cronExpression}'`);
-
-    cron.schedule(cronExpression, () => {
-      // Wrap in try-catch to ensure scheduler keeps running even if execution setup fails
-      try {
-        runTask(task);
-      } catch (err) {
-        log(`Unexpected error triggering task '${task}': ${err.message}`);
-      }
-    });
   });
 
   log('Scheduler is running. Press Ctrl+C to stop.');

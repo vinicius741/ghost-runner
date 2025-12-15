@@ -14,7 +14,8 @@ interface LogEntry {
 
 interface ScheduleItem {
   task: string;
-  cron: string;
+  cron?: string;
+  executeAt?: string;
 }
 
 const socket = io();
@@ -113,8 +114,12 @@ function App() {
     }
   };
 
-  const handleAddSchedule = async (task: string, cron: string) => {
-    const newSchedule = [...schedule, { task, cron }];
+  const handleAddSchedule = async (task: string, cron?: string, executeAt?: string) => {
+    const newItem: ScheduleItem = { task };
+    if (cron) newItem.cron = cron;
+    if (executeAt) newItem.executeAt = executeAt;
+
+    const newSchedule = [...schedule, newItem];
     setSchedule(newSchedule);
     await saveSchedule(newSchedule);
   };
