@@ -9,3 +9,4 @@ src/server/public/assets
 
 settings.json
 schedule.json
+scheduler.log
