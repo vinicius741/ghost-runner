@@ -1,32 +1,39 @@
 # Ghost Runner Bot
 
-A stealthy Node.js automation tool using Playwright and `puppeteer-extra-plugin-stealth` designed to run on macOS with a persistent Google Chrome profile.
+A stealthy Node.js automation tool using Playwright and `puppeteer-extra-plugin-stealth`, featuring a modern React-based Web UI for managing tasks, schedules, and settings.
 
 ## Features
 
-- **Stealth Mode**: Uses a persistent Chrome User Profile and stealth plugins to evade detection.
-- **Modular Architecture**: "Record & Replay" system to easily add new automation tasks.
-- **Advanced Scheduler**: Configurable Cron-based scheduler to run multiple tasks at specific times.
-- **Local Execution**: Runs directly on your macOS machine using your installed Google Chrome.
+- **Stealth Mode**: Uses a persistent browser context (Chromium) and stealth plugins to evade detection.
+- **Web UI**: A full-featured React dashboard (built with `shadcn/ui`, Tailwind CSS) to manage the bot.
+- **Task Management**: Record and replay tasks. Support for **Public** (shared) and **Private** (git-ignored) tasks.
+- **Advanced Scheduler**:
+    - **Cron Jobs**: Recurring tasks (e.g., "Every day at 9 AM").
+    - **One-Time Tasks**: Schedule a specific date/time for execution. The system automatically executes and removes them from the schedule.
+    - **Calendar View**: Visualize your schedule with `react-big-calendar`.
+- **Real-Time Logs**: Watch execution logs live via the Web UI (powered by Socket.io).
+- **Geolocation Control**: Configurable geolocation settings for browser contexts.
+- **Cross-Platform**: Configured to run on macOS and Linux (uses bundled Playwright Chromium).
 
 ## Prerequisites
 
-- **macOS**: This tool is configured to use the local Google Chrome on macOS.
-- **Node.js**: Ensure Node.js is installed (`node -v`).
-- **Google Chrome**: Must be installed at `/Applications/Google Chrome.app`.
+- **Node.js**: Ensure Node.js is installed (v16+ recommended).
+- **Browser**: The tool uses Playwright's bundled Chromium, so manual Chrome installation is not strictly required, though it mimics a real Chrome environment.
 
 ## Installation
 
-1.  Clone the repository or navigate to the project folder.
+1.  Clone the repository.
 2.  Install dependencies:
 
     ```bash
     npm install
     ```
 
+    *Note: This will also install the necessary Playwright browsers.*
+
 ## 🚀 First-Time Setup (Crucial)
 
-To enable Google Login and persistent sessions, you must manually log in once.
+To enable persistent sessions (like staying logged into Google), you must manually log in once.
 
 1.  **Run the Login Setup Script:**
 
@@ -35,103 +42,78 @@ To enable Google Login and persistent sessions, you must manually log in once.
     ```
 
 2.  **Log In Manually:**
-    *   A Chrome window will open.
-    *   Navigate to Google or any other site you need to authenticate with.
-    *   Log in with your credentials.
-    *   **Do not close the browser immediately.** Browse for a minute to ensure cookies are saved.
+    *   A browser window will open.
+    *   Log in to your desired services (e.g., Google).
+    *   Browse for a minute to ensure cookies/session data are saved to `user_data/`.
 
-3.  **Close the Browser:**
-    *   Manually close the Chrome window.
-
-4.  **Verify Session:**
-    *   Run the verification script:
-        ```bash
-        npm run verify-login
-        ```
-    *   The browser should open and you should be already logged in (e.g., at `myaccount.google.com`).
-
-## 🛠 Usage
-
-### 1. Recording New Tasks
-    
-You can create **Public** or **Private** tasks. Private tasks are git-ignored and safe for personal scripts.
-
-1.  **Via UI (Recommended)**:
-    *   Open `http://localhost:3000`.
-    *   Click "Record New Task".
-    *   Enter a name (e.g., `login-flow`) and select **Public** or **Private**.
-    *   The recorder will launch, and a file will be created at `tasks/public/` or `tasks/private/`.
-
-2.  **Via CLI**:
+3.  **Verify Session:**
     ```bash
-    npm run record -- --name=mytask --type=private
+    npm run verify-login
     ```
 
-3.  **Recording Process**:
-    *   A browser window (logged in as you) and a "Playwright Inspector" window will open.
-    *   Perform the actions you want to automate.
-    *   Copy the code generated in the Inspector window.
-    *   Open the newly created file (e.g., `tasks/private/mytask.js`).
-    *   Paste your recorded steps into the `run` function.
+## 💻 Web UI & Usage
 
-### 2. Running a Single Task
+The primary way to interact with the bot is through the Web UI.
 
-To run a specific task immediately:
+### 1. Start the UI Server
+
+This command builds the frontend (React) and starts the backend server:
 
 ```bash
-npm run bot -- --task=task_name
-# Example: npm run bot -- --task=mytask (if file is tasks/mytask.js)
+npm run ui
 ```
 
-### 3. Scheduling Tasks
+Navigate to `http://localhost:3000` in your browser.
 
-1.  Open `schedule.json`.
-2.  Add your task and the desired Cron schedule:
+### 2. UI Features
 
-    ```json
-    [
-      { "task": "mytask", "cron": "0 9 * * *" },     // Runs every day at 9:00 AM
-      { "task": "check_price", "cron": "*/30 * * * *" } // Runs every 30 minutes
-    ]
-    ```
-3.  Start the Scheduler:
+*   **Dashboard**: View and run tasks manually.
+    *   **Public Tasks**: Stored in `tasks/public/`.
+    *   **Private Tasks**: Stored in `tasks/private/`.
+*   **Recorder**: Launch the "Record New Task" tool directly from the browser.
+*   **Schedule Builder**:
+    *   Add **Recurring Tasks** using Cron presets or custom expressions.
+    *   Add **One-Time Tasks** by selecting a specific date and time.
+    *   **Calendar**: View all upcoming scheduled executions.
+*   **Settings**: Configure global settings like **Geolocation** (Latitude/Longitude) for the browser instance.
+*   **Logs**: Real-time console output from the bot and scheduler.
 
-    ```bash
-    npm run schedule
-    ```
-    *Or use the `Run Bot` shortcut on your desktop (see below).*
+## 🛠 Command Line Usage
 
-## 📱 Desktop Shortcut (macOS)
+While the UI is recommended, you can still use the CLI.
 
-A `run_bot.command` file is included. You can double-click this file from Finder to launch the scheduler without opening a terminal manually.
+### Run a Task
+```bash
+npm run bot -- --task=task_name
+```
 
+### Record a Task
+```bash
+npm run record -- --name=mytask --type=private
+```
 
-## 💻 Web UI
-
-The project now includes a Web UI for easier management of tasks and schedules.
-
-1.  **Start the UI Server:**
-    ```bash
-    npm run ui
-    ```
-2.  **Open in Browser:**
-    Navigate to `http://localhost:3000`.
-
-### UI Features
-
-*   **Task Dashboard**: View all available tasks (Public & Private), run them manually, and see real-time execution logs.
-*   **Recorder**: Launch the recording tool directly from the browser, with support for creating **Public** or **Private** tasks.
-*   **Schedule Builder**: A visual interface to manage your `schedule.json`. Add, edit, or remove scheduled tasks without touching the JSON file manually. Supports Cron presets (Minutes, Hourly, Daily).
-*   **Live Logs**: Watch the bot's activity stream in real-time.
-
----
-
+### Run the Scheduler (Headless)
+```bash
+npm run schedule
+```
 
 ## Project Structure
 
-*   `index.js`: Main entry point for running single tasks.
-*   `scheduler.js`: Manages the execution of scheduled tasks.
-*   `browserConfig.js`: Centralized browser launch configuration (Stealth settings).
-*   `tasks/`: Directory containing all automation task modules.
-*   `user_data/`: **(Do not delete)** Stores your persistent browser profile (cookies, login sessions).
-*   `schedule.json`: Configuration for the scheduler.
+*   `frontend/`: React application (TypeScript, Vite, Tailwind, shadcn/ui).
+*   `src/`: Backend source code.
+    *   `core/`: Core logic (`scheduler.js`, `record-new-task.js`, `index.js`).
+    *   `server/`: Express server and Socket.io handlers.
+    *   `config/`: Configuration files (e.g., `browserConfig.js`).
+    *   `utils/`: Helper scripts (`run-setup-login.js`).
+*   `tasks/`: Directory containing automation scripts.
+*   `user_data/`: Stores persistent browser profile (cookies, sessions). **Do not delete if you want to keep sessions.**
+*   `schedule.json`: JSON configuration for the scheduler (managed via UI).
+*   `settings.json`: JSON configuration for global settings (managed via UI).
+
+## Development
+
+If you are developing the frontend:
+
+1.  Navigate to `frontend/`: `cd frontend`
+2.  Install dependencies: `npm install`
+3.  Run dev server: `npm run dev` (Note: Backend API calls require the backend server running on port 3000).
