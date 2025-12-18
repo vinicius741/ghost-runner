@@ -135,14 +135,9 @@ app.post('/api/record', (req, res) => {
 // Scheduler Control
 let schedulerProcess = null;
 
-app.get('/api/scheduler/status', (req, res) => {
-    res.json({ running: !!schedulerProcess });
-});
-
-app.post('/api/scheduler/start', (req, res) => {
-    if (schedulerProcess) {
-        return res.json({ message: 'Scheduler is already running.' });
-    }
+// Helper functions for Scheduler Control
+function startSchedulerProcess() {
+    if (schedulerProcess) return false; // Already running
 
     schedulerProcess = spawn('npm', ['run', 'schedule'], {
         cwd: path.resolve(__dirname, '../../'),
@@ -165,15 +160,35 @@ app.post('/api/scheduler/start', (req, res) => {
         io.emit('scheduler-status', false);
     });
 
+    return true;
+}
+
+function stopSchedulerProcess() {
+    if (schedulerProcess) {
+        schedulerProcess.kill();
+        schedulerProcess = null;
+        io.emit('log', '[Scheduler] Stopped.');
+        io.emit('scheduler-status', false);
+        return true;
+    }
+    return false;
+}
+
+app.get('/api/scheduler/status', (req, res) => {
+    res.json({ running: !!schedulerProcess });
+});
+
+app.post('/api/scheduler/start', (req, res) => {
+    if (schedulerProcess) {
+        return res.json({ message: 'Scheduler is already running.' });
+    }
+
+    startSchedulerProcess();
     res.json({ message: 'Scheduler started.' });
 });
 
 app.post('/api/scheduler/stop', (req, res) => {
-    if (schedulerProcess) {
-        schedulerProcess.kill();
-        schedulerProcess = null;
-        io.emit('log', '[Scheduler] Stopped manually.');
-        io.emit('scheduler-status', false);
+    if (stopSchedulerProcess()) {
         res.json({ message: 'Scheduler stopped.' });
     } else {
         res.json({ message: 'Scheduler is not running.' });
@@ -227,9 +242,21 @@ app.post('/api/schedule', (req, res) => {
         if (err) {
             return res.status(500).json({ error: 'Failed to save schedule.' });
         }
+
+        // Auto-restart or start scheduler to pick up changes
+        if (schedulerProcess) {
+            io.emit('log', '[System] Restarting scheduler to apply changes...');
+            stopSchedulerProcess();
+            // Small delay to ensure process cleanup if needed, though stopSchedulerProcess is synchronous-ish in trigger
+            setTimeout(() => {
+                startSchedulerProcess();
+            }, 1000);
+        } else {
+            io.emit('log', '[System] Starting scheduler to apply changes...');
+            startSchedulerProcess();
+        }
+
         res.json({ message: 'Schedule updated successfully.' });
-        // Notify clients about the update if needed
-        io.emit('log', '[System] Schedule updated via UI.');
     });
 });
 
