@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, Save, RefreshCw, Navigation } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface GeolocationSettings {
     latitude: number;
@@ -98,83 +99,97 @@ export function SettingsManager() {
     };
 
     return (
-        <Card className="bg-slate-900/50 backdrop-blur border-slate-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-slate-100 font-normal flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-blue-400" />
-                    Geolocation Settings
-                </CardTitle>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={fetchSettings}
-                    disabled={loading}
-                    className="text-slate-400 hover:text-slate-100"
-                >
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
-            </CardHeader>
-            <CardContent className="space-y-6 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="latitude" className="text-slate-400">Latitude</Label>
-                        <Input
-                            id="latitude"
-                            type="number"
-                            step="any"
-                            value={settings.geolocation.latitude}
-                            onChange={(e) => updateGeo('latitude', e.target.value)}
-                            className="bg-slate-800/50 border-slate-700 text-slate-100"
-                            placeholder="-23.55052"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="longitude" className="text-slate-400">Longitude</Label>
-                        <Input
-                            id="longitude"
-                            type="number"
-                            step="any"
-                            value={settings.geolocation.longitude}
-                            onChange={(e) => updateGeo('longitude', e.target.value)}
-                            className="bg-slate-800/50 border-slate-700 text-slate-100"
-                            placeholder="-46.633308"
-                        />
-                    </div>
-                </div>
-
-                <div className="flex justify-center">
+        <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+        >
+            <Card className="card-premium h-full">
+                <CardHeader className="flex flex-row items-center justify-between pb-4">
+                    <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-blue-500" />
+                        Geolocation Settings
+                    </CardTitle>
                     <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleGetCurrentLocation}
-                        disabled={detecting}
-                        className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10 hover:text-blue-300 gap-2"
+                        variant="ghost"
+                        size="icon"
+                        onClick={fetchSettings}
+                        disabled={loading}
+                        className="text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"
                     >
-                        <Navigation className={`w-4 h-4 ${detecting ? 'animate-pulse' : ''}`} />
-                        {detecting ? 'Detecting Location...' : 'Use Current Location'}
+                        <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                     </Button>
-                </div>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="latitude" className="text-[10px] text-slate-500 font-bold uppercase tracking-widest ml-1">Latitude</Label>
+                                <Input
+                                    id="latitude"
+                                    type="number"
+                                    step="any"
+                                    value={settings.geolocation.latitude}
+                                    onChange={(e) => updateGeo('latitude', e.target.value)}
+                                    className="h-10 bg-slate-900 border-slate-800 text-slate-200 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all font-mono text-sm"
+                                    placeholder="-23.55052"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="longitude" className="text-[10px] text-slate-500 font-bold uppercase tracking-widest ml-1">Longitude</Label>
+                                <Input
+                                    id="longitude"
+                                    type="number"
+                                    step="any"
+                                    value={settings.geolocation.longitude}
+                                    onChange={(e) => updateGeo('longitude', e.target.value)}
+                                    className="h-10 bg-slate-900 border-slate-800 text-slate-200 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all font-mono text-sm"
+                                    placeholder="-46.633308"
+                                />
+                            </div>
+                        </div>
 
-                <div className="pt-2">
-                    <Button
-                        onClick={handleSave}
-                        disabled={saving || loading}
-                        className="w-full bg-gradient-to-r from-blue-500 to-sky-400 hover:opacity-90 transition-all"
-                    >
-                        {saving ? (
-                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                            <Save className="w-4 h-4 mr-2" />
-                        )}
-                        Save Configuration
-                    </Button>
-                    <p className="text-xs text-slate-500 mt-4 text-center">
-                        Note: Changes will apply to new browser instances.
-                        Persistent profiles will be updated on the next launch.
-                    </p>
-                </div>
-            </CardContent>
-        </Card>
+                        <div className="flex justify-center pt-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleGetCurrentLocation}
+                                disabled={detecting}
+                                className="h-9 px-4 bg-blue-500/5 text-blue-400 border-blue-500/20 hover:bg-blue-500/10 hover:border-blue-500/40 hover:text-blue-300 transition-all duration-300 gap-2"
+                            >
+                                <Navigation className={`w-3.5 h-3.5 ${detecting ? 'animate-pulse' : ''}`} />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">
+                                    {detecting ? 'Detecting...' : 'Use Current Location'}
+                                </span>
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="relative group">
+                            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-sky-400 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+                            <Button
+                                onClick={handleSave}
+                                disabled={saving || loading}
+                                className="relative w-full h-11 bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-100 transition-all duration-300"
+                            >
+                                {saving ? (
+                                    <RefreshCw className="w-4 h-4 mr-2 animate-spin text-blue-500" />
+                                ) : (
+                                    <Save className="w-4 h-4 mr-2 text-blue-500" />
+                                )}
+                                <span className="font-semibold tracking-wide">Save Configuration</span>
+                            </Button>
+                        </div>
+                        <p className="text-[10px] text-slate-500 text-center leading-relaxed px-4">
+                            Changes apply to new browser instances.
+                            <br />
+                            Profiles update on next launch.
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
+        </motion.div>
     );
 }

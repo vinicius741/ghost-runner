@@ -8,6 +8,8 @@ import { TaskCalendar } from "@/components/dashboard/TaskCalendar";
 import { SettingsManager } from "@/components/dashboard/SettingsManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { io } from "socket.io-client";
+import { motion, AnimatePresence } from "framer-motion";
+import { LayoutDashboard, Calendar, Settings as SettingsIcon } from 'lucide-react';
 
 interface LogEntry {
   message: string;
@@ -28,6 +30,7 @@ function App() {
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [schedulerStatus, setSchedulerStatus] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const addLog = (message: string, type: 'normal' | 'error' | 'system' = 'normal') => {
     setLogs(prev => [...prev, {
@@ -145,14 +148,6 @@ function App() {
   };
 
   const handleDeleteSchedule = async (index: number) => {
-    // Confirmation handled by UI or we can skip it if the component already asked
-    // The calendar component asks for confirmation. ScheduleBuilder asks for confirmation.
-    // So we can assume if this is called, it is confirmed or we just do it.
-    // However, the original code had a confirm() here.
-    // I will remove the confirm here if I handle it in the components, or keep it.
-    // But since TaskCalendar calls this after its own dialog, I should avoid double confirmation.
-    // Let's rely on the caller to confirm.
-
     const newSchedule = [...schedule];
     newSchedule.splice(index, 1);
     setSchedule(newSchedule);
@@ -176,56 +171,89 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans transition-colors duration-500">
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))]" />
+      <div className="fixed inset-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-50 contrast-150" />
+
+      <div className="max-w-7xl mx-auto space-y-10 relative">
         <Header />
 
-        <Tabs defaultValue="dashboard" className="w-full space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
           <div className="flex justify-center">
-            <TabsList className="bg-slate-900/50 border border-slate-800">
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsList className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 h-14 p-1.5 gap-1.5 rounded-2xl shadow-2xl shadow-black/20">
+              <TabsTrigger
+                value="dashboard"
+                className="px-8 py-2.5 gap-2.5 rounded-xl text-slate-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-sky-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all duration-300 hover:text-slate-200"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="font-bold uppercase tracking-widest text-[10px]">Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="calendar"
+                className="px-8 py-2.5 gap-2.5 rounded-xl text-slate-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-sky-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all duration-300 hover:text-slate-200"
+              >
+                <Calendar className="w-4 h-4" />
+                <span className="font-bold uppercase tracking-widest text-[10px]">Calendar</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="settings"
+                className="px-8 py-2.5 gap-2.5 rounded-xl text-slate-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-sky-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all duration-300 hover:text-slate-200"
+              >
+                <SettingsIcon className="w-4 h-4" />
+                <span className="font-bold uppercase tracking-widest text-[10px]">Settings</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1 space-y-6">
-                <ControlPanel
-                  onStartScheduler={handleStartScheduler}
-                  onStopScheduler={handleStopScheduler}
-                  onRecordTask={handleRecordTask}
-                  schedulerStatus={schedulerStatus}
-                />
-                <ScheduleBuilder
-                  tasks={tasks}
-                  schedule={schedule}
-                  onAddSchedule={handleAddSchedule}
-                  onDeleteSchedule={(index) => {
-                    if (confirm('Are you sure you want to delete this schedule?')) {
-                      handleDeleteSchedule(index);
-                    }
-                  }}
-                />
-              </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <TabsContent value="dashboard" className="mt-0 space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  <div className="lg:col-span-4 space-y-8">
+                    <ControlPanel
+                      onStartScheduler={handleStartScheduler}
+                      onStopScheduler={handleStopScheduler}
+                      onRecordTask={handleRecordTask}
+                      schedulerStatus={schedulerStatus}
+                    />
+                    <ScheduleBuilder
+                      tasks={tasks}
+                      schedule={schedule}
+                      onAddSchedule={handleAddSchedule}
+                      onDeleteSchedule={(index) => {
+                        if (confirm('Are you sure you want to delete this schedule?')) {
+                          handleDeleteSchedule(index);
+                        }
+                      }}
+                    />
+                  </div>
 
-              <div className="lg:col-span-2 space-y-6">
-                <TaskList tasks={tasks} onRunTask={handleRunTask} />
-                <LogsConsole logs={logs} onClearLogs={() => setLogs([])} />
-              </div>
-            </div>
-          </TabsContent>
+                  <div className="lg:col-span-8 flex flex-col gap-8">
+                    <TaskList tasks={tasks} onRunTask={handleRunTask} />
+                    <LogsConsole logs={logs} onClearLogs={() => setLogs([])} />
+                  </div>
+                </div>
+              </TabsContent>
 
-          <TabsContent value="calendar">
-            <TaskCalendar schedule={schedule} onDeleteSchedule={handleDeleteSchedule} />
-          </TabsContent>
+              <TabsContent value="calendar" className="mt-0">
+                <div className="card-premium p-6 rounded-3xl bg-slate-900/30">
+                  <TaskCalendar schedule={schedule} onDeleteSchedule={handleDeleteSchedule} />
+                </div>
+              </TabsContent>
 
-          <TabsContent value="settings">
-            <div className="max-w-2xl mx-auto py-6">
-              <SettingsManager />
-            </div>
-          </TabsContent>
+              <TabsContent value="settings" className="mt-0">
+                <div className="max-w-3xl mx-auto py-4">
+                  <SettingsManager />
+                </div>
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
         </Tabs>
       </div>
     </div>
@@ -233,3 +261,4 @@ function App() {
 }
 
 export default App;
+

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { X } from 'lucide-react';
+import { X, Calendar, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ScheduleItem {
   task: string;
@@ -52,159 +53,203 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
     if (!selectedTask) return;
 
     if (cronTab === 'once') {
-        const now = new Date();
-        const executeAt = new Date(now.getTime() + (delayHours * 60 * 60 * 1000) + (delayMinutes * 60 * 1000));
-        onAddSchedule(selectedTask, undefined, executeAt.toISOString());
+      const now = new Date();
+      const executeAt = new Date(now.getTime() + (delayHours * 60 * 60 * 1000) + (delayMinutes * 60 * 1000));
+      onAddSchedule(selectedTask, undefined, executeAt.toISOString());
     } else {
-        onAddSchedule(selectedTask, cronPreview, undefined);
+      onAddSchedule(selectedTask, cronPreview, undefined);
     }
 
     setSelectedTask('');
   };
 
   return (
-    <Card className="bg-slate-900/50 backdrop-blur border-slate-700">
-      <CardHeader>
-        <CardTitle className="text-slate-100 font-normal">Schedule Builder</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col gap-4 mb-6">
-          <Select value={selectedTask} onValueChange={setSelectedTask}>
-            <SelectTrigger className="bg-slate-950/50 border-slate-700 text-slate-100">
-              <SelectValue placeholder="Select Task..." />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-900 border-slate-700 text-slate-100">
-              {tasks.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
+    >
+      <Card className="card-premium h-full">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+            Schedule Builder
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-6 mb-8">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Select Automation</label>
+              <Select value={selectedTask} onValueChange={setSelectedTask}>
+                <SelectTrigger className="bg-slate-950/50 border-slate-800/50 text-slate-100 h-11 focus:ring-blue-500/20">
+                  <SelectValue placeholder="Choose a task..." />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                  {tasks.map(t => <SelectItem key={t} value={t} className="focus:bg-blue-500/10 focus:text-blue-200 uppercase text-xs font-semibold tracking-tight">{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="bg-slate-950/30 border border-slate-700 rounded-lg p-4">
-            <Tabs value={cronTab} onValueChange={setCronTab} className="w-full">
-              <TabsList className="bg-slate-900/50 border border-slate-800 w-full justify-start">
-                <TabsTrigger value="minutes">Minutes</TabsTrigger>
-                <TabsTrigger value="hourly">Hourly</TabsTrigger>
-                <TabsTrigger value="daily">Daily</TabsTrigger>
-                <TabsTrigger value="once">One-Time</TabsTrigger>
-              </TabsList>
+            <div className="bg-slate-950/50 border border-slate-800/50 rounded-2xl p-5 space-y-4">
+              <Tabs value={cronTab} onValueChange={setCronTab} className="w-full">
+                <TabsList className="bg-slate-900/50 border border-slate-800/50 w-full p-1 h-11">
+                  <TabsTrigger value="minutes" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Min</TabsTrigger>
+                  <TabsTrigger value="hourly" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Hour</TabsTrigger>
+                  <TabsTrigger value="daily" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Day</TabsTrigger>
+                  <TabsTrigger value="once" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Once</TabsTrigger>
+                </TabsList>
 
-              <div className="py-4 text-slate-200">
-                <TabsContent value="minutes" className="mt-0">
-                  <div className="flex items-center gap-2">
-                    Every
-                    <Input
-                      type="number"
-                      min={1}
-                      max={59}
-                      value={minutes}
-                      onChange={(e) => setMinutes(parseInt(e.target.value))}
-                      className="w-20 inline-block bg-slate-900 border-slate-700 text-center"
-                    />
-                    minutes
+                <div className="pt-4 text-slate-300 min-h-[60px] flex items-center justify-center">
+                  <TabsContent value="minutes" className="mt-0 w-full">
+                    <div className="flex items-center justify-center gap-3 text-sm font-medium">
+                      <span>Every</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={59}
+                        value={minutes}
+                        onChange={(e) => setMinutes(parseInt(e.target.value))}
+                        className="w-20 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+                      />
+                      <span>minutes</span>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="hourly" className="mt-0 w-full">
+                    <div className="flex items-center justify-center gap-3 text-sm font-medium">
+                      <span>Every hour at</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={hourlyMinute}
+                        onChange={(e) => setHourlyMinute(parseInt(e.target.value))}
+                        className="w-20 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+                      />
+                      <span>past the hour</span>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="daily" className="mt-0 w-full">
+                    <div className="flex items-center justify-center gap-3 text-sm font-medium">
+                      <span>Daily at</span>
+                      <Input
+                        type="time"
+                        value={dailyTime}
+                        onChange={(e) => setDailyTime(e.target.value)}
+                        className="w-32 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+                      />
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="once" className="mt-0 w-full">
+                    <div className="flex items-center justify-center gap-3 text-sm font-medium">
+                      <span>In</span>
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={delayHours}
+                          onChange={(e) => setDelayHours(parseInt(e.target.value) || 0)}
+                          className="w-16 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+                          placeholder="HH"
+                        />
+                        <span className="text-slate-500 text-xs">h</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={59}
+                          value={delayMinutes}
+                          onChange={(e) => setDelayMinutes(parseInt(e.target.value) || 0)}
+                          className="w-16 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+                          placeholder="MM"
+                        />
+                        <span className="text-slate-500 text-xs">m</span>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </div>
+              </Tabs>
+
+              <div className="pt-4 border-t border-slate-800/50 flex items-center justify-between px-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Preview Execution</span>
+                {cronTab === 'once' ? (
+                  <div className="flex items-center gap-2 text-xs font-mono text-blue-400 bg-blue-500/5 px-3 py-1 rounded-full border border-blue-500/10">
+                    <Clock className="w-3 h-3" />
+                    {new Date(Date.now() + (delayHours * 3600000) + (delayMinutes * 60000)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
-                </TabsContent>
-                <TabsContent value="hourly" className="mt-0">
-                  <div className="flex items-center gap-2">
-                    Every hour at
-                    <Input
-                      type="number"
-                      min={0}
-                      max={59}
-                      value={hourlyMinute}
-                      onChange={(e) => setHourlyMinute(parseInt(e.target.value))}
-                      className="w-20 inline-block bg-slate-900 border-slate-700 text-center"
-                    />
-                    minutes past the hour
+                ) : (
+                  <div className="flex items-center gap-2 text-xs font-mono text-blue-400 bg-blue-500/5 px-3 py-1 rounded-full border border-blue-500/10">
+                    <Calendar className="w-3 h-3" />
+                    {cronPreview}
                   </div>
-                </TabsContent>
-                <TabsContent value="daily" className="mt-0">
-                  <div className="flex items-center gap-2">
-                    Every day at
-                    <Input
-                      type="time"
-                      value={dailyTime}
-                      onChange={(e) => setDailyTime(e.target.value)}
-                      className="w-32 inline-block bg-slate-900 border-slate-700 text-center"
-                    />
-                  </div>
-                </TabsContent>
-                <TabsContent value="once" className="mt-0">
-                  <div className="flex items-center gap-2">
-                    Run once in
-                    <Input
-                      type="number"
-                      min={0}
-                      value={delayHours}
-                      onChange={(e) => setDelayHours(parseInt(e.target.value) || 0)}
-                      className="w-16 inline-block bg-slate-900 border-slate-700 text-center"
-                      placeholder="HH"
-                    />
-                    h
-                    <Input
-                      type="number"
-                      min={0}
-                      max={59}
-                      value={delayMinutes}
-                      onChange={(e) => setDelayMinutes(parseInt(e.target.value) || 0)}
-                      className="w-16 inline-block bg-slate-900 border-slate-700 text-center"
-                      placeholder="MM"
-                    />
-                    m
-                  </div>
-                </TabsContent>
+                )}
               </div>
-            </Tabs>
+            </div>
 
-            <div className="pt-4 border-t border-slate-800 flex items-center gap-2 text-sm text-slate-400">
-              {cronTab === 'once' ? (
-                 <div className="text-slate-400">
-                   Task will run at approx: <span className="text-blue-400">
-                     {new Date(Date.now() + (delayHours * 3600000) + (delayMinutes * 60000)).toLocaleTimeString()}
-                   </span>
-                 </div>
-              ) : (
-                <>
-                  <span>Preview:</span>
-                  <code className="text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded font-mono">{cronPreview}</code>
-                </>
-              )}
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-sky-400 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000" />
+              <Button
+                onClick={handleAdd}
+                className="relative w-full h-11 bg-slate-100 text-slate-950 hover:bg-white transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)] disabled:opacity-50 disabled:grayscale"
+                disabled={!selectedTask}
+              >
+                <span className="font-bold uppercase tracking-widest text-xs">Add to Schedule</span>
+              </Button>
             </div>
           </div>
 
-          <Button onClick={handleAdd} className="w-full bg-blue-600 hover:bg-blue-700" disabled={!selectedTask}>
-            Add to Schedule
-          </Button>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {schedule.length === 0 ? (
-            <div className="text-slate-500 text-center py-2">No scheduled tasks.</div>
-          ) : (
-            schedule.map((item, idx) => (
-              <div key={idx} className="flex justify-between items-center p-3 bg-white/5 border border-slate-800 rounded-lg group">
-                <div>
-                  <span className="font-medium text-slate-200">{item.task}</span>
-                  {item.cron && (
-                      <span className="ml-3 inline-block bg-purple-500/20 text-purple-300 text-xs font-mono px-2 py-0.5 rounded">
-                        {item.cron}
-                      </span>
-                  )}
-                  {item.executeAt && (
-                      <span className="ml-3 inline-block bg-green-500/20 text-green-300 text-xs font-mono px-2 py-0.5 rounded">
-                        Once: {new Date(item.executeAt).toLocaleString()}
-                      </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => onDeleteSchedule(idx)}
-                  className="text-red-500/70 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Active Schedules</h3>
+            <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              <AnimatePresence mode="popLayout">
+                {schedule.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-slate-600 text-center py-8 border border-dashed border-slate-800/50 rounded-2xl bg-slate-950/20"
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-widest">No active schedules</p>
+                  </motion.div>
+                ) : (
+                  schedule.map((item, idx) => (
+                    <motion.div
+                      key={`${item.task}-${idx}`}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="group flex items-center justify-between p-4 bg-slate-950/50 border border-slate-800/50 rounded-2xl hover:border-blue-500/30 transition-all duration-300"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-bold text-slate-200 uppercase tracking-tight">{item.task}</span>
+                        <div className="flex items-center gap-2">
+                          {item.cron && (
+                            <span className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold font-mono rounded-md border border-blue-500/10">
+                              <Calendar className="w-2.5 h-2.5" />
+                              {item.cron}
+                            </span>
+                          )}
+                          {item.executeAt && (
+                            <span className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold font-mono rounded-md border border-emerald-500/10">
+                              <Clock className="w-2.5 h-2.5" />
+                              {new Date(item.executeAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => onDeleteSchedule(idx)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-500 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all duration-300"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </motion.div>
+                  ))
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

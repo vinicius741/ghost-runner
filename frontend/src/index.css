@@ -4,19 +4,19 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
+    --background: 230 40% 4%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 230 40% 6%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 230 40% 5%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 222.2 47.4% 11.2%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
@@ -30,39 +30,9 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 224.3 76.3% 48%;
 
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --radius: 0.75rem;
   }
 }
 
@@ -70,80 +40,97 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
+@layer components {
+  .glass {
+    @apply bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-xl;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px theme('colors.blue.500/0.4');
+  }
+
+  .card-premium {
+    @apply bg-slate-900/40 backdrop-blur-sm border border-slate-800 hover:border-slate-700 transition-all duration-300;
+  }
+}
+
+
 /* React Big Calendar Overrides for Dark Mode */
 .dark-calendar .rbc-toolbar {
-    @apply text-slate-100 mb-4;
+  @apply text-slate-100 mb-4;
 }
 
 .dark-calendar .rbc-toolbar button {
-    @apply text-slate-100 border-slate-700 hover:bg-slate-800;
+  @apply text-slate-100 border-slate-700 hover:bg-slate-800;
 }
 
 .dark-calendar .rbc-toolbar button.rbc-active {
-    @apply bg-blue-600 border-blue-600 text-white hover:bg-blue-700 shadow-none;
+  @apply bg-blue-600 border-blue-600 text-white hover:bg-blue-700 shadow-none;
 }
 
 .dark-calendar .rbc-header {
-    @apply border-slate-700 text-slate-400 font-medium py-2;
+  @apply border-slate-700 text-slate-400 font-medium py-2;
 }
 
 .dark-calendar .rbc-month-view {
-    @apply border-slate-700 rounded-lg overflow-hidden;
+  @apply border-slate-700 rounded-lg overflow-hidden;
 }
 
 .dark-calendar .rbc-day-bg {
-    @apply border-slate-800;
+  @apply border-slate-800;
 }
 
 .dark-calendar .rbc-off-range-bg {
-    @apply bg-slate-900/50;
+  @apply bg-slate-900/50;
 }
 
 .dark-calendar .rbc-date-cell {
-    @apply text-slate-400 p-2;
+  @apply text-slate-400 p-2;
 }
 
 .dark-calendar .rbc-now {
-    @apply text-blue-400 font-bold;
+  @apply text-blue-400 font-bold;
 }
 
 .dark-calendar .rbc-event {
-    @apply bg-blue-600/80 border-none rounded text-white text-xs p-1;
+  @apply bg-blue-600/20 border border-blue-500/40 rounded-lg text-blue-200 text-[10px] font-bold uppercase tracking-wider p-1.5 transition-all duration-300 hover:bg-blue-600/40 hover:border-blue-500/60 shadow-sm border-blue-500/20;
 }
 
 .dark-calendar .rbc-time-view {
-    @apply border-slate-700 rounded-lg;
+  @apply border-slate-700 rounded-lg;
 }
 
 .dark-calendar .rbc-time-header {
-    @apply border-slate-700;
+  @apply border-slate-700;
 }
 
 .dark-calendar .rbc-time-content {
-    @apply border-slate-700;
+  @apply border-slate-700;
 }
 
 .dark-calendar .rbc-timeslot-group {
-    @apply border-slate-800;
+  @apply border-slate-800;
 }
 
 .dark-calendar .rbc-time-slot {
-    @apply border-slate-800;
+  @apply border-slate-800;
 }
 
 .dark-calendar .rbc-time-gutter .rbc-timeslot-group {
-    @apply border-slate-800 text-slate-500 text-xs;
+  @apply border-slate-800 text-slate-500 text-xs;
 }
 
 .dark-calendar .rbc-day-slot .rbc-time-slot {
-    @apply border-slate-800;
+  @apply border-slate-800;
 }
 
 .dark-calendar .rbc-today {
-    @apply bg-slate-800/30;
+  @apply bg-slate-800/30;
 }
