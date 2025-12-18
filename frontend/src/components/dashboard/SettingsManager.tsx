@@ -3,8 +3,35 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Save, RefreshCw, Navigation } from 'lucide-react';
+import { MapPin, Save, RefreshCw, Navigation, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useMap, MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix for default marker icon in leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+function MapEvents({ onChange }: { onChange: (lat: number, lng: number) => void }) {
+    useMapEvents({
+        click(e) {
+            onChange(e.latlng.lat, e.latlng.lng);
+        },
+    });
+    return null;
+}
+
+function RecenterMap({ lat, lng }: { lat: number, lng: number }) {
+    const map = useMap();
+    useEffect(() => {
+        map.setView([lat, lng], map.getZoom());
+    }, [lat, lng, map]);
+    return null;
+}
 
 interface GeolocationSettings {
     latitude: number;
@@ -62,7 +89,7 @@ export function SettingsManager() {
 
     const updateGeo = (field: keyof GeolocationSettings, value: string | number) => {
         const numValue = typeof value === 'string' ? parseFloat(value) : value;
-        setSettings(prev => ({
+        setSettings((prev: Settings) => ({
             ...prev,
             geolocation: {
                 ...prev.geolocation,
@@ -80,7 +107,7 @@ export function SettingsManager() {
         setDetecting(true);
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                setSettings(prev => ({
+                setSettings((prev: Settings) => ({
                     ...prev,
                     geolocation: {
                         latitude: position.coords.latitude,
@@ -163,6 +190,31 @@ export function SettingsManager() {
                                     {detecting ? 'Detecting...' : 'Use Current Location'}
                                 </span>
                             </Button>
+                        </div>
+
+                        <div className="mt-2 h-[200px] rounded-lg overflow-hidden border border-slate-800 bg-slate-900 group relative">
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-10 pointer-events-none transition-opacity duration-300">
+                                <Globe className="w-12 h-12 text-blue-500" />
+                            </div>
+                            <MapContainer
+                                center={[settings.geolocation.latitude, settings.geolocation.longitude]}
+                                zoom={13}
+                                style={{ height: '100%', width: '100%' }}
+                                scrollWheelZoom={false}
+                            >
+                                <TileLayer
+                                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                />
+                                <Marker position={[settings.geolocation.latitude, settings.geolocation.longitude]} />
+                                <RecenterMap lat={settings.geolocation.latitude} lng={settings.geolocation.longitude} />
+                                <MapEvents onChange={(lat, lng) => {
+                                    setSettings((prev: Settings) => ({
+                                        ...prev,
+                                        geolocation: { latitude: lat, longitude: lng }
+                                    }));
+                                }} />
+                            </MapContainer>
                         </div>
                     </div>
 
