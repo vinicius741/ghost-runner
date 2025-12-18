@@ -5,6 +5,7 @@ import { TaskList } from "@/components/dashboard/TaskList";
 import { ScheduleBuilder } from "@/components/dashboard/ScheduleBuilder";
 import { LogsConsole } from "@/components/dashboard/LogsConsole";
 import { TaskCalendar } from "@/components/dashboard/TaskCalendar";
+import { SettingsManager } from "@/components/dashboard/SettingsManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { io } from "socket.io-client";
 
@@ -88,48 +89,48 @@ function App() {
   const handleStartScheduler = async () => {
     addLog('Starting Scheduler...', 'system');
     try {
-        const res = await fetch('/api/scheduler/start', { method: 'POST' });
-        const data = await res.json();
-        addLog(data.message, 'system');
+      const res = await fetch('/api/scheduler/start', { method: 'POST' });
+      const data = await res.json();
+      addLog(data.message, 'system');
     } catch (error: any) {
-        addLog(`Error starting scheduler: ${error.message}`, 'error');
+      addLog(`Error starting scheduler: ${error.message}`, 'error');
     }
   };
 
   const handleStopScheduler = async () => {
     addLog('Stopping Scheduler...', 'system');
     try {
-        const res = await fetch('/api/scheduler/stop', { method: 'POST' });
-        const data = await res.json();
-        addLog(data.message, 'system');
+      const res = await fetch('/api/scheduler/stop', { method: 'POST' });
+      const data = await res.json();
+      addLog(data.message, 'system');
     } catch (error: any) {
-        addLog(`Error stopping scheduler: ${error.message}`, 'error');
+      addLog(`Error stopping scheduler: ${error.message}`, 'error');
     }
   };
 
   const handleRecordTask = async (taskName: string, type: 'private' | 'public') => {
     addLog(`Starting Recorder for task: ${taskName} (${type})...`, 'system');
     try {
-        await fetch('/api/record', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskName, type })
-        });
+      await fetch('/api/record', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskName, type })
+      });
     } catch (error: any) {
-        addLog(`Error starting recorder: ${error.message}`, 'error');
+      addLog(`Error starting recorder: ${error.message}`, 'error');
     }
   };
 
   const handleRunTask = async (taskName: string) => {
     addLog(`Requesting to run task: ${taskName}...`, 'system');
     try {
-        await fetch('/api/run-task', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskName })
-        });
+      await fetch('/api/run-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskName })
+      });
     } catch (error: any) {
-        addLog(`Error starting task: ${error.message}`, 'error');
+      addLog(`Error starting task: ${error.message}`, 'error');
     }
   };
 
@@ -160,17 +161,17 @@ function App() {
 
   const saveSchedule = async (newSchedule: ScheduleItem[]) => {
     try {
-        const res = await fetch('/api/schedule', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ schedule: newSchedule })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        addLog('Schedule updated successfully.', 'system');
+      const res = await fetch('/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schedule: newSchedule })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      addLog('Schedule updated successfully.', 'system');
     } catch (error: any) {
-        console.error('Error saving schedule:', error);
-        addLog(`Error saving schedule: ${error.message}`, 'error');
+      console.error('Error saving schedule:', error);
+      addLog(`Error saving schedule: ${error.message}`, 'error');
     }
   };
 
@@ -184,6 +185,7 @@ function App() {
             <TabsList className="bg-slate-900/50 border border-slate-800">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
           </div>
 
@@ -202,7 +204,7 @@ function App() {
                   onAddSchedule={handleAddSchedule}
                   onDeleteSchedule={(index) => {
                     if (confirm('Are you sure you want to delete this schedule?')) {
-                        handleDeleteSchedule(index);
+                      handleDeleteSchedule(index);
                     }
                   }}
                 />
@@ -217,6 +219,12 @@ function App() {
 
           <TabsContent value="calendar">
             <TaskCalendar schedule={schedule} onDeleteSchedule={handleDeleteSchedule} />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <div className="max-w-2xl mx-auto py-6">
+              <SettingsManager />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -16,6 +16,15 @@ const LOG_FILE = path.resolve(__dirname, '../../scheduler.log');
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
+const SETTINGS_FILE = path.resolve(__dirname, '../../settings.json');
+
+// Initialize settings file if it doesn't exist
+if (!fs.existsSync(SETTINGS_FILE)) {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({
+        geolocation: { latitude: -23.55052, longitude: -46.633308 }
+    }, null, 2));
+}
+
 // --- API Endpoints ---
 
 // Get all tasks
@@ -220,6 +229,43 @@ app.post('/api/schedule', (req, res) => {
         res.json({ message: 'Schedule updated successfully.' });
         // Notify clients about the update if needed
         io.emit('log', '[System] Schedule updated via UI.');
+    });
+});
+
+// --- Settings Management ---
+
+// Get Settings
+app.get('/api/settings', (req, res) => {
+    if (fs.existsSync(SETTINGS_FILE)) {
+        fs.readFile(SETTINGS_FILE, 'utf8', (err, data) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to read settings file.' });
+            }
+            try {
+                const settings = JSON.parse(data);
+                res.json({ settings });
+            } catch (e) {
+                res.status(500).json({ error: 'Invalid JSON in settings file.' });
+            }
+        });
+    } else {
+        res.json({ settings: {} });
+    }
+});
+
+// Save Settings
+app.post('/api/settings', (req, res) => {
+    const { settings } = req.body;
+    if (!settings || typeof settings !== 'object') {
+        return res.status(400).json({ error: 'Invalid settings format.' });
+    }
+
+    fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2), (err) => {
+        if (err) {
+            return res.status(500).json({ error: 'Failed to save settings.' });
+        }
+        res.json({ message: 'Settings updated successfully.' });
+        io.emit('log', '[System] Global settings updated via UI.');
     });
 });
 
