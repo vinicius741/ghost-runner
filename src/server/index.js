@@ -36,7 +36,10 @@ app.get('/api/tasks', (req, res) => {
         if (fs.existsSync(dirPath)) {
             return fs.readdirSync(dirPath)
                 .filter(f => f.endsWith('.js'))
-                .map(f => f.replace('.js', ''));
+                .map(f => ({
+                    name: f.replace('.js', ''),
+                    type: dirName === 'public' ? 'public' : (dirName === 'private' ? 'private' : 'root')
+                }));
         }
         return [];
     };
@@ -46,13 +49,28 @@ app.get('/api/tasks', (req, res) => {
         const privateTasks = getTasksFromDir('private');
 
         // Also check root for backward compatibility (optional, but good to have)
-        const rootTasks = fs.readdirSync(TASKS_DIR)
-            .filter(f => f.endsWith('.js'))
-            .map(f => f.replace('.js', ''));
+        const rootPath = TASKS_DIR;
+        let rootTasks = [];
+        if (fs.existsSync(rootPath)) {
+            rootTasks = fs.readdirSync(rootPath)
+                .filter(f => f.endsWith('.js'))
+                .map(f => ({
+                    name: f.replace('.js', ''),
+                    type: 'root'
+                }));
+        }
 
-        // distinct tasks
-        const allTasks = [...new Set([...publicTasks, ...privateTasks, ...rootTasks])];
-        res.json({ tasks: allTasks });
+        // Combine and handle duplicates (prefer public/private over root)
+        const taskMap = new Map();
+
+        // Root first (lowest priority)
+        rootTasks.forEach(t => taskMap.set(t.name, t));
+        // Private next
+        privateTasks.forEach(t => taskMap.set(t.name, t));
+        // Public last (highest priority if names collide)
+        publicTasks.forEach(t => taskMap.set(t.name, t));
+
+        res.json({ tasks: Array.from(taskMap.values()) });
     } catch (err) {
         console.error('Error reading tasks:', err);
         res.status(500).json({ error: 'Failed to read tasks directory.' });

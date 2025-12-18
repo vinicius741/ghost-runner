@@ -7,6 +7,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { X, Calendar, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface Task {
+  name: string;
+  type: 'public' | 'private' | 'root';
+}
+
 interface ScheduleItem {
   task: string;
   cron?: string;
@@ -14,7 +19,7 @@ interface ScheduleItem {
 }
 
 interface ScheduleBuilderProps {
-  tasks: string[];
+  tasks: Task[];
   schedule: ScheduleItem[];
   onAddSchedule: (task: string, cron?: string, executeAt?: string) => void;
   onDeleteSchedule: (index: number) => void;
@@ -85,7 +90,7 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
                   <SelectValue placeholder="Choose a task..." />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                  {tasks.map(t => <SelectItem key={t} value={t} className="focus:bg-blue-500/10 focus:text-blue-200 uppercase text-xs font-semibold tracking-tight">{t}</SelectItem>)}
+                  {tasks.map(t => <SelectItem key={`${t.name}-${t.type}`} value={t.name} className="focus:bg-blue-500/10 focus:text-blue-200 uppercase text-xs font-semibold tracking-tight">{t.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

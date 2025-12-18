@@ -11,6 +11,11 @@ import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, Calendar, Settings as SettingsIcon } from 'lucide-react';
 
+interface Task {
+  name: string;
+  type: 'public' | 'private' | 'root';
+}
+
 interface LogEntry {
   message: string;
   timestamp: string;
@@ -26,7 +31,7 @@ interface ScheduleItem {
 const socket = io();
 
 function App() {
-  const [tasks, setTasks] = useState<string[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [schedulerStatus, setSchedulerStatus] = useState<boolean>(false);
