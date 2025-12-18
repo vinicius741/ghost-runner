@@ -11,11 +11,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
-        '/api': 'http://localhost:3000',
-        '/socket.io': {
-            target: 'http://localhost:3000',
-            ws: true
-        }
+      '/api': `http://localhost:${process.env.VITE_API_PORT || 3000}`,
+      '/socket.io': {
+        target: `http://localhost:${process.env.VITE_API_PORT || 3000}`,
+        ws: true
+      }
     }
   }
 })

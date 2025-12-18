@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const path = require('path');
@@ -9,7 +10,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const TASKS_DIR = path.resolve(__dirname, '../../tasks');
 const LOG_FILE = path.resolve(__dirname, '../../scheduler.log');
 
