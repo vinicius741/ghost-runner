@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Save, RefreshCw, Navigation, Globe } from 'lucide-react';
+import { MapPin, Save, RefreshCw, Navigation, Globe, Lock as LockIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMap, MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -49,6 +49,7 @@ export function SettingsManager() {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [detecting, setDetecting] = useState(false);
+    const [settingUpLogin, setSettingUpLogin] = useState(false);
 
     useEffect(() => {
         fetchSettings();
@@ -84,6 +85,21 @@ export function SettingsManager() {
             alert('Failed to save settings');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleSetupLogin = async () => {
+        setSettingUpLogin(true);
+        try {
+            const res = await fetch('/api/setup-login', { method: 'POST' });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            alert(data.message);
+        } catch (e: any) {
+            console.error('Error starting setup login:', e);
+            alert(`Failed to start setup login: ${e.message}`);
+        } finally {
+            setSettingUpLogin(false);
         }
     };
 
@@ -216,6 +232,33 @@ export function SettingsManager() {
                                 }} />
                             </MapContainer>
                         </div>
+                    </div>
+
+                    <div className="flex flex-col gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">
+                        <div className="flex items-center gap-2 mb-2">
+                            <LockIcon className="w-4 h-4 text-amber-500" />
+                            <h3 className="text-slate-100 font-medium tracking-tight">Authentication</h3>
+                        </div>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2">Session Management</p>
+                        <div className="relative group">
+                            <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-yellow-400 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+                            <Button
+                                onClick={handleSetupLogin}
+                                disabled={settingUpLogin || loading}
+                                className="relative w-full h-11 bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-100 transition-all duration-300"
+                            >
+                                {settingUpLogin ? (
+                                    <RefreshCw className="w-4 h-4 mr-2 animate-spin text-amber-500" />
+                                ) : (
+                                    <LockIcon className="w-4 h-4 mr-2 text-amber-500" />
+                                )}
+                                <span className="font-semibold tracking-wide">Setup Google Login</span>
+                            </Button>
+                        </div>
+                        <p className="text-[10px] text-slate-500 leading-relaxed">
+                            This will launch a browser for manual login.
+                            The session will be saved for all automation tasks.
+                        </p>
                     </div>
 
                     <div className="space-y-4">

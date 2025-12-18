@@ -132,6 +132,38 @@ app.post('/api/record', (req, res) => {
     }
 });
 
+// Setup Login
+app.post('/api/setup-login', (req, res) => {
+    try {
+        const child = spawn('npm', ['run', 'setup-login'], {
+            cwd: path.resolve(__dirname, '../../'),
+            shell: true
+        });
+
+        child.stdout.on('data', (data) => {
+            io.emit('log', `[Setup Login] ${data.toString()}`);
+        });
+
+        child.stderr.on('data', (data) => {
+            io.emit('log', `[Setup Login ERROR] ${data.toString()}`);
+        });
+
+        child.on('error', (err) => {
+            console.error('Spawn error:', err);
+            io.emit('log', `[Setup Login SYSTEM ERROR] Failed to spawn process: ${err.message}`);
+        });
+
+        child.on('close', (code) => {
+            io.emit('log', `[Setup Login] Process finished with code ${code}`);
+        });
+
+        res.json({ message: 'Setup login started. Browser should open soon.' });
+    } catch (error) {
+        console.error('Error in /api/setup-login:', error);
+        res.status(500).json({ error: `Internal Server Error: ${error.message}` });
+    }
+});
+
 // Scheduler Control
 let schedulerProcess = null;
 
