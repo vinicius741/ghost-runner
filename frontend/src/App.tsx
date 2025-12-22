@@ -9,6 +9,7 @@ import { SettingsManager } from "@/components/dashboard/SettingsManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
+import { NextTaskTimer } from "@/components/dashboard/NextTaskTimer";
 import { LayoutDashboard, Calendar, Settings as SettingsIcon } from 'lucide-react';
 
 interface Task {
@@ -227,6 +228,7 @@ function App() {
                       onRecordTask={handleRecordTask}
                       schedulerStatus={schedulerStatus}
                     />
+                    <NextTaskTimer schedulerRunning={schedulerStatus} />
                     <ScheduleBuilder
                       tasks={tasks}
                       schedule={schedule}

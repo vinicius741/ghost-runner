@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/vinicius741/ghost-runner#readme",
   "dependencies": {
+    "cron-parser": "^5.4.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "node-cron": "^4.2.1",
