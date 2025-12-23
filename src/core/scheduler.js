@@ -91,29 +91,34 @@ function updateCaffeinateStatus() {
 /**
  * Executes a specific task by spawning a child process running 'node index.js'
  * @param {string} taskName 
+ * @returns {Promise<void>}
  */
 function runTask(taskName) {
-  log(`Starting task: '${taskName}'`);
+  return new Promise((resolve, reject) => {
+    log(`Starting task: '${taskName}'`);
 
-  const child = spawn('node', ['index.js', `--task=${taskName}`], {
-    cwd: __dirname, // Current directory is now src/core where index.js is
-    stdio: 'inherit', // Pipe output so we see it in the main console
-    shell: true
-  });
+    const child = spawn('node', ['index.js', `--task=${taskName}`], {
+      cwd: __dirname, // Current directory is now src/core where index.js is
+      stdio: 'inherit', // Pipe output so we see it in the main console
+      shell: true
+    });
 
-  child.on('close', (code) => {
-    if (code === 0) {
-      log(`Task '${taskName}' finished successfully.`);
-    } else {
-      log(`Task '${taskName}' failed with exit code ${code}.`);
-    }
-    // After a task finishes, a one-time task might have been removed, so re-evaluate.
-    updateCaffeinateStatus();
-  });
+    child.on('close', (code) => {
+      if (code === 0) {
+        log(`Task '${taskName}' finished successfully.`);
+      } else {
+        log(`Task '${taskName}' failed with exit code ${code}.`);
+      }
+      // After a task finishes, a one-time task might have been removed, so re-evaluate.
+      updateCaffeinateStatus();
+      resolve();
+    });
 
-  child.on('error', (err) => {
-    log(`Error spawning task '${taskName}': ${err.message}`);
-    updateCaffeinateStatus();
+    child.on('error', (err) => {
+      log(`Error spawning task '${taskName}': ${err.message}`);
+      updateCaffeinateStatus();
+      resolve(); // Still resolve so the chain can continue or handle it
+    });
   });
 }
 
@@ -181,9 +186,9 @@ function startScheduler() {
         log(`Scheduling '${task}' once at ${executeAt} (in ${Math.round(delay / 60000)} minutes)`);
       }
 
-      setTimeout(() => {
+      setTimeout(async () => {
         try {
-          runTask(task);
+          await runTask(task);
           // Remove from schedule.json
           try {
             const currentConfig = JSON.parse(fs.readFileSync(CONFIG_FILE));
