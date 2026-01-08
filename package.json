@@ -12,7 +12,8 @@
     "verify-login": "node src/utils/verify-session.js",
     "build:frontend": "cd frontend && npm install && npm run build",
     "deploy:frontend": "npm run build:frontend && rm -rf src/server/public/* && mkdir -p src/server/public && cp -r frontend/dist/* src/server/public/",
-    "ui": "npm run deploy:frontend && node src/server/index.js"
+    "ui:prod": "npm run deploy:frontend && node src/server/index.js",
+    "ui": "node dev-runner.js"
   },
   "repository": {
     "type": "git",
