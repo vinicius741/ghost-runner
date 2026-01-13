@@ -1,0 +1,6 @@
+{
+    "scripts": {
+        "setup": "npm install; cp $CONDUCTOR_ROOT_PATH/.env .env",
+        "run": "npm run dev"
+    }
+}
