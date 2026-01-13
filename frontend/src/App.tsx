@@ -6,6 +6,7 @@ import { ScheduleBuilder } from "@/components/dashboard/ScheduleBuilder";
 import { LogsConsole } from "@/components/dashboard/LogsConsole";
 import { TaskCalendar } from "@/components/dashboard/TaskCalendar";
 import { SettingsManager } from "@/components/dashboard/SettingsManager";
+import { LocationWarning } from "@/components/dashboard/LocationWarning";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,6 +30,18 @@ interface ScheduleItem {
   executeAt?: string;
 }
 
+interface GeolocationSettings {
+  latitude: number;
+  longitude: number;
+}
+
+interface Settings {
+  geolocation: GeolocationSettings;
+}
+
+// Default location (São Paulo) - used to detect if user hasn't set their location
+const DEFAULT_LOCATION = { latitude: -23.55052, longitude: -46.633308 };
+
 const socket = io();
 
 function App() {
@@ -37,6 +50,8 @@ function App() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [schedulerStatus, setSchedulerStatus] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [locationWarningDismissed, setLocationWarningDismissed] = useState(false);
 
   const addLog = (message: string, type: 'normal' | 'error' | 'system' = 'normal') => {
     setLogs(prev => [...prev, {
@@ -50,6 +65,7 @@ function App() {
     fetchTasks();
     fetchSchedule();
     fetchSchedulerStatus();
+    fetchSettings();
 
     socket.on('log', (message: string) => {
       addLog(message);
@@ -92,6 +108,18 @@ function App() {
       setSchedulerStatus(data.running);
     } catch (e) {
       // Quiet fail or log
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      if (data.settings && data.settings.geolocation) {
+        setSettings(data.settings);
+      }
+    } catch (e) {
+      console.error('Error fetching settings:', e);
     }
   };
 
@@ -176,6 +204,12 @@ function App() {
     }
   };
 
+  const isUsingDefaultLocation = settings?.geolocation &&
+    settings.geolocation.latitude === DEFAULT_LOCATION.latitude &&
+    settings.geolocation.longitude === DEFAULT_LOCATION.longitude;
+
+  const showLocationWarning = isUsingDefaultLocation && !locationWarningDismissed;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans transition-colors duration-500">
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))]" />
@@ -220,6 +254,14 @@ function App() {
               transition={{ duration: 0.3 }}
             >
               <TabsContent value="dashboard" className="mt-0 space-y-8">
+                <AnimatePresence>
+                  {showLocationWarning && (
+                    <LocationWarning
+                      onDismiss={() => setLocationWarningDismissed(true)}
+                      onGoToSettings={() => setActiveTab('settings')}
+                    />
+                  )}
+                </AnimatePresence>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   <div className="lg:col-span-4 space-y-8">
                     <ControlPanel
@@ -256,7 +298,7 @@ function App() {
 
               <TabsContent value="settings" className="mt-0">
                 <div className="max-w-3xl mx-auto py-4">
-                  <SettingsManager />
+                  <SettingsManager onSettingsSaved={fetchSettings} />
                 </div>
               </TabsContent>
             </motion.div>

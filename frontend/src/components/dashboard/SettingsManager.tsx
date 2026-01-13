@@ -42,7 +42,11 @@ interface Settings {
     geolocation: GeolocationSettings;
 }
 
-export function SettingsManager() {
+interface SettingsManagerProps {
+    onSettingsSaved?: () => void;
+}
+
+export function SettingsManager({ onSettingsSaved }: SettingsManagerProps) {
     const [settings, setSettings] = useState<Settings>({
         geolocation: { latitude: -23.55052, longitude: -46.633308 }
     });
@@ -80,6 +84,7 @@ export function SettingsManager() {
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
+            onSettingsSaved?.();
         } catch (e) {
             console.error('Error saving settings:', e);
             alert('Failed to save settings');
@@ -114,7 +119,7 @@ export function SettingsManager() {
         }));
     };
 
-    const handleGetCurrentLocation = () => {
+    const handleGetCurrentLocation = async () => {
         if (!navigator.geolocation) {
             alert('Geolocation is not supported by your browser');
             return;
@@ -122,15 +127,33 @@ export function SettingsManager() {
 
         setDetecting(true);
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                setSettings((prev: Settings) => ({
-                    ...prev,
+            async (position) => {
+                const newSettings: Settings = {
                     geolocation: {
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude
                     }
-                }));
+                };
+                setSettings(newSettings);
                 setDetecting(false);
+
+                // Automatically save the detected location
+                setSaving(true);
+                try {
+                    const res = await fetch('/api/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ settings: newSettings })
+                    });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    onSettingsSaved?.();
+                } catch (e) {
+                    console.error('Error saving location:', e);
+                    alert('Failed to save location');
+                } finally {
+                    setSaving(false);
+                }
             },
             (error) => {
                 console.error('Error getting location:', error);
@@ -198,12 +221,12 @@ export function SettingsManager() {
                                 variant="outline"
                                 size="sm"
                                 onClick={handleGetCurrentLocation}
-                                disabled={detecting}
+                                disabled={detecting || saving}
                                 className="h-9 px-4 bg-blue-500/5 text-blue-400 border-blue-500/20 hover:bg-blue-500/10 hover:border-blue-500/40 hover:text-blue-300 transition-all duration-300 gap-2"
                             >
-                                <Navigation className={`w-3.5 h-3.5 ${detecting ? 'animate-pulse' : ''}`} />
+                                <Navigation className={`w-3.5 h-3.5 ${detecting || saving ? 'animate-pulse' : ''}`} />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">
-                                    {detecting ? 'Detecting...' : 'Use Current Location'}
+                                    {detecting ? 'Detecting...' : saving ? 'Saving...' : 'Use Current Location'}
                                 </span>
                             </Button>
                         </div>
