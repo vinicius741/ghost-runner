@@ -5,6 +5,7 @@ require('dotenv').config();
 // Colors for output
 const colors = {
     server: '\x1b[36m', // Cyan
+    frontend: '\x1b[32m', // Green
     reset: '\x1b[0m'
 };
 
@@ -45,21 +46,52 @@ function startProcess(name, command, args, cwd, color) {
 
 console.log('Starting development environment...');
 const apiPort = process.env.PORT || 3333;
-console.log(`Server will run on http://localhost:${apiPort}`);
+const frontendPort = 5173;
+console.log(`Backend API will run on http://localhost:${apiPort}`);
+console.log(`Frontend dev server will run on http://localhost:${frontendPort}`);
 
 // Start Backend only (serves both API and built frontend)
 const server = startProcess('Server', 'npx', ['tsx', 'src/server/index.ts'], process.cwd(), colors.server);
 
+// Start Frontend dev server
+const frontend = startProcess('Frontend', 'npm', ['run', 'dev'], path.join(process.cwd(), 'frontend'), colors.frontend);
+
 // Handle termination
 const cleanup = () => {
-    console.log('\nStopping server...');
+    console.log('\nStopping services...');
+    // Kill backend server
     try {
         process.kill(-server.pid);
     } catch(e) {
-        server.kill();
+        try {
+            server.kill();
+        } catch(killError) {
+            // Process already terminated, ignore
+        }
+    }
+    // Kill frontend dev server
+    try {
+        process.kill(-frontend.pid);
+    } catch(e) {
+        try {
+            frontend.kill();
+        } catch(killError) {
+            // Process already terminated, ignore
+        }
     }
     process.exit();
 };
+
+// Handle early exits from child processes
+const handleChildExit = (name, code) => {
+    if (code !== 0 && code !== null) {
+        console.error(`\n${colors[name.toLowerCase()]}[${name}] exited unexpectedly with code ${code}. Shutting down...${colors.reset}`);
+        cleanup();
+    }
+};
+
+server.on('close', (code) => handleChildExit('Server', code));
+frontend.on('close', (code) => handleChildExit('Frontend', code));
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
