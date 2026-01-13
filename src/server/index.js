@@ -27,10 +27,10 @@ const frontendDist = path.join(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {
     app.use(express.static(frontendDist));
     // Serve index.html for SPA routing
-    app.get('*', (req, res) => {
+    app.get('*', (req, res, next) => {
         // Don't intercept API routes
         if (req.path.startsWith('/api')) {
-            return res.status(404).json({ error: 'Not found' });
+            return next();
         }
         res.sendFile(path.join(frontendDist, 'index.html'));
     });
@@ -77,18 +77,12 @@ async function startServer() {
 
     function tryListen(port) {
         return new Promise((resolve, reject) => {
-            function onError(err) {
-                server.off('error', onError);
-                server.off('listening', onListening);
-                reject(err);
-            }
-            function onListening() {
-                server.off('error', onError);
-                server.off('listening', onListening);
-                resolve(port);
-            }
+            const onError = (err) => reject(err);
             server.once('error', onError);
-            server.once('listening', onListening);
+            server.once('listening', () => {
+                server.removeListener('error', onError);
+                resolve(port);
+            });
             server.listen(port);
         });
     }
