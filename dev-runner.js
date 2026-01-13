@@ -48,7 +48,7 @@ const apiPort = process.env.PORT || 3333;
 console.log(`Server will run on http://localhost:${apiPort}`);
 
 // Start Backend only (serves both API and built frontend)
-const server = startProcess('Server', 'node', ['src/server/index.js'], process.cwd(), colors.server);
+const server = startProcess('Server', 'npx', ['tsx', 'src/server/index.ts'], process.cwd(), colors.server);
 
 // Handle termination
 const cleanup = () => {
