@@ -7,6 +7,8 @@ import { MapPin, Save, RefreshCw, Navigation, Globe, Lock as LockIcon } from 'lu
 import { motion } from 'framer-motion';
 import { useMap, MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import type { Settings, GeolocationSettings } from '@/types';
+import { DEFAULT_LOCATION } from '@/types';
 
 // Fix for default marker icon in leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -33,18 +35,14 @@ function RecenterMap({ lat, lng }: { lat: number, lng: number }) {
     return null;
 }
 
-interface GeolocationSettings {
-    latitude: number;
-    longitude: number;
+interface SettingsManagerProps {
+    onSettingsSaved?: () => void;
+    onLog?: (message: string, type: 'normal' | 'error' | 'system') => void;
 }
 
-interface Settings {
-    geolocation: GeolocationSettings;
-}
-
-export function SettingsManager() {
+export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps) {
     const [settings, setSettings] = useState<Settings>({
-        geolocation: { latitude: -23.55052, longitude: -46.633308 }
+        geolocation: { ...DEFAULT_LOCATION }
     });
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -65,27 +63,36 @@ export function SettingsManager() {
             }
         } catch (e) {
             console.error('Error fetching settings:', e);
+            onLog?.('Error fetching settings', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSave = async () => {
-        setSaving(true);
+    const saveSettings = async (settingsToSave: Settings): Promise<boolean> => {
         try {
             const res = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ settings })
+                body: JSON.stringify({ settings: settingsToSave })
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
+            return true;
         } catch (e) {
             console.error('Error saving settings:', e);
-            alert('Failed to save settings');
-        } finally {
-            setSaving(false);
+            onLog?.('Failed to save settings', 'error');
+            return false;
         }
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        const success = await saveSettings(settings);
+        if (success) {
+            onSettingsSaved?.();
+        }
+        setSaving(false);
     };
 
     const handleSetupLogin = async () => {
@@ -94,10 +101,10 @@ export function SettingsManager() {
             const res = await fetch('/api/setup-login', { method: 'POST' });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
-            alert(data.message);
+            onLog?.(data.message, 'system');
         } catch (e: any) {
             console.error('Error starting setup login:', e);
-            alert(`Failed to start setup login: ${e.message}`);
+            onLog?.(`Failed to start setup login: ${e.message}`, 'error');
         } finally {
             setSettingUpLogin(false);
         }
@@ -114,27 +121,35 @@ export function SettingsManager() {
         }));
     };
 
-    const handleGetCurrentLocation = () => {
+    const handleGetCurrentLocation = async () => {
         if (!navigator.geolocation) {
-            alert('Geolocation is not supported by your browser');
+            onLog?.('Geolocation is not supported by your browser', 'error');
             return;
         }
 
         setDetecting(true);
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                setSettings((prev: Settings) => ({
-                    ...prev,
+            async (position) => {
+                const newSettings: Settings = {
                     geolocation: {
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude
                     }
-                }));
+                };
+                setSettings(newSettings);
                 setDetecting(false);
+
+                // Automatically save the detected location
+                setSaving(true);
+                const success = await saveSettings(newSettings);
+                if (success) {
+                    onSettingsSaved?.();
+                }
+                setSaving(false);
             },
             (error) => {
                 console.error('Error getting location:', error);
-                alert(`Error getting location: ${error.message}`);
+                onLog?.(`Error getting location: ${error.message}`, 'error');
                 setDetecting(false);
             },
             { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
@@ -198,12 +213,12 @@ export function SettingsManager() {
                                 variant="outline"
                                 size="sm"
                                 onClick={handleGetCurrentLocation}
-                                disabled={detecting}
+                                disabled={detecting || saving}
                                 className="h-9 px-4 bg-blue-500/5 text-blue-400 border-blue-500/20 hover:bg-blue-500/10 hover:border-blue-500/40 hover:text-blue-300 transition-all duration-300 gap-2"
                             >
-                                <Navigation className={`w-3.5 h-3.5 ${detecting ? 'animate-pulse' : ''}`} />
+                                <Navigation className={`w-3.5 h-3.5 ${detecting || saving ? 'animate-pulse' : ''}`} />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">
-                                    {detecting ? 'Detecting...' : 'Use Current Location'}
+                                    {detecting ? 'Detecting...' : saving ? 'Saving...' : 'Use Current Location'}
                                 </span>
                             </Button>
                         </div>

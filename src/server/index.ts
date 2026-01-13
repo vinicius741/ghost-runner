@@ -25,13 +25,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 const frontendDist = path.join(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {
     app.use(express.static(frontendDist));
-    // Serve index.html for SPA routing
-    app.get('*', (req: Request, res: Response, next: NextFunction) => {
+    // Serve index.html for SPA routing (using middleware instead of app.get for Express 5.x compatibility)
+    app.use((req: Request, res: Response, next: NextFunction) => {
         // Don't intercept API routes
         if (req.path.startsWith('/api')) {
             return next();
         }
-        res.sendFile(path.join(frontendDist, 'index.html'));
+        // Send index.html for non-API routes that don't match static files
+        if (!req.path.includes('.')) {
+            res.sendFile(path.join(frontendDist, 'index.html'));
+        } else {
+            next();
+        }
     });
 }
 
