@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "setup": "npm install; cp $CONDUCTOR_ROOT_PATH/.env .env",
+        "setup": "npm install; cp $CONDUCTOR_ROOT_PATH/.env .env; cp -r $CONDUCTOR_ROOT_PATH/tasks/private tasks/private",
         "run": "npm run dev"
     }
 }
