@@ -12,35 +12,8 @@ import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { NextTaskTimer } from "@/components/dashboard/NextTaskTimer";
 import { LayoutDashboard, Calendar, Settings as SettingsIcon } from 'lucide-react';
-
-interface Task {
-  name: string;
-  type: 'public' | 'private' | 'root';
-}
-
-interface LogEntry {
-  message: string;
-  timestamp: string;
-  type: 'normal' | 'error' | 'system';
-}
-
-interface ScheduleItem {
-  task: string;
-  cron?: string;
-  executeAt?: string;
-}
-
-interface GeolocationSettings {
-  latitude: number;
-  longitude: number;
-}
-
-interface Settings {
-  geolocation: GeolocationSettings;
-}
-
-// Default location (São Paulo) - used to detect if user hasn't set their location
-const DEFAULT_LOCATION = { latitude: -23.55052, longitude: -46.633308 };
+import type { Task, LogEntry, ScheduleItem, Settings } from '@/types';
+import { DEFAULT_LOCATION } from '@/types';
 
 const socket = io();
 
@@ -119,6 +92,7 @@ function App() {
         setSettings(data.settings);
       }
     } catch (e) {
+      addLog('Error fetching settings', 'error');
       console.error('Error fetching settings:', e);
     }
   };
@@ -298,7 +272,7 @@ function App() {
 
               <TabsContent value="settings" className="mt-0">
                 <div className="max-w-3xl mx-auto py-4">
-                  <SettingsManager onSettingsSaved={fetchSettings} />
+                  <SettingsManager onSettingsSaved={fetchSettings} onLog={addLog} />
                 </div>
               </TabsContent>
             </motion.div>

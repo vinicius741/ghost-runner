@@ -7,6 +7,8 @@ import { MapPin, Save, RefreshCw, Navigation, Globe, Lock as LockIcon } from 'lu
 import { motion } from 'framer-motion';
 import { useMap, MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import type { Settings, GeolocationSettings } from '@/types';
+import { DEFAULT_LOCATION } from '@/types';
 
 // Fix for default marker icon in leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -33,22 +35,14 @@ function RecenterMap({ lat, lng }: { lat: number, lng: number }) {
     return null;
 }
 
-interface GeolocationSettings {
-    latitude: number;
-    longitude: number;
-}
-
-interface Settings {
-    geolocation: GeolocationSettings;
-}
-
 interface SettingsManagerProps {
     onSettingsSaved?: () => void;
+    onLog?: (message: string, type: 'normal' | 'error' | 'system') => void;
 }
 
-export function SettingsManager({ onSettingsSaved }: SettingsManagerProps) {
+export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps) {
     const [settings, setSettings] = useState<Settings>({
-        geolocation: { latitude: -23.55052, longitude: -46.633308 }
+        geolocation: { ...DEFAULT_LOCATION }
     });
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -69,28 +63,36 @@ export function SettingsManager({ onSettingsSaved }: SettingsManagerProps) {
             }
         } catch (e) {
             console.error('Error fetching settings:', e);
+            onLog?.('Error fetching settings', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSave = async () => {
-        setSaving(true);
+    const saveSettings = async (settingsToSave: Settings): Promise<boolean> => {
         try {
             const res = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ settings })
+                body: JSON.stringify({ settings: settingsToSave })
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
-            onSettingsSaved?.();
+            return true;
         } catch (e) {
             console.error('Error saving settings:', e);
-            alert('Failed to save settings');
-        } finally {
-            setSaving(false);
+            onLog?.('Failed to save settings', 'error');
+            return false;
         }
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        const success = await saveSettings(settings);
+        if (success) {
+            onSettingsSaved?.();
+        }
+        setSaving(false);
     };
 
     const handleSetupLogin = async () => {
@@ -99,10 +101,10 @@ export function SettingsManager({ onSettingsSaved }: SettingsManagerProps) {
             const res = await fetch('/api/setup-login', { method: 'POST' });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
-            alert(data.message);
+            onLog?.(data.message, 'system');
         } catch (e: any) {
             console.error('Error starting setup login:', e);
-            alert(`Failed to start setup login: ${e.message}`);
+            onLog?.(`Failed to start setup login: ${e.message}`, 'error');
         } finally {
             setSettingUpLogin(false);
         }
@@ -121,7 +123,7 @@ export function SettingsManager({ onSettingsSaved }: SettingsManagerProps) {
 
     const handleGetCurrentLocation = async () => {
         if (!navigator.geolocation) {
-            alert('Geolocation is not supported by your browser');
+            onLog?.('Geolocation is not supported by your browser', 'error');
             return;
         }
 
@@ -139,25 +141,15 @@ export function SettingsManager({ onSettingsSaved }: SettingsManagerProps) {
 
                 // Automatically save the detected location
                 setSaving(true);
-                try {
-                    const res = await fetch('/api/settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ settings: newSettings })
-                    });
-                    const data = await res.json();
-                    if (data.error) throw new Error(data.error);
+                const success = await saveSettings(newSettings);
+                if (success) {
                     onSettingsSaved?.();
-                } catch (e) {
-                    console.error('Error saving location:', e);
-                    alert('Failed to save location');
-                } finally {
-                    setSaving(false);
                 }
+                setSaving(false);
             },
             (error) => {
                 console.error('Error getting location:', error);
-                alert(`Error getting location: ${error.message}`);
+                onLog?.(`Error getting location: ${error.message}`, 'error');
                 setDetecting(false);
             },
             { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
