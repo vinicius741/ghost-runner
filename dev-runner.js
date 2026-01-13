@@ -50,8 +50,8 @@ const frontendPort = 5173;
 console.log(`Backend API will run on http://localhost:${apiPort}`);
 console.log(`Frontend dev server will run on http://localhost:${frontendPort}`);
 
-// Start Backend server
-const server = startProcess('Server', 'node', ['src/server/index.js'], process.cwd(), colors.server);
+// Start Backend only (serves both API and built frontend)
+const server = startProcess('Server', 'npx', ['tsx', 'src/server/index.ts'], process.cwd(), colors.server);
 
 // Start Frontend dev server
 const frontend = startProcess('Frontend', 'npm', ['run', 'dev'], path.join(process.cwd(), 'frontend'), colors.frontend);

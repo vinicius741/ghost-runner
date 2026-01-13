@@ -12,7 +12,7 @@
     "verify-login": "node src/utils/verify-session.js",
     "build:frontend": "cd frontend && npm install && npm run build",
     "deploy:frontend": "npm run build:frontend && rm -rf src/server/public/* && mkdir -p src/server/public && cp -r frontend/dist/* src/server/public/",
-    "ui:prod": "npm run deploy:frontend && node src/server/index.js",
+    "ui:prod": "npm run deploy:frontend && tsx src/server/index.ts",
     "ui": "node dev-runner.js"
   },
   "repository": {
@@ -36,5 +36,11 @@
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.8",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

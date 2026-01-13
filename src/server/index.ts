@@ -1,18 +1,17 @@
-require('dotenv').config();
-const express = require('express');
-const http = require('http');
-const path = require('path');
-const fs = require('fs');
-const { Server } = require('socket.io');
+import 'dotenv/config';
+import express, { Express, Request, Response, NextFunction } from 'express';
+import http from 'http';
+import path from 'path';
+import fs from 'fs';
+import { Server } from 'socket.io';
+import { PORT, SETTINGS_FILE } from './config';
 
-const { PORT, SETTINGS_FILE } = require('./config');
+import tasksRoutes from './routes/tasks';
+import schedulerRoutes from './routes/scheduler';
+import settingsRoutes from './routes/settings';
+import logsRoutes from './routes/logs';
 
-const tasksRoutes = require('./routes/tasks');
-const schedulerRoutes = require('./routes/scheduler');
-const settingsRoutes = require('./routes/settings');
-const logsRoutes = require('./routes/logs');
-
-const app = express();
+const app: Express = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
@@ -27,7 +26,7 @@ const frontendDist = path.join(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {
     app.use(express.static(frontendDist));
     // Serve index.html for SPA routing
-    app.get('*', (req, res, next) => {
+    app.get('*', (req: Request, res: Response, next: NextFunction) => {
         // Don't intercept API routes
         if (req.path.startsWith('/api')) {
             return next();
@@ -53,14 +52,14 @@ app.use('/api', settingsRoutes);
 app.use('/api', logsRoutes);
 
 // --- Global Error Handlers ---
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', (err: Error) => {
     console.error('UNCAUGHT EXCEPTION:', err);
     try {
         if (io) io.emit('log', `[SYSTEM CRASH] Uncaught Exception: ${err.message}`);
     } catch (e) { /* ignore */ }
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason: unknown) => {
     console.error('UNHANDLED REJECTION:', reason);
     try {
         if (io) io.emit('log', `[SYSTEM CRASH] Unhandled Rejection: ${reason}`);
@@ -70,14 +69,19 @@ process.on('unhandledRejection', (reason, promise) => {
 // Port search limit - maximum number of ports to try
 const MAX_PORT_ATTEMPTS = 100;
 
+// Type guard for Node.js ErrnoException
+function isErrnoException(err: unknown): err is NodeJS.ErrnoException {
+  return err instanceof Error && 'code' in err;
+}
+
 // Start server with error-based port detection (avoids TOCTOU race condition)
-async function startServer() {
-    let desiredPort = parseInt(PORT, 10);
+async function startServer(): Promise<void> {
+    let desiredPort = PORT;
     const maxPort = desiredPort + MAX_PORT_ATTEMPTS;
 
-    function tryListen(port) {
+    function tryListen(port: number): Promise<number> {
         return new Promise((resolve, reject) => {
-            const onError = (err) => reject(err);
+            const onError = (err: Error) => reject(err);
             server.once('error', onError);
             server.once('listening', () => {
                 server.removeListener('error', onError);
@@ -93,7 +97,7 @@ async function startServer() {
             console.log(`Server running on http://localhost:${port}`);
             return;
         } catch (err) {
-            if (err.code === 'EADDRINUSE') {
+            if (isErrnoException(err) && err.code === 'EADDRINUSE') {
                 console.log(`Port ${desiredPort} is in use, trying next port...`);
                 desiredPort++;
             } else {
