@@ -63,7 +63,7 @@ This command builds the frontend (React) and starts the backend server:
 npm run ui
 ```
 
-Navigate to `http://localhost:3000` in your browser.
+Navigate to `http://localhost:3333` in your browser. (The server will automatically find an available port if 3333 is in use.)
 
 ### 2. UI Features
 
@@ -116,4 +116,4 @@ If you are developing the frontend:
 
 1.  Navigate to `frontend/`: `cd frontend`
 2.  Install dependencies: `npm install`
-3.  Run dev server: `npm run dev` (Note: Backend API calls require the backend server running on port 3000).
+3.  Run dev server: `npm run dev` (Note: Backend API calls require the backend server running on port 3333).

@@ -19,7 +19,23 @@ const io = new Server(server);
 // Share io instance with controllers
 app.set('io', io);
 
+// Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve built frontend (for production/single-server mode)
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+    app.use(express.static(frontendDist));
+    // Serve index.html for SPA routing
+    app.get('*', (req, res) => {
+        // Don't intercept API routes
+        if (req.path.startsWith('/api')) {
+            return res.status(404).json({ error: 'Not found' });
+        }
+        res.sendFile(path.join(frontendDist, 'index.html'));
+    });
+}
+
 app.use(express.json());
 
 // Initialize settings file if it doesn't exist
@@ -51,6 +67,49 @@ process.on('unhandledRejection', (reason, promise) => {
     } catch (e) { /* ignore */ }
 });
 
-server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+// Port search limit - maximum number of ports to try
+const MAX_PORT_ATTEMPTS = 100;
+
+// Start server with error-based port detection (avoids TOCTOU race condition)
+async function startServer() {
+    let desiredPort = parseInt(PORT, 10);
+    const maxPort = desiredPort + MAX_PORT_ATTEMPTS;
+
+    function tryListen(port) {
+        return new Promise((resolve, reject) => {
+            function onError(err) {
+                server.off('error', onError);
+                server.off('listening', onListening);
+                reject(err);
+            }
+            function onListening() {
+                server.off('error', onError);
+                server.off('listening', onListening);
+                resolve(port);
+            }
+            server.once('error', onError);
+            server.once('listening', onListening);
+            server.listen(port);
+        });
+    }
+
+    while (desiredPort <= maxPort) {
+        try {
+            const port = await tryListen(desiredPort);
+            console.log(`Server running on http://localhost:${port}`);
+            return;
+        } catch (err) {
+            if (err.code === 'EADDRINUSE') {
+                console.log(`Port ${desiredPort} is in use, trying next port...`);
+                desiredPort++;
+            } else {
+                console.error('Failed to start server:', err);
+                throw err;
+            }
+        }
+    }
+
+    throw new Error(`No available ports found between ${PORT} and ${maxPort}`);
+}
+
+startServer();

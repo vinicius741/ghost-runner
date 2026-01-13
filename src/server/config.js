@@ -13,8 +13,11 @@ const ROOT_DIR = path.resolve(__dirname, '../../'); // Assuming src/server/confi
 // Actually, let's stick to the plan: src/server/config.js.
 // Since it's in src/server/, path to ../../tasks is correct.
 
+// Default port - will try this first, then find available if in use
+const DEFAULT_PORT = 3333;
+
 module.exports = {
-    PORT: process.env.PORT || 3000,
+    PORT: process.env.PORT || DEFAULT_PORT,
     TASKS_DIR: path.resolve(__dirname, '../../tasks'),
     LOG_FILE: path.resolve(__dirname, '../../scheduler.log'),
     SETTINGS_FILE: path.resolve(__dirname, '../../settings.json'),

@@ -5,13 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Common Commands
 
 ### Development
-- `npm run ui` - Start development environment (runs both backend server and frontend dev server with hot reload). Backend on :3000, frontend on :5173 with Vite proxy.
+- `npm run ui` - Start development environment (runs both backend server and frontend dev server with hot reload). Backend on :3333, frontend on :5173 with Vite proxy.
 - `cd frontend && npm run dev` - Start frontend dev server only (requires backend running separately)
 - `cd frontend && npm run build` - Build frontend for production
 - `npm run lint` - Run frontend linting
 
 ### Production
-- `npm run ui:prod` - Build frontend and start production server on :3000
+- `npm run ui:prod` - Build frontend and start production server on :3333 (serves both API and built frontend)
 - `npm run deploy:frontend` - Build frontend and copy to backend static files
 
 ### CLI / Automation
@@ -68,7 +68,7 @@ Ghost Runner is a **hybrid CLI tool and Web UI** for stealthy browser automation
 
 4. **Real-time Communication:** Web UI uses Socket.io to stream logs and status updates. Server stores `io` instance in `app.set('io', io)` for controller access.
 
-5. **Development Runner:** `dev-runner.js` spawns both backend and frontend processes with color-coded console output. Handles graceful shutdown of both processes.
+5. **Development Runner:** `dev-runner.js` spawns the backend server with color-coded console output. The server serves both API endpoints and the built frontend (from `frontend/dist`). Handles graceful shutdown.
 
 ## Important Implementation Details
 

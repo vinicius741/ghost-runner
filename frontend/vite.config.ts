@@ -11,9 +11,9 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': `http://localhost:${process.env.VITE_API_PORT || 3000}`,
+      '/api': `http://localhost:${process.env.VITE_API_PORT || 3333}`,
       '/socket.io': {
-        target: `http://localhost:${process.env.VITE_API_PORT || 3000}`,
+        target: `http://localhost:${process.env.VITE_API_PORT || 3333}`,
         ws: true
       }
     }
