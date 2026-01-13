@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from 'fs/promises';
 import { Request, Response } from 'express';
 import { SCHEDULE_FILE } from '../config';
 import schedulerService from '../services/scheduler';
@@ -34,22 +34,17 @@ export const stop = (req: Request, res: Response): void => {
   }
 };
 
-export const getSchedule = (req: Request, res: Response): void => {
-  if (fs.existsSync(SCHEDULE_FILE)) {
-    fs.readFile(SCHEDULE_FILE, 'utf8', (err, data) => {
-      if (err) {
-        res.status(500).json({ error: 'Failed to read schedule file.' });
-        return;
-      }
-      try {
-        const schedule: ScheduleItem[] = JSON.parse(data);
-        res.json({ schedule });
-      } catch (e) {
-        res.status(500).json({ error: 'Invalid JSON in schedule file.' });
-      }
-    });
-  } else {
-    res.json({ schedule: [] });
+export const getSchedule = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const data = await fs.readFile(SCHEDULE_FILE, 'utf8');
+    const schedule: ScheduleItem[] = JSON.parse(data);
+    res.json({ schedule });
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      res.json({ schedule: [] });
+    } else {
+      res.status(500).json({ error: 'Failed to read schedule file.' });
+    }
   }
 };
 
@@ -59,76 +54,69 @@ export interface NextTask {
   delayMs: number;
 }
 
-export const getNextTask = (req: Request, res: Response): void => {
-  if (fs.existsSync(SCHEDULE_FILE)) {
-    fs.readFile(SCHEDULE_FILE, 'utf8', (err, data) => {
-      if (err) {
-        res.status(500).json({ error: 'Failed to read schedule file.' });
-        return;
-      }
-      try {
-        const schedule: ScheduleItem[] = JSON.parse(data);
-        if (!Array.isArray(schedule) || schedule.length === 0) {
-          res.json({ nextTask: null });
-          return;
+export const getNextTask = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const data = await fs.readFile(SCHEDULE_FILE, 'utf8');
+    const schedule: ScheduleItem[] = JSON.parse(data);
+
+    if (!Array.isArray(schedule) || schedule.length === 0) {
+      res.json({ nextTask: null });
+      return;
+    }
+
+    const now = new Date();
+    let nearestTask: NextTask | null = null;
+    let minDelay = Infinity;
+
+    schedule.forEach(item => {
+      let nextRun: Date | null = null;
+      if (item.cron) {
+        try {
+          const interval = parseExpression(item.cron);
+          nextRun = interval.next().toDate();
+        } catch (e) {
+          console.error(`Invalid cron expression: ${item.cron}`);
         }
+      } else if (item.executeAt) {
+        nextRun = new Date(item.executeAt);
+      }
 
-        const now = new Date();
-        let nearestTask: NextTask | null = null;
-        let minDelay = Infinity;
-
-        schedule.forEach(item => {
-          let nextRun: Date | null = null;
-          if (item.cron) {
-            try {
-              const interval = parseExpression(item.cron);
-              nextRun = interval.next().toDate();
-            } catch (e) {
-              console.error(`Invalid cron expression: ${item.cron}`);
-            }
-          } else if (item.executeAt) {
-            nextRun = new Date(item.executeAt);
-          }
-
-          if (nextRun && nextRun > now) {
-            const delay = nextRun.getTime() - now.getTime();
-            if (delay < minDelay) {
-              minDelay = delay;
-              nearestTask = {
-                task: item.task,
-                nextRun: nextRun.toISOString(),
-                delayMs: delay
-              };
-            }
-          }
-        });
-
-        res.json({ nextTask: nearestTask });
-      } catch (e) {
-        res.status(500).json({ error: 'Invalid JSON in schedule file.' });
+      if (nextRun && nextRun > now) {
+        const delay = nextRun.getTime() - now.getTime();
+        if (delay < minDelay) {
+          minDelay = delay;
+          nearestTask = {
+            task: item.task,
+            nextRun: nextRun.toISOString(),
+            delayMs: delay
+          };
+        }
       }
     });
-  } else {
-    res.json({ nextTask: null });
+
+    res.json({ nextTask: nearestTask });
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      res.json({ nextTask: null });
+    } else {
+      res.status(500).json({ error: 'Invalid JSON in schedule file.' });
+    }
   }
 };
 
-export const saveSchedule = (req: Request, res: Response): void => {
+export const saveSchedule = async (req: Request, res: Response): Promise<void> => {
   const io = req.app.get('io');
-  const { schedule } = req.body;
+  const { schedule }: { schedule: ScheduleItem[] } = req.body;
   if (!Array.isArray(schedule)) {
     res.status(400).json({ error: 'Invalid schedule format. Expected an array.' });
     return;
   }
 
-  fs.writeFile(SCHEDULE_FILE, JSON.stringify(schedule, null, 2), (err) => {
-    if (err) {
-      res.status(500).json({ error: 'Failed to save schedule.' });
-      return;
-    }
-
+  try {
+    await fs.writeFile(SCHEDULE_FILE, JSON.stringify(schedule, null, 2));
     schedulerService.restart(io);
-
     res.json({ message: 'Schedule updated successfully.' });
-  });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save schedule.' });
+  }
 };

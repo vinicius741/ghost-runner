@@ -1,24 +1,30 @@
 import { spawn, ChildProcess } from 'child_process';
-import fs from 'fs';
+import * as fs from 'fs/promises';
 import { Request, Response } from 'express';
 import { TASKS_DIR, ROOT_DIR } from '../config';
 import { getTasksFromDir } from '../utils/fileSystem';
 
-export const getTasks = (req: Request, res: Response): void => {
+export const getTasks = async (req: Request, res: Response): Promise<void> => {
   try {
-    const publicTasks = getTasksFromDir('public');
-    const privateTasks = getTasksFromDir('private');
+    const [publicTasks, privateTasks] = await Promise.all([
+      getTasksFromDir('public'),
+      getTasksFromDir('private')
+    ]);
 
     // Also check root for backward compatibility
     let rootTasks: Array<{ name: string; type: 'root' }> = [];
-    const rootPath = TASKS_DIR;
-    if (fs.existsSync(rootPath)) {
-      rootTasks = fs.readdirSync(rootPath)
+    try {
+      const rootPath = TASKS_DIR;
+      const files = await fs.readdir(rootPath);
+      rootTasks = files
         .filter(f => f.endsWith('.js'))
         .map(f => ({
           name: f.replace('.js', ''),
           type: 'root' as const
         }));
+    } catch {
+      // Root directory doesn't exist or can't be read
+      rootTasks = [];
     }
 
     const taskMap = new Map<string, { name: string; type: string }>();

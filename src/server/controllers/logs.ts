@@ -1,17 +1,17 @@
-import fs from 'fs';
+import fs from 'fs/promises';
 import { Request, Response } from 'express';
 import { LOG_FILE } from '../config';
 
-export const getLogs = (req: Request, res: Response): void => {
-  if (fs.existsSync(LOG_FILE)) {
-    fs.readFile(LOG_FILE, 'utf8', (err, data) => {
-      if (err) {
-        res.status(500).json({ error: 'Failed to read log file.' });
-        return;
-      }
-      res.json({ logs: data });
-    });
-  } else {
-    res.json({ logs: 'No logs found.' });
+export const getLogs = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const data = await fs.readFile(LOG_FILE, 'utf8');
+    res.json({ logs: data });
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      res.json({ logs: 'No logs found.' });
+    } else {
+      console.error('Failed to read log file:', error);
+      res.status(500).json({ error: 'Failed to read log file.' });
+    }
   }
 };
