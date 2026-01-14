@@ -1,9 +1,8 @@
-const { spawn } = require('child_process');
-const path = require('path');
+import { spawn, ChildProcess } from 'child_process';
+import path from 'path';
+import fs from 'fs';
 
-const fs = require('fs');
-
-// Configuration matching browserConfig.js
+// Configuration matching browserConfig.ts
 const userDataDir = path.resolve(__dirname, '../../user_data');
 const tasksDir = path.resolve(__dirname, '../../tasks');
 
@@ -51,7 +50,7 @@ console.log('Note: This will open a browser window. Perform your actions, then c
 // Arguments for Playwright Codegen
 // We use --channel=chrome to ensure we use the same browser binary as the bot (local Chrome)
 // to avoid profile version conflicts.
-const playwrightArgs = [
+const playwrightArgs: string[] = [
   'playwright',
   'codegen',
   `--viewport-size=1920,1080`,
@@ -59,11 +58,11 @@ const playwrightArgs = [
   '--channel=chrome'
 ];
 
-const child = spawn('npx', playwrightArgs, {
+const child: ChildProcess = spawn('npx', playwrightArgs, {
   stdio: 'inherit', // Pipe output to parent console
   shell: true       // execute through shell for npx compatibility
 });
 
-child.on('close', (code) => {
+child.on('close', (code: number | null) => {
   console.log(`Recorder exited with code ${code}`);
 });

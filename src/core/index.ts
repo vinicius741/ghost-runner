@@ -1,8 +1,13 @@
-const { launchBrowser } = require('../config/browserConfig');
-const fs = require('fs');
-const path = require('path');
+import { launchBrowser } from '../config/browserConfig';
+import fs from 'fs';
+import path from 'path';
+import type { Page } from 'playwright';
 
-async function main() {
+interface TaskModule {
+  run: (page: Page) => Promise<void>;
+}
+
+async function main(): Promise<void> {
   // Parse command line arguments for --task
   const args = process.argv.slice(2);
   const taskArg = args.find(arg => arg.startsWith('--task='));
@@ -26,7 +31,7 @@ async function main() {
   const publicTaskPath = path.resolve(__dirname, '../../tasks/public', `${taskName}.js`);
   const privateTaskPath = path.resolve(__dirname, '../../tasks/private', `${taskName}.js`);
 
-  let taskPath;
+  let taskPath: string | undefined;
   if (fs.existsSync(publicTaskPath)) {
     taskPath = publicTaskPath;
   } else if (fs.existsSync(privateTaskPath)) {
@@ -47,7 +52,7 @@ async function main() {
   console.log(`Loading task: ${taskName}`);
 
   let browserContext;
-  let page;
+  let page: Page;
 
   try {
     // Launch the browser using our centralized config (Stealth + Persistent Profile)
@@ -60,7 +65,7 @@ async function main() {
     console.log('Browser launched. executing task...');
 
     // Load the task module
-    const taskModule = require(taskPath);
+    const taskModule = require(taskPath) as TaskModule;
 
     if (typeof taskModule.run !== 'function') {
       throw new Error(`Task ${taskName} does not export a 'run' function.`);

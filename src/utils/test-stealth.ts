@@ -1,10 +1,10 @@
-const { launchBrowser } = require('../config/browserConfig');
+import { launchBrowser } from '../config/browserConfig';
 
-(async () => {
+(async (): Promise<void> => {
   try {
     console.log('Starting Stealth Browser Test...');
     const context = await launchBrowser();
-    
+
     // In a persistent context, there might already be a page, or we create one.
     // launchPersistentContext usually opens a page by default.
     const pages = context.pages();
@@ -15,11 +15,11 @@ const { launchBrowser } = require('../config/browserConfig');
 
     console.log('Page loaded. Please verify the results manually.');
     console.log('Look for "WebDriver" -> false (green).');
-    
+
     // Keep it open for observation as per instructions
     console.log('Browser will remain open for 30 seconds for verification...');
-    await page.waitForTimeout(30000); 
-    
+    await page.waitForTimeout(30000);
+
     console.log('Closing browser...');
     await context.close();
     console.log('Test Finished.');
