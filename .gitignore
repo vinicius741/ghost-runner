@@ -10,3 +10,7 @@ src/server/public/assets
 settings.json
 schedule.json
 scheduler.log
+
+# Test coverage
+coverage/
+node_modules/.cache/
