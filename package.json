@@ -4,16 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node src/core/index.js",
-    "bot": "node src/core/index.js",
-    "record": "node src/core/record-new-task.js",
-    "schedule": "node src/core/scheduler.js",
-    "setup-login": "node src/utils/run-setup-login.js",
-    "verify-login": "node src/utils/verify-session.js",
+    "start": "tsx src/core/index.ts",
+    "bot": "tsx src/core/index.ts",
+    "record": "tsx src/core/record-new-task.ts",
+    "schedule": "tsx src/core/scheduler.ts",
+    "setup-login": "tsx src/utils/run-setup-login.ts",
+    "verify-login": "tsx src/utils/verify-session.ts",
     "build:frontend": "cd frontend && npm install && npm run build",
     "deploy:frontend": "npm run build:frontend && rm -rf src/server/public/* && mkdir -p src/server/public && cp -r frontend/dist/* src/server/public/",
     "ui:prod": "npm run deploy:frontend && tsx src/server/index.ts",
-    "ui": "node dev-runner.js"
+    "ui": "tsx dev-runner.ts"
   },
   "repository": {
     "type": "git",

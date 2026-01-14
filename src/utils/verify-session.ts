@@ -1,6 +1,6 @@
-const { launchBrowser } = require('../config/browserConfig');
+import { launchBrowser } from '../config/browserConfig';
 
-(async () => {
+(async (): Promise<void> => {
   try {
     console.log('Verifying Session Persistence...');
     const context = await launchBrowser();
@@ -12,7 +12,7 @@ const { launchBrowser } = require('../config/browserConfig');
 
     console.log('Please check the browser window.');
     console.log('If you are already logged in, the session persistence is working.');
-    
+
     // Keep it open for a short while to allow visual verification
     await page.waitForTimeout(10000);
 

@@ -1,11 +1,11 @@
-const { launchBrowser } = require('../config/browserConfig');
+import { launchBrowser } from '../config/browserConfig';
 
-(async () => {
+(async (): Promise<void> => {
   try {
     console.log('Starting Setup Login...');
     console.log('This script will launch the browser and keep it open for 5 minutes.');
     console.log('PLEASE LOG IN TO GOOGLE MANUALLY NOW.');
-    
+
     const context = await launchBrowser();
     const pages = context.pages();
     const page = pages.length > 0 ? pages[0] : await context.newPage();
@@ -14,7 +14,7 @@ const { launchBrowser } = require('../config/browserConfig');
     await page.goto('https://accounts.google.com/');
 
     console.log('Browser launched. You have 5 minutes to log in.');
-    
+
     // Keep open for 5 minutes (300,000 ms)
     await new Promise(resolve => setTimeout(resolve, 300000));
 

@@ -1,18 +1,23 @@
-const cron = require('node-cron');
-const fs = require('fs');
-const path = require('path');
-const { spawn } = require('child_process');
+import cron from 'node-cron';
+import fs from 'fs';
+import path from 'path';
+import { spawn, ChildProcess } from 'child_process';
 
 const LOG_FILE = path.resolve(__dirname, '../../scheduler.log');
 const CONFIG_FILE = path.resolve(__dirname, '../../schedule.json');
 
-let caffeinateProcess = null;
+interface ScheduleItem {
+  task: string;
+  cron?: string;
+  executeAt?: string;
+}
+
+let caffeinateProcess: ChildProcess | null = null;
 
 /**
  * Logs a message with a timestamp to the console and a file.
- * @param {string} message 
  */
-function log(message) {
+function log(message: string): void {
   const timestamp = new Date().toISOString();
   const formattedMessage = `[${timestamp}] ${message}`;
   console.log(formattedMessage);
@@ -22,7 +27,7 @@ function log(message) {
 /**
  * Starts the 'caffeinate' command to prevent the system from sleeping.
  */
-function startCaffeinate() {
+function startCaffeinate(): void {
   if (caffeinateProcess) return;
 
   log('Starting caffeinate to prevent system sleep...');
@@ -42,26 +47,29 @@ function startCaffeinate() {
 /**
  * Stops the 'caffeinate' command.
  */
-function stopCaffeinate() {
+function stopCaffeinate(): void {
   if (!caffeinateProcess) return;
 
   log('Stopping caffeinate...');
   try {
-    process.kill(-caffeinateProcess.pid); // Kill the process group if detached
+    if (caffeinateProcess.pid) {
+      process.kill(-caffeinateProcess.pid); // Kill the process group if detached
+    }
   } catch (e) {
-    caffeinateProcess.kill();
+    if (caffeinateProcess) {
+      caffeinateProcess.kill();
+    }
   }
   caffeinateProcess = null;
 }
 
 /**
  * Checks if there are any tasks left to be executed.
- * @returns {boolean}
  */
-function hasTasksLeft() {
+function hasTasksLeft(): boolean {
   if (!fs.existsSync(CONFIG_FILE)) return false;
   try {
-    const scheduleConfig = JSON.parse(fs.readFileSync(CONFIG_FILE));
+    const scheduleConfig: ScheduleItem[] = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
     const now = new Date();
     return scheduleConfig.some(item => {
       if (item.cron) return true; // Cron tasks are always "left" as they repeat
@@ -72,7 +80,8 @@ function hasTasksLeft() {
       return false;
     });
   } catch (error) {
-    log(`Error checking tasks left: ${error.message}`);
+    const err = error as Error;
+    log(`Error checking tasks left: ${err.message}`);
     return false;
   }
 }
@@ -80,7 +89,7 @@ function hasTasksLeft() {
 /**
  * Re-evaluates if caffeinate should still be running.
  */
-function updateCaffeinateStatus() {
+function updateCaffeinateStatus(): void {
   if (hasTasksLeft()) {
     startCaffeinate();
   } else {
@@ -90,20 +99,18 @@ function updateCaffeinateStatus() {
 
 /**
  * Executes a specific task by spawning a child process running 'node index.js'
- * @param {string} taskName 
- * @returns {Promise<void>}
  */
-function runTask(taskName) {
-  return new Promise((resolve, reject) => {
+function runTask(taskName: string): Promise<void> {
+  return new Promise((resolve) => {
     log(`Starting task: '${taskName}'`);
 
-    const child = spawn('node', ['index.js', `--task=${taskName}`], {
+    const child = spawn(process.execPath, ['index.js', `--task=${taskName}`], {
       cwd: __dirname, // Current directory is now src/core where index.js is
       stdio: 'inherit', // Pipe output so we see it in the main console
       shell: true
     });
 
-    child.on('close', (code) => {
+    child.on('close', (code: number | null) => {
       if (code === 0) {
         log(`Task '${taskName}' finished successfully.`);
       } else {
@@ -114,7 +121,7 @@ function runTask(taskName) {
       resolve();
     });
 
-    child.on('error', (err) => {
+    child.on('error', (err: Error) => {
       log(`Error spawning task '${taskName}': ${err.message}`);
       updateCaffeinateStatus();
       resolve(); // Still resolve so the chain can continue or handle it
@@ -122,7 +129,7 @@ function runTask(taskName) {
   });
 }
 
-function startScheduler() {
+function startScheduler(): void {
   log('Initializing Scheduler...');
 
   if (!fs.existsSync(CONFIG_FILE)) {
@@ -130,12 +137,13 @@ function startScheduler() {
     process.exit(1);
   }
 
-  let scheduleConfig;
+  let scheduleConfig: ScheduleItem[];
   try {
-    const rawData = fs.readFileSync(CONFIG_FILE);
+    const rawData = fs.readFileSync(CONFIG_FILE, 'utf8');
     scheduleConfig = JSON.parse(rawData);
   } catch (error) {
-    log(`Error parsing schedule.json: ${error.message}`);
+    const err = error as Error;
+    log(`Error parsing schedule.json: ${err.message}`);
     process.exit(1);
   }
 
@@ -165,7 +173,8 @@ function startScheduler() {
         try {
           runTask(task);
         } catch (err) {
-          log(`Unexpected error triggering task '${task}': ${err.message}`);
+          const error = err as Error;
+          log(`Unexpected error triggering task '${task}': ${error.message}`);
         }
       });
 
@@ -191,15 +200,17 @@ function startScheduler() {
           await runTask(task);
           // Remove from schedule.json
           try {
-            const currentConfig = JSON.parse(fs.readFileSync(CONFIG_FILE));
+            const currentConfig: ScheduleItem[] = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
             const newConfig = currentConfig.filter(t => t.task !== task || t.executeAt !== executeAt);
             fs.writeFileSync(CONFIG_FILE, JSON.stringify(newConfig, null, 2));
             log(`Removed one-time task '${task}' from schedule.`);
           } catch (ioErr) {
-            log(`Error removing task from schedule: ${ioErr.message}`);
+            const error = ioErr as Error;
+            log(`Error removing task from schedule: ${error.message}`);
           }
         } catch (err) {
-          log(`Unexpected error triggering task '${task}': ${err.message}`);
+          const error = err as Error;
+          log(`Unexpected error triggering task '${task}': ${error.message}`);
         }
       }, Math.max(0, delay));
 
