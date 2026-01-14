@@ -1,19 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Header } from "@/components/dashboard/Header";
-import { ControlPanel } from "@/components/dashboard/ControlPanel";
-import { TaskList } from "@/components/dashboard/TaskList";
-import { ScheduleBuilder } from "@/components/dashboard/ScheduleBuilder";
-import { LogsConsole } from "@/components/dashboard/LogsConsole";
 import { TaskCalendar } from "@/components/dashboard/TaskCalendar";
 import { SettingsManager } from "@/components/dashboard/SettingsManager";
 import { LocationWarning } from "@/components/dashboard/LocationWarning";
+import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
-import { NextTaskTimer } from "@/components/dashboard/NextTaskTimer";
 import { LayoutDashboard, Calendar, Settings as SettingsIcon } from 'lucide-react';
-import type { Task, LogEntry, ScheduleItem, Settings } from '@/types';
+import { arrayMove } from '@dnd-kit/sortable';
+import type { DragEndEvent } from '@dnd-kit/core';
+import type { Task, LogEntry, ScheduleItem, Settings, DashboardCardId, DashboardLayout, DashboardColumn } from '@/types';
 import { DEFAULT_LOCATION } from '@/types';
+import { getStoredLayout, saveLayout } from '@/lib/dashboardLayout';
 
 const socket = io();
 
@@ -25,6 +24,7 @@ function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [locationWarningDismissed, setLocationWarningDismissed] = useState(false);
+  const [layout, setLayout] = useState<DashboardLayout>(() => getStoredLayout());
 
   const addLog = (message: string, type: 'normal' | 'error' | 'system' = 'normal') => {
     setLogs(prev => [...prev, {
@@ -178,6 +178,57 @@ function App() {
     }
   };
 
+  const handleCardReorder = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeId = active.id as DashboardCardId;
+    const overId = over.id as DashboardCardId;
+
+    setLayout((currentLayout) => {
+      // Find which column the active card is in
+      const activeColumn: DashboardColumn = currentLayout.left.includes(activeId) ? 'left' : 'right';
+      // Find which column the target card is in
+      const overColumn: DashboardColumn = currentLayout.left.includes(overId) ? 'left' : 'right';
+
+      // Get the source and target arrays
+      const sourceArray = currentLayout[activeColumn];
+      const targetArray = currentLayout[overColumn];
+
+      const oldIndex = sourceArray.indexOf(activeId);
+      const newIndex = targetArray.indexOf(overId);
+
+      let newLayout: DashboardLayout;
+
+      if (activeColumn === overColumn) {
+        // Moving within the same column
+        const newArray = arrayMove(sourceArray, oldIndex, newIndex);
+        newLayout = {
+          ...currentLayout,
+          [activeColumn]: newArray
+        };
+      } else {
+        // Moving between columns
+        const newSourceArray = [...sourceArray];
+        const newTargetArray = [...targetArray];
+
+        // Remove from source
+        newSourceArray.splice(oldIndex, 1);
+        // Insert in target
+        newTargetArray.splice(newIndex, 0, activeId);
+
+        newLayout = {
+          ...currentLayout,
+          [activeColumn]: newSourceArray,
+          [overColumn]: newTargetArray
+        };
+      }
+
+      saveLayout(newLayout);
+      return newLayout;
+    });
+  };
+
   const isUsingDefaultLocation = settings?.geolocation &&
     settings.geolocation.latitude === DEFAULT_LOCATION.latitude &&
     settings.geolocation.longitude === DEFAULT_LOCATION.longitude;
@@ -236,32 +287,25 @@ function App() {
                     />
                   )}
                 </AnimatePresence>
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  <div className="lg:col-span-4 space-y-8">
-                    <ControlPanel
-                      onStartScheduler={handleStartScheduler}
-                      onStopScheduler={handleStopScheduler}
-                      onRecordTask={handleRecordTask}
-                      schedulerStatus={schedulerStatus}
-                    />
-                    <NextTaskTimer schedulerRunning={schedulerStatus} />
-                    <ScheduleBuilder
-                      tasks={tasks}
-                      schedule={schedule}
-                      onAddSchedule={handleAddSchedule}
-                      onDeleteSchedule={(index) => {
-                        if (confirm('Are you sure you want to delete this schedule?')) {
-                          handleDeleteSchedule(index);
-                        }
-                      }}
-                    />
-                  </div>
-
-                  <div className="lg:col-span-8 flex flex-col gap-8">
-                    <TaskList tasks={tasks} onRunTask={handleRunTask} />
-                    <LogsConsole logs={logs} onClearLogs={() => setLogs([])} />
-                  </div>
-                </div>
+                <DashboardGrid
+                  layout={layout}
+                  onDragEnd={handleCardReorder}
+                  onStartScheduler={handleStartScheduler}
+                  onStopScheduler={handleStopScheduler}
+                  onRecordTask={handleRecordTask}
+                  schedulerStatus={schedulerStatus}
+                  tasks={tasks}
+                  schedule={schedule}
+                  onAddSchedule={handleAddSchedule}
+                  onDeleteSchedule={(index) => {
+                    if (confirm('Are you sure you want to delete this schedule?')) {
+                      handleDeleteSchedule(index);
+                    }
+                  }}
+                  onRunTask={handleRunTask}
+                  logs={logs}
+                  onClearLogs={() => setLogs([])}
+                />
               </TabsContent>
 
               <TabsContent value="calendar" className="mt-0">
