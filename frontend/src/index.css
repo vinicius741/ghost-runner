@@ -60,6 +60,19 @@
   .card-premium {
     @apply bg-slate-900/40 backdrop-blur-sm border border-slate-800 hover:border-slate-700 transition-all duration-300;
   }
+
+  /* Drag and drop styles for dashboard cards */
+  .drag-handle {
+    @apply opacity-0 group-hover:opacity-100 transition-opacity duration-200;
+  }
+
+  .sortable-card {
+    @apply relative;
+  }
+
+  .sortable-card.dragging {
+    @apply opacity-50 shadow-2xl scale-[1.02] z-50;
+  }
 }
 
 
