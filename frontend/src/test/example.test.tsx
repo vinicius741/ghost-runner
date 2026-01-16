@@ -15,11 +15,10 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 
 // Example: How to test a component
 //
+// import { render, screen } from '@testing-library/react'
 // import { TaskList } from './TaskList'
 //
 // describe('TaskList', () => {
@@ -37,22 +36,22 @@ import userEvent from '@testing-library/user-event'
 //   })
 //
 //   it('calls onRunTask when a task is clicked', async () => {
-//     const user = userEvent.setup()
 //     const onRunTask = vi.fn()
 //     render(<TaskList tasks={mockTasks} onRunTask={onRunTask} />)
 //
 //     const taskButton = screen.getByText('task1').closest('div[role="button"]') ?? screen.getByText('task1')
-//     await user.click(taskButton)
+//     // Click handling would go here
+//     // For user interactions, you would import: import userEvent from '@testing-library/user-event'
 //
 //     expect(onRunTask).toHaveBeenCalledWith('task1')
 //   })
 //
 //   it('filters tasks by search query', async () => {
-//     const user = userEvent.setup()
 //     render(<TaskList tasks={mockTasks} onRunTask={vi.fn()} />)
 //
 //     const searchInput = screen.getByPlaceholderText('Search tasks...')
-//     await user.type(searchInput, 'task1')
+//     // Type interaction would go here
+//     // For user interactions, you would import: import userEvent from '@testing-library/user-event'
 //
 //     expect(screen.getByText('task1')).toBeInTheDocument()
 //     expect(screen.queryByText('task2')).not.toBeInTheDocument()
