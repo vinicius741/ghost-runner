@@ -25,6 +25,74 @@ Since agent-browser is a CLI tool, we have two integration options:
 
 ---
 
+## Phase 0: Git Preparation & Legacy Preservation
+
+**IMPORTANT:** This phase must be completed FIRST before any code changes. Creating the legacy branch ensures you have a fallback if the migration encounters issues.
+
+### 0.1 Create Legacy Branch
+
+Before making any changes, create a legacy branch to preserve the current Playwright implementation:
+
+```bash
+# Create and push the legacy branch
+git checkout -b legacy/playwright
+git push -u origin legacy/playwright
+
+# Return to main branch for migration work
+git checkout main
+```
+
+This branch serves as:
+- A permanent reference for the original Playwright implementation
+- A fallback if issues arise during migration
+- Historical documentation of the project's evolution
+
+### 0.2 Archive Existing Tasks
+
+Move existing Playwright-based tasks to a legacy folder for reference:
+
+```bash
+# Create legacy folder structure
+mkdir -p tasks/legacy/public
+mkdir -p tasks/legacy/private
+
+# Move existing tasks (if they exist)
+# Note: These commands will fail if folders are empty or files don't exist - that's okay
+git mv tasks/public/* tasks/legacy/public/ 2>/dev/null || true
+git mv tasks/private/* tasks/legacy/private/ 2>/dev/null || true
+```
+
+**Gitignore consideration:**
+- `tasks/legacy/private/` remains git-ignored (contains sensitive tasks)
+- Only `tasks/legacy/public/` is tracked in Git
+
+### 0.3 Verify Legacy Branch
+
+After creating the legacy branch, verify it exists:
+
+```bash
+# List all branches
+git branch -a
+
+# Confirm legacy branch has the current code
+git log legacy/playwright --oneline -5
+```
+
+### 0.4 Ready to Proceed
+
+Once Phase 0 is complete:
+- Your `legacy/playwright` branch is pushed to origin
+- Your `main` branch is ready for migration changes
+- You can safely proceed to Phase 1
+
+**If you need to rollback at any point:**
+```bash
+git checkout legacy/playwright
+git checkout -b hotfix/rollback-attempt
+```
+
+---
+
 ## Phase 1: Core Architecture Migration
 
 ### 1.1 Create Browser CLI Wrapper
@@ -591,35 +659,19 @@ Verify task execution works through the web interface.
 
 ---
 
-## Phase 7: Git Strategy & Legacy Handling
+## Phase 7: Git Strategy & Commit Organization
 
-### 7.1 Create Legacy Branch
+### 7.1 Migration Commit Strategy
 
-Before starting the migration, create a legacy branch:
+**Note:** Phase 0 should already be completed before reaching this phase.
 
-```bash
-git checkout -b legacy/playwright
-git push origin legacy/playwright
-```
-
-### 7.2 Archive Existing Tasks
-
-```bash
-mkdir -p tasks/legacy/public
-mkdir -p tasks/legacy/private
-git mv tasks/public/* tasks/legacy/public/
-git mv tasks/private/* tasks/legacy/private/
-```
-
-### 7.3 Migration Commit Strategy
-
-1. **Commit 1:** Create legacy branch and archive tasks
-2. **Commit 2:** Install agent-browser, remove Playwright dependencies
-3. **Commit 3:** Create CLI wrapper (`browserCli.ts`)
-4. **Commit 4:** Migrate task runner and helpers
-5. **Commit 5:** Update session management
+1. **Commit 1:** Install agent-browser, remove Playwright dependencies
+2. **Commit 2:** Create CLI wrapper (`src/config/browserCli.ts`)
+3. **Commit 3:** Migrate task runner (`src/core/index.ts`)
+4. **Commit 4:** Create helper utilities (`src/utils/agentBrowserHelpers.ts`)
+5. **Commit 5:** Update session management (`src/core/setup-login.ts`)
 6. **Commit 6:** Create new task templates and examples
-7. **Commit 7:** Update documentation
+7. **Commit 7:** Update documentation (this file, CLAUDE.md, etc.)
 8. **Commit 8:** Final testing and cleanup
 
 ---
@@ -754,12 +806,17 @@ module.exports = {
 
 ## Migration Tasks Checklist
 
-### Pre-Migration
+### Phase 0: Git Preparation (DO THIS FIRST)
+- [ ] Create `legacy/playwright` branch: `git checkout -b legacy/playwright`
+- [ ] Push legacy branch: `git push -u origin legacy/playwright`
+- [ ] Return to main: `git checkout main`
+- [ ] Verify legacy branch exists: `git branch -a`
+- [ ] Create `tasks/legacy/` folder structure
+- [ ] Move existing tasks to legacy (if any exist)
+
+### Pre-Migration Setup
 - [ ] Install agent-browser globally: `npm install -g agent-browser`
 - [ ] Test agent-browser CLI: `agent-browser --version`
-- [ ] Create `legacy/playwright` branch
-- [ ] Create `tasks/legacy/` folders
-- [ ] Move existing tasks to legacy
 
 ### Core Migration
 - [ ] Create `src/config/browserCli.ts` CLI wrapper
