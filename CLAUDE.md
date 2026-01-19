@@ -34,12 +34,12 @@ Ghost Runner is a **hybrid CLI tool and Web UI** for stealthy browser automation
 
 ### Core Architecture
 
-**Backend (Node.js, CommonJS):**
-- `src/core/index.js` - Main task runner (CLI entry point). Accepts `--task=` argument, loads browser with stealth config, executes tasks from `tasks/` directory.
-- `src/core/scheduler.js` - Cron scheduler supporting both recurring (cron expressions) and one-time tasks. Auto-removes executed one-time tasks from `schedule.json`. Includes macOS `caffeinate` integration to prevent system sleep when tasks are scheduled.
-- `src/core/record-new-task.js` - Playwright Codegen launcher with stealth configuration for recording tasks.
-- `src/config/browserConfig.js` - Stealth browser configuration using `playwright-extra` + `puppeteer-extra-plugin-stealth`. Launches persistent context with `user_data/` directory for session persistence.
-- `src/server/index.js` - Express server with Socket.io for Web UI and real-time logs.
+**Backend (Node.js, TypeScript):**
+- `src/core/index.ts` - Main task runner (CLI entry point). Accepts `--task=` argument, loads browser with stealth config, executes tasks from `tasks/` directory.
+- `src/core/scheduler.ts` - Cron scheduler supporting both recurring (cron expressions) and one-time tasks. Auto-removes executed one-time tasks from `schedule.json`. Includes macOS `caffeinate` integration to prevent system sleep when tasks are scheduled. Uses `tsx` for runtime TypeScript execution.
+- `src/core/record-new-task.ts` - Playwright Codegen launcher with stealth configuration for recording tasks.
+- `src/config/browserConfig.ts` - Stealth browser configuration using `playwright-extra` + `puppeteer-extra-plugin-stealth`. Launches persistent context with `user_data/` directory for session persistence.
+- `src/server/index.ts` - Express server with Socket.io for Web UI and real-time logs.
 - `src/server/routes/` + `src/server/controllers/` - API endpoints for tasks, scheduler, settings, and logs.
 
 **Frontend (React + TypeScript):**
@@ -64,7 +64,7 @@ Ghost Runner is a **hybrid CLI tool and Web UI** for stealthy browser automation
 
 2. **Stealth Configuration:** Browser launched through `playwright-extra` with stealth plugin applied. Configuration includes geolocation from `settings.json` and permissions granted via `context.grantPermissions()`.
 
-3. **Scheduler Task Execution:** Scheduler spawns child processes (`node index.js --task=xxx`) to isolate task execution. Each task runs independently with error handling to prevent cascading failures.
+3. **Scheduler Task Execution:** Scheduler spawns child processes (`tsx src/core/index.ts --task=xxx`) to isolate task execution. Each task runs independently with error handling to prevent cascading failures. Task names are validated for security.
 
 4. **Real-time Communication:** Web UI uses Socket.io to stream logs and status updates. Server stores `io` instance in `app.set('io', io)` for controller access.
 
@@ -72,8 +72,8 @@ Ghost Runner is a **hybrid CLI tool and Web UI** for stealthy browser automation
 
 ## Important Implementation Details
 
-- **Module System:** Backend uses CommonJS (`require`/`module.exports`), Frontend uses ES modules (`import`/`export`)
-- **Task Loading:** Tasks are loaded dynamically using `require()` with path construction to support both `tasks/public/` and `tasks/private/` directories
+- **Module System:** Backend uses TypeScript compiled at runtime with `tsx`, Frontend uses ES modules (`import`/`export`)
+- **Task Loading:** Tasks are loaded dynamically using dynamic `import()` with path construction to support both `tasks/public/` and `tasks/private/` directories
 - **Geolocation:** Browser geolocation defaults to São Paulo coordinates but can be configured via Web UI settings
 - **Sleep Prevention:** On macOS, `caffeinate -i` is started when tasks are scheduled and stopped when no tasks remain
 - **One-Time Task Cleanup:** After execution, one-time tasks are filtered out of `schedule.json` by matching both task name and executeAt timestamp

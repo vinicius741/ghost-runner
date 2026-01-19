@@ -98,16 +98,36 @@ function updateCaffeinateStatus(): void {
 }
 
 /**
- * Executes a specific task by spawning a child process running 'node index.js'
+ * Validates a task name to prevent command injection and other security issues.
+ * Only allows alphanumeric characters, hyphens, underscores, and forward slashes.
+ */
+function validateTaskName(taskName: string): boolean {
+  // Task names should be alphanumeric with hyphens, underscores, and path separators
+  const validPattern = /^[a-zA-Z0-9_/-]+$/;
+  return validPattern.test(taskName) && taskName.length > 0 && taskName.length < 100;
+}
+
+/**
+ * Executes a specific task by spawning a child process running tsx on index.ts
  */
 function runTask(taskName: string): Promise<void> {
   return new Promise((resolve) => {
+    // Validate task name for security
+    if (!validateTaskName(taskName)) {
+      log(`Invalid task name '${taskName}'. Skipping execution.`);
+      updateCaffeinateStatus();
+      resolve();
+      return;
+    }
+
     log(`Starting task: '${taskName}'`);
 
-    const child = spawn(process.execPath, ['index.js', `--task=${taskName}`], {
-      cwd: __dirname, // Current directory is now src/core where index.js is
+    const projectRoot = path.resolve(__dirname, '../..');
+    // Use tsx directly from node_modules for better performance than npx
+    const tsxBin = path.join(projectRoot, 'node_modules', '.bin', 'tsx');
+    const child = spawn(tsxBin, ['src/core/index.ts', `--task=${taskName}`], {
+      cwd: projectRoot, // Run from project root
       stdio: 'inherit', // Pipe output so we see it in the main console
-      shell: true
     });
 
     child.on('close', (code: number | null) => {
