@@ -14,3 +14,4 @@ scheduler.log
 # Test coverage
 coverage/
 node_modules/.cache/
+tasks/legacy/private/*
