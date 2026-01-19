@@ -874,7 +874,7 @@ module.exports = {
 
 ### Core Migration (Phase 1)
 - [x] Create `src/config/browserCli.ts` CLI wrapper
-- [ ] Rewrite `src/core/index.ts` task runner
+- [x] Rewrite `src/core/index.ts` task runner
 - [ ] Create `src/utils/agentBrowserHelpers.ts` utilities
 - [ ] Update `src/core/scheduler.ts` (if needed)
 - [ ] Rewrite `src/core/setup-login.ts`

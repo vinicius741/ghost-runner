@@ -113,7 +113,8 @@ export class AgentBrowserCLI {
   /**
    * Execute agent-browser command and return output
    */
-  private async exec(args: string[], json = true, timeout = DEFAULT_TIMEOUT): Promise<any> {
+  private async exec(args: string[], options: { json?: boolean; binary?: boolean; timeout?: number } = {}): Promise<any> {
+    const { json = true, binary = false, timeout = DEFAULT_TIMEOUT } = options;
     await this.ensureInstalled();
 
     const command = 'agent-browser';
@@ -122,8 +123,6 @@ export class AgentBrowserCLI {
 
     return new Promise((resolve, reject) => {
       const proc = spawn(command, finalArgs);
-      let stdout = '';
-      let stderr = '';
       // Use Buffers for proper UTF-8 handling
       const stdoutChunks: Buffer[] = [];
       const stderrChunks: Buffer[] = [];
@@ -144,17 +143,22 @@ export class AgentBrowserCLI {
 
       proc.on('close', (code) => {
         clearTimeout(timeoutHandle);
-        stdout = Buffer.concat(stdoutChunks).toString('utf-8');
-        stderr = Buffer.concat(stderrChunks).toString('utf-8');
 
         if (code !== 0) {
-          reject(new Error(`agent-browser exited with code ${code}: ${stderr || stdout}`));
+          const stderr = Buffer.concat(stderrChunks).toString('utf-8');
+          reject(new Error(`agent-browser exited with code ${code}: ${stderr}`));
         } else {
-          try {
-            resolve(json ? JSON.parse(stdout) : stdout);
-          } catch (e) {
-            // If JSON parsing fails, return raw output
-            resolve(stdout);
+          if (binary) {
+            // Return raw buffer for binary data (screenshots, etc.)
+            resolve(Buffer.concat(stdoutChunks));
+          } else {
+            const stdout = Buffer.concat(stdoutChunks).toString('utf-8');
+            try {
+              resolve(json ? JSON.parse(stdout) : stdout);
+            } catch (e) {
+              // If JSON parsing fails, return raw output
+              resolve(stdout);
+            }
           }
         }
       });
@@ -180,7 +184,7 @@ export class AgentBrowserCLI {
     }
 
     const args = options.headed ? ['open', url, '--headed'] : ['open', url];
-    await this.exec(args, false);
+    await this.exec(args, { json: false });
     this.browserOpen = true;
   }
 
@@ -203,7 +207,7 @@ export class AgentBrowserCLI {
    */
   async click(ref: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
-    await this.exec(['click', sanitized], false);
+    await this.exec(['click', sanitized], { json: false });
   }
 
   /**
@@ -212,7 +216,7 @@ export class AgentBrowserCLI {
    */
   async dblclick(ref: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
-    await this.exec(['dblclick', sanitized], false);
+    await this.exec(['dblclick', sanitized], { json: false });
   }
 
   /**
@@ -221,7 +225,7 @@ export class AgentBrowserCLI {
    */
   async focus(ref: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
-    await this.exec(['focus', sanitized], false);
+    await this.exec(['focus', sanitized], { json: false });
   }
 
   /**
@@ -232,7 +236,7 @@ export class AgentBrowserCLI {
   async fill(ref: string, text: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
     const sanitizedText = sanitizeText(text);
-    await this.exec(['fill', sanitized, sanitizedText], false);
+    await this.exec(['fill', sanitized, sanitizedText], { json: false });
   }
 
   /**
@@ -243,7 +247,7 @@ export class AgentBrowserCLI {
   async type(ref: string, text: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
     const sanitizedText = sanitizeText(text);
-    await this.exec(['type', sanitized, sanitizedText], false);
+    await this.exec(['type', sanitized, sanitizedText], { json: false });
   }
 
   /**
@@ -321,7 +325,7 @@ export class AgentBrowserCLI {
       args.push('--load', options.load);
     }
 
-    await this.exec(args, false);
+    await this.exec(args, { json: false });
   }
 
   /**
@@ -330,7 +334,7 @@ export class AgentBrowserCLI {
    * @param longitude - Longitude coordinate
    */
   async setGeolocation(latitude: number, longitude: number): Promise<void> {
-    await this.exec(['set', 'geo', latitude.toString(), longitude.toString()], false);
+    await this.exec(['set', 'geo', latitude.toString(), longitude.toString()], { json: false });
   }
 
   /**
@@ -339,7 +343,7 @@ export class AgentBrowserCLI {
    * @param height - Viewport height
    */
   async setViewport(width: number, height: number): Promise<void> {
-    await this.exec(['set', 'viewport', width.toString(), height.toString()], false);
+    await this.exec(['set', 'viewport', width.toString(), height.toString()], { json: false });
   }
 
   /**
@@ -347,7 +351,7 @@ export class AgentBrowserCLI {
    * @param device - Device name (e.g., 'iPhone 14')
    */
   async setDevice(device: string): Promise<void> {
-    await this.exec(['set', 'device', device], false);
+    await this.exec(['set', 'device', device], { json: false });
   }
 
   /**
@@ -356,7 +360,7 @@ export class AgentBrowserCLI {
    */
   async saveState(statePath?: string): Promise<void> {
     const path = statePath || this.getStatePath();
-    await this.exec(['state', 'save', path], false);
+    await this.exec(['state', 'save', path], { json: false });
   }
 
   /**
@@ -369,28 +373,28 @@ export class AgentBrowserCLI {
       console.log(`No saved state found at ${path}, starting fresh session`);
       return;
     }
-    await this.exec(['state', 'load', path], false);
+    await this.exec(['state', 'load', path], { json: false });
   }
 
   /**
    * Navigate back
    */
   async back(): Promise<void> {
-    await this.exec(['back'], false);
+    await this.exec(['back'], { json: false });
   }
 
   /**
    * Navigate forward
    */
   async forward(): Promise<void> {
-    await this.exec(['forward'], false);
+    await this.exec(['forward'], { json: false });
   }
 
   /**
    * Reload page
    */
   async reload(): Promise<void> {
-    await this.exec(['reload'], false);
+    await this.exec(['reload'], { json: false });
   }
 
   /**
@@ -399,7 +403,7 @@ export class AgentBrowserCLI {
    */
   async press(key: string): Promise<void> {
     // agent-browser accepts key combinations as a single argument
-    await this.exec(['press', key], false);
+    await this.exec(['press', key], { json: false });
   }
 
   /**
@@ -418,7 +422,7 @@ export class AgentBrowserCLI {
    */
   async hover(ref: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
-    await this.exec(['hover', sanitized], false);
+    await this.exec(['hover', sanitized], { json: false });
   }
 
   /**
@@ -427,7 +431,7 @@ export class AgentBrowserCLI {
    */
   async check(ref: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
-    await this.exec(['check', sanitized], false);
+    await this.exec(['check', sanitized], { json: false });
   }
 
   /**
@@ -436,7 +440,7 @@ export class AgentBrowserCLI {
    */
   async uncheck(ref: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
-    await this.exec(['uncheck', sanitized], false);
+    await this.exec(['uncheck', sanitized], { json: false });
   }
 
   /**
@@ -446,7 +450,7 @@ export class AgentBrowserCLI {
    */
   async select(ref: string, value: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
-    await this.exec(['select', sanitized, value], false);
+    await this.exec(['select', sanitized, value], { json: false });
   }
 
   /**
@@ -455,7 +459,7 @@ export class AgentBrowserCLI {
   async close(): Promise<void> {
     if (this.browserOpen) {
       try {
-        await this.exec(['close'], false);
+        await this.exec(['close'], { json: false });
         this.browserOpen = false;
       } catch (error) {
         // Browser may already be closed
@@ -471,22 +475,22 @@ export class AgentBrowserCLI {
    */
   async screenshot(screenshotPath?: string): Promise<Buffer | null> {
     const args = screenshotPath ? ['screenshot', screenshotPath] : ['screenshot'];
-    const result = await this.exec(args, false);
 
     // If path provided, agent-browser saves to file (no return value)
     if (screenshotPath) {
+      await this.exec(args, { json: false });
       return null;
     }
 
-    // If no path, result is binary data (base64 encoded or raw)
-    // agent-browser outputs binary to stdout, which we collect as Buffer
+    // Request binary data from exec
+    const result = await this.exec(args, { json: false, binary: true });
+
     if (Buffer.isBuffer(result)) {
       return result;
     }
-    if (typeof result === 'string') {
-      return Buffer.from(result, 'base64');
-    }
-    return result;
+
+    console.error('Expected a Buffer from screenshot command but received:', typeof result);
+    return null;
   }
 
   /**
@@ -502,14 +506,14 @@ export class AgentBrowserCLI {
    * @param value - Cookie value
    */
   async setCookie(name: string, value: string): Promise<void> {
-    await this.exec(['cookies', 'set', name, value], false);
+    await this.exec(['cookies', 'set', name, value], { json: false });
   }
 
   /**
    * Clear all cookies
    */
   async clearCookies(): Promise<void> {
-    await this.exec(['cookies', 'clear'], false);
+    await this.exec(['cookies', 'clear'], { json: false });
   }
 
   /**
@@ -527,14 +531,14 @@ export class AgentBrowserCLI {
    * @param value - Storage value
    */
   async setLocalStorage(key: string, value: string): Promise<void> {
-    await this.exec(['storage', 'local', 'set', key, value], false);
+    await this.exec(['storage', 'local', 'set', key, value], { json: false });
   }
 
   /**
    * Clear localStorage
    */
   async clearLocalStorage(): Promise<void> {
-    await this.exec(['storage', 'local', 'clear'], false);
+    await this.exec(['storage', 'local', 'clear'], { json: false });
   }
 
   /**
@@ -543,7 +547,7 @@ export class AgentBrowserCLI {
    * @param pixels - Number of pixels to scroll
    */
   async scroll(direction: 'up' | 'down', pixels: number): Promise<void> {
-    await this.exec(['scroll', direction, pixels.toString()], false);
+    await this.exec(['scroll', direction, pixels.toString()], { json: false });
   }
 
   /**
@@ -562,7 +566,7 @@ export class AgentBrowserCLI {
   async findByRole(role: string, name?: string): Promise<string | null> {
     const args = ['find', 'role', role];
     if (name) args.push('--name', name);
-    const result = await this.exec(args, false);
+    const result = await this.exec(args, { json: false });
     return result || null;
   }
 
@@ -571,7 +575,7 @@ export class AgentBrowserCLI {
    * @param text - Text to search for
    */
   async findByText(text: string): Promise<string | null> {
-    const result = await this.exec(['find', 'text', text], false);
+    const result = await this.exec(['find', 'text', text], { json: false });
     return result || null;
   }
 
@@ -611,7 +615,7 @@ export class AgentBrowserCLI {
    */
   async scrollIntoView(ref: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
-    await this.exec(['scrollintoview', sanitized], false);
+    await this.exec(['scrollintoview', sanitized], { json: false });
   }
 
   /**
@@ -622,7 +626,7 @@ export class AgentBrowserCLI {
   async drag(fromRef: string, toRef: string): Promise<void> {
     const fromSanitized = sanitizeRef(fromRef);
     const toSanitized = sanitizeRef(toRef);
-    await this.exec(['drag', fromSanitized, toSanitized], false);
+    await this.exec(['drag', fromSanitized, toSanitized], { json: false });
   }
 
   /**
@@ -632,7 +636,11 @@ export class AgentBrowserCLI {
    */
   async upload(ref: string, filePath: string): Promise<void> {
     const sanitized = sanitizeRef(ref);
-    await this.exec(['upload', sanitized, filePath], false);
+    const resolvedPath = path.resolve(filePath);
+    if (!resolvedPath.startsWith(process.cwd())) {
+      throw new Error(`Path traversal attempt detected: ${filePath}`);
+    }
+    await this.exec(['upload', sanitized, filePath], { json: false });
   }
 
   /**
@@ -642,14 +650,14 @@ export class AgentBrowserCLI {
   async acceptDialog(promptText?: string): Promise<void> {
     const args = ['dialog', 'accept'];
     if (promptText) args.push(promptText);
-    await this.exec(args, false);
+    await this.exec(args, { json: false });
   }
 
   /**
    * Dismiss dialog
    */
   async dismissDialog(): Promise<void> {
-    await this.exec(['dialog', 'dismiss'], false);
+    await this.exec(['dialog', 'dismiss'], { json: false });
   }
 
   /**
@@ -657,14 +665,14 @@ export class AgentBrowserCLI {
    * @param selector - CSS selector for iframe
    */
   async switchToFrame(selector: string): Promise<void> {
-    await this.exec(['frame', selector], false);
+    await this.exec(['frame', selector], { json: false });
   }
 
   /**
    * Switch back to main frame
    */
   async switchToMainFrame(): Promise<void> {
-    await this.exec(['frame', 'main'], false);
+    await this.exec(['frame', 'main'], { json: false });
   }
 
   /**
