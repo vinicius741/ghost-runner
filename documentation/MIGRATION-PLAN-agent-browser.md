@@ -29,7 +29,11 @@ Since agent-browser is a CLI tool, we have two integration options:
 
 **IMPORTANT:** This phase must be completed FIRST before any code changes. Creating the legacy branch ensures you have a fallback if the migration encounters issues.
 
+- [x] **Phase 0 Status**: Complete
+
 ### 0.1 Create Legacy Branch
+
+- [x] **0.1 Status**: Complete
 
 Before making any changes, create a legacy branch to preserve the current Playwright implementation:
 
@@ -48,6 +52,8 @@ This branch serves as:
 - Historical documentation of the project's evolution
 
 ### 0.2 Archive Existing Tasks
+
+- [x] **0.2 Status**: Complete
 
 Move existing Playwright-based tasks to a legacy folder for reference:
 
@@ -68,6 +74,8 @@ git mv tasks/private/* tasks/legacy/private/ 2>/dev/null || true
 
 ### 0.3 Verify Legacy Branch
 
+- [x] **0.3 Status**: Complete
+
 After creating the legacy branch, verify it exists:
 
 ```bash
@@ -79,6 +87,8 @@ git log legacy/playwright --oneline -5
 ```
 
 ### 0.4 Ready to Proceed
+
+- [x] **0.4 Status**: Complete
 
 Once Phase 0 is complete:
 - Your `legacy/playwright` branch is pushed to origin
@@ -95,7 +105,11 @@ git checkout -b hotfix/rollback-attempt
 
 ## Phase 1: Core Architecture Migration
 
+- [ ] **Phase 1 Status**: Not Started
+
 ### 1.1 Create Browser CLI Wrapper
+
+- [ ] **1.1 Status**: Pending
 
 **New File:** `src/config/browserCli.ts`
 
@@ -251,6 +265,8 @@ export class AgentBrowserCLI {
 
 ### 1.2 Update Task Runner
 
+- [ ] **1.2 Status**: Pending
+
 **File:** `src/core/index.ts`
 
 **Changes:**
@@ -299,6 +315,8 @@ main().catch(console.error);
 
 ### 1.3 Update Scheduler
 
+- [ ] **1.3 Status**: Pending
+
 **File:** `src/core/scheduler.ts`
 
 **Changes:**
@@ -309,7 +327,11 @@ main().catch(console.error);
 
 ## Phase 2: Task System Redesign
 
+- [ ] **Phase 2 Status**: Not Started
+
 ### 2.1 New Task Template
+
+- [ ] **2.1 Status**: Pending
 
 **File:** `tasks/public/template.js`
 
@@ -357,6 +379,8 @@ module.exports = {
 ```
 
 ### 2.2 Create Helper Utilities
+
+- [ ] **2.2 Status**: Pending
 
 **File:** `src/utils/agentBrowserHelpers.ts`
 
@@ -471,7 +495,11 @@ export async function fillForm(
 
 ## Phase 3: Dependencies & Configuration
 
+- [ ] **Phase 3 Status**: Not Started
+
 ### 3.1 Package.json Updates
+
+- [ ] **3.1 Status**: Pending
 
 **Remove:**
 - `playwright`
@@ -491,6 +519,8 @@ npm install --save-dev agent-browser
 
 ### 3.2 Update NPM Scripts
 
+- [ ] **3.2 Status**: Pending
+
 **File:** `package.json`
 
 ```json
@@ -506,7 +536,11 @@ npm install --save-dev agent-browser
 
 ## Phase 4: Session Management
 
+- [ ] **Phase 4 Status**: Not Started
+
 ### 4.1 Save/Load Session State
+
+- [ ] **4.1 Status**: Pending
 
 **Update File:** `src/core/setup-login.ts`
 
@@ -542,6 +576,8 @@ main().catch(console.error);
 
 ### 4.2 Load Saved Session in Tasks
 
+- [ ] **4.2 Status**: Pending
+
 ```javascript
 // In tasks that need authentication
 module.exports = {
@@ -564,7 +600,11 @@ module.exports = {
 
 ## Phase 5: Recording/Development Tools
 
+- [ ] **Phase 5 Status**: Not Started
+
 ### 5.1 Update Task Recorder
+
+- [ ] **5.1 Status**: Pending
 
 **Option A:** Remove `src/core/record-new-task.ts` entirely and use agent-browser CLI directly
 
@@ -596,7 +636,11 @@ recordTask();
 
 ## Phase 6: Web UI Integration
 
+- [ ] **Phase 6 Status**: Not Started
+
 ### 6.1 Update Server Controllers
+
+- [ ] **6.1 Status**: Pending
 
 **Files to update:**
 - `src/server/controllers/taskController.ts`
@@ -661,7 +705,11 @@ Verify task execution works through the web interface.
 
 ## Phase 7: Git Strategy & Commit Organization
 
+- [ ] **Phase 7 Status**: Not Started
+
 ### 7.1 Migration Commit Strategy
+
+- [ ] **7.1 Status**: Pending
 
 **Note:** Phase 0 should already be completed before reaching this phase.
 
@@ -678,7 +726,11 @@ Verify task execution works through the web interface.
 
 ## Phase 8: Documentation
 
+- [ ] **Phase 8 Status**: Not Started
+
 ### 8.1 Create MIGRATION.md
+
+- [ ] **8.1 Status**: Pending
 
 **File:** `documentation/MIGRATION.md`
 
@@ -689,6 +741,8 @@ Verify task execution works through the web interface.
 - Troubleshooting common issues
 
 ### 8.2 Update CLAUDE.md
+
+- [ ] **8.2 Status**: Pending
 
 - Remove Playwright-specific references
 - Add agent-browser CLI patterns
@@ -807,36 +861,52 @@ module.exports = {
 ## Migration Tasks Checklist
 
 ### Phase 0: Git Preparation (DO THIS FIRST)
-- [ ] Create `legacy/playwright` branch: `git checkout -b legacy/playwright`
-- [ ] Push legacy branch: `git push -u origin legacy/playwright`
-- [ ] Return to main: `git checkout main`
-- [ ] Verify legacy branch exists: `git branch -a`
-- [ ] Create `tasks/legacy/` folder structure
-- [ ] Move existing tasks to legacy (if any exist)
+- [x] Create `legacy/playwright` branch: `git checkout -b legacy/playwright`
+- [x] Push legacy branch: `git push -u origin legacy/playwright`
+- [x] Return to main: `git checkout main`
+- [x] Verify legacy branch exists: `git branch -a`
+- [x] Create `tasks/legacy/` folder structure
+- [x] Move existing tasks to legacy (if any exist)
 
 ### Pre-Migration Setup
 - [ ] Install agent-browser globally: `npm install -g agent-browser`
 - [ ] Test agent-browser CLI: `agent-browser --version`
 
-### Core Migration
-- [ ] Create `src/config/browserCli.ts` CLI wrapper
+### Core Migration (Phase 1)
+- [x] Create `src/config/browserCli.ts` CLI wrapper
 - [ ] Rewrite `src/core/index.ts` task runner
 - [ ] Create `src/utils/agentBrowserHelpers.ts` utilities
 - [ ] Update `src/core/scheduler.ts` (if needed)
 - [ ] Rewrite `src/core/setup-login.ts`
 - [ ] Decide on `src/core/record-new-task.ts` approach
 
-### Task System
+### Task System (Phase 2)
 - [ ] Create new `tasks/public/template.js`
 - [ ] Create example tasks demonstrating all patterns
 - [ ] Test example tasks manually
 
-### Documentation
+### Dependencies (Phase 3)
+- [ ] Remove Playwright dependencies from package.json
+- [ ] Add agent-browser dependency
+- [ ] Update NPM scripts
+
+### Session Management (Phase 4)
+- [ ] Update session save/load implementation
+- [ ] Test session persistence
+
+### Recording Tools (Phase 5)
+- [ ] Update or remove task recorder
+
+### Web UI (Phase 6)
+- [ ] Update server controllers
+- [ ] Test Web UI integration
+
+### Documentation (Phase 8)
 - [ ] Create `documentation/MIGRATION.md`
 - [ ] Update `CLAUDE.md`
 - [ ] Update `README.md` if it exists
 
-### Testing
+### Testing & Verification
 - [ ] Test browser launch
 - [ ] Test snapshot workflow
 - [ ] Test session persistence (save/load)
