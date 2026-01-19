@@ -1,10 +1,13 @@
-import { launchBrowser } from '../config/browserConfig';
-import fs from 'fs';
-import path from 'path';
-import type { Page } from 'playwright';
+import { AgentBrowserCLI } from '../config/browserCli';
+import * as fs from 'fs';
+import * as path from 'path';
 
+/**
+ * Task module interface for agent-browser based tasks
+ * Tasks receive an AgentBrowserCLI instance instead of Playwright Page
+ */
 interface TaskModule {
-  run: (page: Page) => Promise<void>;
+  run: (cli: AgentBrowserCLI) => Promise<void>;
 }
 
 async function main(): Promise<void> {
@@ -51,18 +54,13 @@ async function main(): Promise<void> {
 
   console.log(`Loading task: ${taskName}`);
 
-  let browserContext;
-  let page: Page;
+  // Create CLI instance with task name as session name
+  const cli = new AgentBrowserCLI(taskName);
+
+  let taskFailed = false;
 
   try {
-    // Launch the browser using our centralized config (Stealth + Persistent Profile)
-    browserContext = await launchBrowser();
-
-    // Get the default page or create new one
-    const pages = browserContext.pages();
-    page = pages.length > 0 ? pages[0] : await browserContext.newPage();
-
-    console.log('Browser launched. executing task...');
+    console.log('Executing task with agent-browser...');
 
     // Load the task module
     const taskModule = require(taskPath) as TaskModule;
@@ -71,21 +69,24 @@ async function main(): Promise<void> {
       throw new Error(`Task ${taskName} does not export a 'run' function.`);
     }
 
-    // Execute the task
-    await taskModule.run(page);
+    // Execute the task with CLI instance
+    await taskModule.run(cli);
 
     console.log(`Task '${taskName}' completed successfully.`);
 
   } catch (error) {
+    taskFailed = true;
     console.error(`Task execution failed:`, error);
   } finally {
-    if (browserContext) {
-      console.log('Closing browser...');
-      // await browserContext.close(); // Optional: Comment out if you want to inspect after run
-      // For a bot runner, we usually close it.
-      await browserContext.close();
+    // Ensure browser is closed
+    console.log('Closing browser...');
+    try {
+      await cli.close();
+    } catch (closeError) {
+      console.error('Error closing browser:', closeError);
     }
-    process.exit(0);
+    // Exit with non-zero code if task failed
+    process.exit(taskFailed ? 1 : 0);
   }
 }
 
