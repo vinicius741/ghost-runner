@@ -65,7 +65,11 @@ export async function getFailures(): Promise<FailureRecord[]> {
     const failures = JSON.parse(content) as FailureRecord[];
     return failures;
   } catch (error) {
-    // File doesn't exist or is invalid - return empty array
+    // File doesn't exist yet - return empty array (normal on first run)
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
+    // Log unexpected errors
     console.error('Error reading failures file:', error);
     return [];
   }

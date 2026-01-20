@@ -35,12 +35,17 @@ router.delete('/failures', async (req: Request, res: Response) => {
 /**
  * POST /api/failures/:id/dismiss
  * Dismisses a specific failure by ID.
+ *
+ * Note: Express may return `req.params.id` as an array in certain edge cases
+ * (e.g., malformed route patterns or middleware interference). We handle this defensively.
  */
 router.post('/failures/:id/dismiss', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const io = req.app.get('io');
-    const result = await failuresController.dismissFailureHandler(id, io);
+    // Defensive: handle edge case where Express returns id as array
+    const failureId = Array.isArray(id) ? id[0] : id;
+    const result = await failuresController.dismissFailureHandler(failureId, io);
     if (!result.success) {
       res.status(404).json(result);
     } else {

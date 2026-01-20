@@ -57,8 +57,41 @@ console.log(`Frontend dev server will run on http://localhost:${frontendPort}`);
 // Start Backend only (serves both API and built frontend)
 const server = startProcess('Server', 'npx', ['tsx', 'src/server/index.ts'], process.cwd(), colors.server);
 
-// Start Frontend dev server
-const frontend = startProcess('Frontend', 'npm', ['run', 'dev'], path.join(process.cwd(), 'frontend'), colors.frontend);
+// Start Frontend dev server after backend is ready (checked via health endpoint)
+let frontend: ChildProcess | undefined;
+const startFrontend = (): void => {
+    frontend = startProcess('Frontend', 'npm', ['run', 'dev'], path.join(process.cwd(), 'frontend'), colors.frontend);
+    // Attach exit handler after frontend starts
+    frontend.on('close', (code: number | null) => handleChildExit('Frontend', code));
+};
+
+// Poll backend health endpoint before starting frontend
+const maxRetries = 15;
+const healthCheckInterval = 500; // 500ms between checks
+let retryCount = 0;
+
+const checkBackendHealth = async (): Promise<void> => {
+    try {
+        const response = await fetch(`http://localhost:${apiPort}/health`);
+        if (response.ok) {
+            startFrontend();
+            return;
+        }
+    } catch {
+        // Backend not ready yet
+    }
+
+    retryCount++;
+    if (retryCount < maxRetries) {
+        setTimeout(checkBackendHealth, healthCheckInterval);
+    } else {
+        console.warn(`${colors.reset}Backend health check failed after ${maxRetries} attempts. Starting frontend anyway...${colors.reset}`);
+        startFrontend();
+    }
+};
+
+// Start health check after a brief delay to let backend begin initialization
+setTimeout(checkBackendHealth, 500);
 
 // Handle termination
 const cleanup = (): void => {
@@ -81,7 +114,7 @@ const cleanup = (): void => {
 
     // Kill frontend dev server
     const killFrontend = () => {
-        if (frontend.pid !== undefined) {
+        if (frontend?.pid !== undefined) {
             try {
                 process.kill(-frontend.pid);
             } catch {
@@ -108,7 +141,6 @@ const handleChildExit = (name: string, code: number | null): void => {
 };
 
 server.on('close', (code: number | null) => handleChildExit('Server', code));
-frontend.on('close', (code: number | null) => handleChildExit('Frontend', code));
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);

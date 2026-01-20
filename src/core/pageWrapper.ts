@@ -3,12 +3,41 @@
  * Wraps common Page methods to throw structured errors on failure.
  */
 
-import type { Page } from 'playwright';
+import type { Page, ElementHandle, Locator } from 'playwright';
 import {
   ElementNotFoundError,
   NavigationFailureError,
   isTaskError,
 } from './errors';
+
+// Extract option types from Page methods using Parameters utility type
+type PageMethods = Page;
+type ClickOptions = Parameters<PageMethods['click']>[1];
+type FillOptions = Parameters<PageMethods['fill']>[2];
+type TypeOptions = Parameters<PageMethods['type']>[2];
+type PressOptions = Parameters<PageMethods['press']>[2];
+type CheckOptions = Parameters<PageMethods['check']>[1];
+type UncheckOptions = Parameters<PageMethods['uncheck']>[1];
+type HoverOptions = Parameters<PageMethods['hover']>[1];
+type FocusOptions = Parameters<PageMethods['focus']>[1];
+type TapOptions = Parameters<PageMethods['tap']>[1];
+type DragAndDropOptions = Parameters<PageMethods['dragAndDrop']>[2];
+type PageScreenshotOptions = Parameters<PageMethods['screenshot']>[0];
+type PdfOptions = Parameters<PageMethods['pdf']>[0];
+type SelectOptionValue = Parameters<PageMethods['selectOption']>[1];
+type SelectOptionOptions = Parameters<PageMethods['selectOption']>[2];
+type GotoOptions = Parameters<PageMethods['goto']>[1];
+type WaitForNavigationOptions = Parameters<PageMethods['waitForNavigation']>[0];
+type ScriptTagOptions = Parameters<PageMethods['addScriptTag']>[0];
+type StyleTagOptions = Parameters<PageMethods['addStyleTag']>[0];
+type WaitForFunctionOptions = Parameters<PageMethods['waitForFunction']>[1];
+type WaitForURLOptions = Parameters<PageMethods['waitForURL']>[1];
+type ReloadOptions = Parameters<PageMethods['reload']>[0];
+type GoBackOptions = Parameters<PageMethods['goBack']>[0];
+type GoForwardOptions = Parameters<PageMethods['goForward']>[0];
+type SetContentOptions = Parameters<PageMethods['setContent']>[1];
+type EmulateMediaOptions = Parameters<PageMethods['emulateMedia']>[0];
+type CloseOptions = Parameters<PageMethods['close']>[0];
 
 /**
  * Options for creating a monitored page.
@@ -72,7 +101,7 @@ export class MonitoredPage {
   async waitForSelector(
     selector: string,
     options?: { timeout?: number }
-  ): Promise<any> {
+  ): Promise<null | ElementHandle> {
     const timeout = options?.timeout ?? this.state.defaultSelectorTimeout;
 
     try {
@@ -90,7 +119,7 @@ export class MonitoredPage {
    * Navigate to a URL.
    * @throws NavigationFailureError on network errors or bad responses
    */
-  async goto(url: string, options?: any): Promise<any> {
+  async goto(url: string, options?: GotoOptions): ReturnType<Page['goto']> {
     const timeout = options?.timeout ?? this.state.defaultNavigationTimeout;
 
     try {
@@ -125,7 +154,7 @@ export class MonitoredPage {
    * Wait for navigation to complete.
    * @throws NavigationFailureError on timeout
    */
-  async waitForNavigation(options?: any): Promise<any> {
+  async waitForNavigation(options?: WaitForNavigationOptions): ReturnType<Page['waitForNavigation']> {
     const timeout = options?.timeout ?? this.state.defaultNavigationTimeout;
 
     try {
@@ -184,59 +213,59 @@ export class MonitoredPage {
     return this.page.getByTitle(text, options);
   }
 
-  getByRole(role: string, options?: any): ReturnType<Page['getByRole']> {
+  getByRole(role: string, options?: Parameters<Page['getByRole']>[1]): ReturnType<Page['getByRole']> {
     return this.page.getByRole(role as any, options);
   }
 
-  click(selector: string, options?: any): ReturnType<Page['click']> {
+  click(selector: string, options?: ClickOptions): ReturnType<Page['click']> {
     return this.page.click(selector, options);
   }
 
-  fill(selector: string, value: string, options?: any): ReturnType<Page['fill']> {
+  fill(selector: string, value: string, options?: FillOptions): ReturnType<Page['fill']> {
     return this.page.fill(selector, value, options);
   }
 
-  type(selector: string, text: string, options?: any): ReturnType<Page['type']> {
+  type(selector: string, text: string, options?: TypeOptions): ReturnType<Page['type']> {
     return this.page.type(selector, text, options);
   }
 
-  press(selector: string, key: string, options?: any): ReturnType<Page['press']> {
+  press(selector: string, key: string, options?: PressOptions): ReturnType<Page['press']> {
     return this.page.press(selector, key, options);
   }
 
-  selectOption(selector: string, value: any, options?: any): ReturnType<Page['selectOption']> {
+  selectOption(selector: string, value: SelectOptionValue, options?: SelectOptionOptions): ReturnType<Page['selectOption']> {
     return this.page.selectOption(selector, value, options);
   }
 
-  check(selector: string, options?: any): ReturnType<Page['check']> {
+  check(selector: string, options?: CheckOptions): ReturnType<Page['check']> {
     return this.page.check(selector, options);
   }
 
-  uncheck(selector: string, options?: any): ReturnType<Page['uncheck']> {
+  uncheck(selector: string, options?: UncheckOptions): ReturnType<Page['uncheck']> {
     return this.page.uncheck(selector, options);
   }
 
-  hover(selector: string, options?: any): ReturnType<Page['hover']> {
+  hover(selector: string, options?: HoverOptions): ReturnType<Page['hover']> {
     return this.page.hover(selector, options);
   }
 
-  focus(selector: string, options?: any): ReturnType<Page['focus']> {
+  focus(selector: string, options?: FocusOptions): ReturnType<Page['focus']> {
     return this.page.focus(selector, options);
   }
 
-  tap(selector: string, options?: any): ReturnType<Page['tap']> {
+  tap(selector: string, options?: TapOptions): ReturnType<Page['tap']> {
     return this.page.tap(selector, options);
   }
 
-  dragAndDrop(source: string, target: string, options?: any): ReturnType<Page['dragAndDrop']> {
+  dragAndDrop(source: string, target: string, options?: DragAndDropOptions): ReturnType<Page['dragAndDrop']> {
     return this.page.dragAndDrop(source, target, options);
   }
 
-  screenshot(options?: any): ReturnType<Page['screenshot']> {
+  screenshot(options?: PageScreenshotOptions): ReturnType<Page['screenshot']> {
     return this.page.screenshot(options);
   }
 
-  pdf(options?: any): ReturnType<Page['pdf']> {
+  pdf(options?: PdfOptions): ReturnType<Page['pdf']> {
     return this.page.pdf(options);
   }
 
@@ -260,32 +289,32 @@ export class MonitoredPage {
     return this.page.viewportSize();
   }
 
-  evaluate<R, Arg>(pageFunction: (arg: Arg) => R, arg?: Arg): ReturnType<Page['evaluate']> {
+  evaluate<R, Arg = unknown>(pageFunction: (arg: Arg) => R, arg?: Arg): ReturnType<Page['evaluate']> {
     return this.page.evaluate(pageFunction as any, arg);
   }
 
-  evaluateHandle<R, Arg>(pageFunction: (arg: Arg) => R, arg?: Arg): ReturnType<Page['evaluateHandle']> {
+  evaluateHandle<R, Arg = unknown>(pageFunction: (arg: Arg) => R, arg?: Arg): ReturnType<Page['evaluateHandle']> {
     return this.page.evaluateHandle(pageFunction as any, arg);
   }
 
-  $eval<R>(selector: string, pageFunction: (element: any, arg?: any) => R, arg?: any): ReturnType<Page['$eval']> {
+  $eval<R>(selector: string, pageFunction: (element: ElementHandle, arg?: unknown) => R, arg?: unknown): ReturnType<Page['$eval']> {
     return this.page.$eval(selector, pageFunction, arg);
   }
 
-  $$eval<R>(selector: string, pageFunction: (elements: any[], arg?: any) => R, arg?: any): ReturnType<Page['$$eval']> {
+  $$eval<R>(selector: string, pageFunction: (elements: ElementHandle[], arg?: unknown) => R, arg?: unknown): ReturnType<Page['$$eval']> {
     return this.page.$$eval(selector, pageFunction, arg);
   }
 
-  addScriptTag(options: any): ReturnType<Page['addScriptTag']> {
+  addScriptTag(options: ScriptTagOptions): ReturnType<Page['addScriptTag']> {
     return this.page.addScriptTag(options);
   }
 
-  addStyleTag(options: any): ReturnType<Page['addStyleTag']> {
+  addStyleTag(options: StyleTagOptions): ReturnType<Page['addStyleTag']> {
     return this.page.addStyleTag(options);
   }
 
   addInitScript(script?: string | { path: string } | ((arg: unknown) => string | Promise<string>), arg?: unknown): ReturnType<Page['addInitScript']> {
-    return this.page.addInitScript(script as any, arg);
+    return this.page.addInitScript(script as string | { path: string } | ((arg: unknown) => string | Promise<string>), arg);
   }
 
   get keyboard(): Page['keyboard'] {
@@ -300,23 +329,27 @@ export class MonitoredPage {
     return this.page.touchscreen;
   }
 
-  on(event: any, listener: (...args: any[]) => void): any {
-    return this.page.on(event, listener);
+  on(event: Parameters<Page['on']>[0], listener: (...args: unknown[]) => void): this {
+    this.page.on(event, listener);
+    return this;
   }
 
-  once(event: any, listener: (...args: any[]) => void): any {
-    return this.page.once(event, listener);
+  once(event: Parameters<Page['once']>[0], listener: (...args: unknown[]) => void): this {
+    this.page.once(event, listener);
+    return this;
   }
 
-  off(event: any, listener: (...args: any[]) => void): any {
-    return this.page.off(event, listener);
+  off(event: Parameters<Page['off']>[0], listener: (...args: unknown[]) => void): this {
+    this.page.off(event, listener);
+    return this;
   }
 
-  removeAllListeners(event?: any): any {
-    return this.page.removeAllListeners(event);
+  removeAllListeners(event?: Parameters<Page['removeAllListeners']>[0]): this {
+    this.page.removeAllListeners(event);
+    return this;
   }
 
-  close(options?: any): ReturnType<Page['close']> {
+  close(options?: CloseOptions): ReturnType<Page['close']> {
     return this.page.close(options);
   }
 
@@ -328,7 +361,7 @@ export class MonitoredPage {
     return this.page.context();
   }
 
-  waitForFunction<R>(pageFunction: () => R | Promise<R>, options?: any): ReturnType<Page['waitForFunction']> {
+  waitForFunction<R>(pageFunction: () => R | Promise<R>, options?: WaitForFunctionOptions): ReturnType<Page['waitForFunction']> {
     return this.page.waitForFunction(pageFunction as any, options);
   }
 
@@ -340,19 +373,19 @@ export class MonitoredPage {
     return this.page.waitForLoadState(state, options);
   }
 
-  waitForURL(url?: any, options?: any): ReturnType<Page['waitForURL']> {
-    return this.page.waitForURL(url, options);
+  waitForURL(url?: string | RegExp | ((url: URL) => boolean), options?: WaitForURLOptions): ReturnType<Page['waitForURL']> {
+    return this.page.waitForURL(url as string | RegExp | ((url: URL) => boolean), options);
   }
 
-  reload(options?: any): ReturnType<Page['reload']> {
+  reload(options?: ReloadOptions): ReturnType<Page['reload']> {
     return this.page.reload(options);
   }
 
-  goBack(options?: any): ReturnType<Page['goBack']> {
+  goBack(options?: GoBackOptions): ReturnType<Page['goBack']> {
     return this.page.goBack(options);
   }
 
-  goForward(options?: any): ReturnType<Page['goForward']> {
+  goForward(options?: GoForwardOptions): ReturnType<Page['goForward']> {
     return this.page.goForward(options);
   }
 
@@ -360,7 +393,7 @@ export class MonitoredPage {
     return this.page.setExtraHTTPHeaders(headers);
   }
 
-  setContent(html: string, options?: any): ReturnType<Page['setContent']> {
+  setContent(html: string, options?: SetContentOptions): ReturnType<Page['setContent']> {
     return this.page.setContent(html, options);
   }
 
@@ -368,16 +401,16 @@ export class MonitoredPage {
     return this.page.bringToFront();
   }
 
-  emulateMedia(options?: any): ReturnType<Page['emulateMedia']> {
+  emulateMedia(options?: EmulateMediaOptions): ReturnType<Page['emulateMedia']> {
     return this.page.emulateMedia(options);
   }
 
-  route(url: any, handler: any): any {
-    return this.page.route(url, handler);
+  async route(url: string | RegExp | ((url: URL) => boolean), handler: Parameters<Page['route']>[1]): Promise<void> {
+    await this.page.route(url, handler);
   }
 
-  unroute(url: any, handler?: any): any {
-    return this.page.unroute(url, handler);
+  async unroute(url: string | RegExp | ((url: URL) => boolean), handler?: Parameters<Page['unroute']>[1]): Promise<void> {
+    await this.page.unroute(url, handler);
   }
 
   setDefaultNavigationTimeout(timeout: number): void {

@@ -43,6 +43,11 @@ if (fs.existsSync(frontendDist)) {
 
 app.use(express.json());
 
+// Health check endpoint for dev runner and monitoring
+app.get('/health', (req: Request, res: Response) => {
+    res.status(200).json({ status: 'ok' });
+});
+
 // Initialize settings file if it doesn't exist
 if (!fs.existsSync(SETTINGS_FILE)) {
     console.log('Initializing settings file...');

@@ -7,13 +7,20 @@ A stealthy Node.js automation tool using Playwright and `puppeteer-extra-plugin-
 - **Stealth Mode**: Uses a persistent browser context (Chromium) and stealth plugins to evade detection.
 - **Web UI**: A full-featured React dashboard (built with `shadcn/ui`, Tailwind CSS) to manage the bot.
 - **Task Management**: Record and replay tasks. Support for **Public** (shared) and **Private** (git-ignored) tasks.
+- **Task Failure Tracking**: Automatic detection and tracking of task failures with:
+    - **Structured Error Types**: Element not found, navigation failures, timeouts
+    - **Failure Dashboard**: Visual panel with color-coded error types, occurrence counts, and detailed error context
+    - **Deduplication**: Same error within 24 hours increments count instead of creating duplicates
+    - **Dismissal System**: Mark failures as dismissed to reduce noise
 - **Advanced Scheduler**:
     - **Cron Jobs**: Recurring tasks (e.g., "Every day at 9 AM").
     - **One-Time Tasks**: Schedule a specific date/time for execution. The system automatically executes and removes them from the schedule.
     - **Calendar View**: Visualize your schedule with `react-big-calendar`.
 - **Real-Time Logs**: Watch execution logs live via the Web UI (powered by Socket.io).
+- **Task Status Events**: Real-time task execution status (started, completed, failed) via Socket.io.
 - **Geolocation Control**: Configurable geolocation settings for browser contexts.
 - **Cross-Platform**: Configured to run on macOS and Linux (uses bundled Playwright Chromium).
+- **Drag-and-Drop Dashboard**: Customize your dashboard layout by dragging and rearranging panels.
 
 ## Prerequisites
 
@@ -70,6 +77,8 @@ Navigate to `http://localhost:3333` in your browser. (The server will automatica
 *   **Dashboard**: View and run tasks manually.
     *   **Public Tasks**: Stored in `tasks/public/`.
     *   **Private Tasks**: Stored in `tasks/private/`.
+    *   **Drag-and-Drop Layout**: Customize the dashboard by rearranging panels between left and right columns.
+*   **Warnings Panel**: Track task failures with color-coded error types, occurrence counts, and detailed error context. Filter by error type (Element, Navigation, Timeout) and dismiss resolved issues.
 *   **Recorder**: Launch the "Record New Task" tool directly from the browser.
 *   **Schedule Builder**:
     *   Add **Recurring Tasks** using Cron presets or custom expressions.
@@ -100,15 +109,24 @@ npm run schedule
 ## Project Structure
 
 *   `frontend/`: React application (TypeScript, Vite, Tailwind, shadcn/ui).
+    *   `src/components/dashboard/`: Dashboard components including TaskList, ScheduleBuilder, TaskCalendar, SettingsManager, LogsConsole, and WarningsPanel.
+    *   `src/lib/`: Utilities including dashboard layout management with drag-and-drop support.
 *   `src/`: Backend source code.
-    *   `core/`: Core logic (`scheduler.js`, `record-new-task.js`, `index.js`).
+    *   `core/`: Core logic (`index.ts`, `scheduler.ts`, `record-new-task.ts`).
+    *   `core/errors.ts`: Structured error types for task failures.
+    *   `core/pageWrapper.ts`: Monitored Playwright Page wrapper that throws structured errors.
+    *   `core/taskReporter.ts`: Task execution status reporting via stdout markers.
     *   `server/`: Express server and Socket.io handlers.
-    *   `config/`: Configuration files (e.g., `browserConfig.js`).
-    *   `utils/`: Helper scripts (`run-setup-login.js`).
+    *   `server/controllers/`: API controllers for tasks, scheduler, settings, logs, and failures.
+    *   `server/routes/`: API route definitions.
+    *   `server/config.ts`: Backend configuration constants.
 *   `tasks/`: Directory containing automation scripts.
+    *   `public/`: Shared tasks (tracked in git).
+    *   `private/`: Private tasks (git-ignored).
 *   `user_data/`: Stores persistent browser profile (cookies, sessions). **Do not delete if you want to keep sessions.**
 *   `schedule.json`: JSON configuration for the scheduler (managed via UI).
 *   `settings.json`: JSON configuration for global settings (managed via UI).
+*   `failures.json`: JSON configuration for task failure tracking (auto-created).
 
 ## Development
 
