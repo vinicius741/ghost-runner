@@ -39,6 +39,23 @@ export interface FailureRecord {
   dismissed?: boolean;
 }
 
+/**
+ * Info gathering result from info-gathering tasks.
+ * Represents data returned by tasks that gather information.
+ */
+export interface InfoGatheringResult {
+  taskName: string;
+  category: string;
+  displayName: string;
+  data: unknown;
+  lastUpdated: string;
+  expiresAt?: string;
+  metadata: {
+    dataType: 'key-value' | 'table' | 'custom';
+    renderedBy?: string;
+  };
+}
+
 // Default location (São Paulo) - used to detect if user hasn't set their location
 export const DEFAULT_LOCATION = { latitude: -23.55052, longitude: -46.633308 } as const;
 
@@ -49,7 +66,8 @@ export type DashboardCardId =
   | 'scheduleBuilder'
   | 'taskList'
   | 'logsConsole'
-  | 'warningsPanel';
+  | 'warningsPanel'
+  | 'infoGathering';
 
 export type DashboardColumn = 'left' | 'right';
 
@@ -70,9 +88,9 @@ export interface DashboardLayoutExtended extends DashboardLayout {
 }
 
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutExtended = {
-  version: 4,
+  version: 5,
   left: ['controlPanel', 'nextTaskTimer', 'scheduleBuilder'],
-  right: ['taskList', 'warningsPanel', 'logsConsole'],
+  right: ['taskList', 'warningsPanel', 'infoGathering', 'logsConsole'],
   minimized: []
 } as const;
 
@@ -85,4 +103,5 @@ export const CARD_METADATA: Record<DashboardCardId, {
   logsConsole: { displayName: 'Logs' },
   warningsPanel: { displayName: 'Failures' },
   nextTaskTimer: { displayName: 'Timer' },
+  infoGathering: { displayName: 'Info Gather' },
 } as const;

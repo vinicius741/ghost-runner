@@ -21,7 +21,8 @@ import { ScheduleBuilder } from './ScheduleBuilder';
 import { TaskList } from './TaskList';
 import { LogsConsole } from './LogsConsole';
 import { WarningsPanel } from './WarningsPanel';
-import type { DashboardCardId, DashboardColumn, Task, LogEntry, ScheduleItem, FailureRecord, MinimizedCard } from '@/types';
+import { InfoGathering } from './InfoGathering';
+import type { DashboardCardId, DashboardColumn, Task, LogEntry, ScheduleItem, FailureRecord, MinimizedCard, InfoGatheringResult } from '@/types';
 import { CARD_METADATA } from '@/types';
 
 interface DashboardGridProps {
@@ -51,6 +52,12 @@ interface DashboardGridProps {
   failures: FailureRecord[];
   onClearFailures: () => void;
   onDismissFailure: (id: string) => void;
+  // InfoGathering props
+  infoGatheringResults: InfoGatheringResult[];
+  onRefreshInfoGatheringTask: (taskName: string) => void;
+  onClearInfoGatheringResult: (taskName: string) => void;
+  onClearAllInfoGatheringResults: () => void;
+  refreshingInfoGatheringTasks: string[];
 }
 
 interface DroppableColumnProps {
@@ -92,6 +99,11 @@ export function DashboardGrid({
   failures,
   onClearFailures,
   onDismissFailure,
+  infoGatheringResults,
+  onRefreshInfoGatheringTask,
+  onClearInfoGatheringResult,
+  onClearAllInfoGatheringResults,
+  refreshingInfoGatheringTasks,
 }: DashboardGridProps) {
   const [activeId, setActiveId] = useState<DashboardCardId | null>(null);
 
@@ -174,6 +186,20 @@ export function DashboardGrid({
           </SortableCard>
         );
 
+      case 'infoGathering':
+        return (
+          <SortableCard key={id} id={id} onMinimize={onMinimize ? () => onMinimize(id) : undefined} title={title}>
+            <InfoGathering
+              results={infoGatheringResults}
+              onRefreshTask={onRefreshInfoGatheringTask}
+              onClearResult={onClearInfoGatheringResult}
+              onClearAll={onClearAllInfoGatheringResults}
+              onHeaderDoubleClick={onMinimize ? () => onMinimize(id) : undefined}
+              refreshingTasks={refreshingInfoGatheringTasks}
+            />
+          </SortableCard>
+        );
+
       default:
         return null;
     }
@@ -212,6 +238,16 @@ export function DashboardGrid({
             failures={failures}
             onClearFailures={onClearFailures}
             onDismissFailure={onDismissFailure}
+          />
+        );
+      case 'infoGathering':
+        return (
+          <InfoGathering
+            results={infoGatheringResults}
+            onRefreshTask={onRefreshInfoGatheringTask}
+            onClearResult={onClearInfoGatheringResult}
+            onClearAll={onClearAllInfoGatheringResults}
+            refreshingTasks={refreshingInfoGatheringTasks}
           />
         );
       default:

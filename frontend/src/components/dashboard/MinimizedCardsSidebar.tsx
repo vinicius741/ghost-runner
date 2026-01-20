@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Sliders, Layers, CalendarClock, Terminal, AlertTriangle, Timer, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sliders, Layers, CalendarClock, Terminal, AlertTriangle, Timer, Maximize2, Database } from 'lucide-react';
 import type { MinimizedCard, DashboardCardId } from '@/types';
 import { CARD_METADATA } from '@/types';
 
@@ -17,6 +17,7 @@ const ICONS: Record<DashboardCardId, React.ComponentType<{ className?: string }>
   logsConsole: Terminal,
   warningsPanel: AlertTriangle,
   nextTaskTimer: Timer,
+  infoGathering: Database,
 };
 
 const SIDEBAR_WIDTH_REM = 12; // w-48 in Tailwind is 12rem

@@ -5,10 +5,13 @@
 
 import { isTaskError, type TaskError } from './errors';
 
+// Constants
+const DEFAULT_TTL_MS = 604800000; // 7 days in milliseconds
+
 /**
  * Task execution status types.
  */
-export type TaskStatus = 'STARTED' | 'COMPLETED' | 'FAILED';
+export type TaskStatus = 'STARTED' | 'COMPLETED' | 'COMPLETED_WITH_DATA' | 'FAILED';
 
 /**
  * Structured result of a task execution.
@@ -174,4 +177,38 @@ export function reportTaskResult(taskName: string, error?: unknown): TaskResult 
  */
 export function getExitCode(result: TaskResult): number {
   return result.success ? 0 : 1;
+}
+
+/**
+ * Task metadata for info-gathering tasks.
+ * Re-exported from core/index.ts for convenience.
+ */
+export type { TaskMetadata } from './index';
+
+/**
+ * Reports that a task completed successfully with data.
+ * Used for info-gathering tasks that return structured data.
+ *
+ * @param taskName - Name of the task
+ * @param data - The data returned by the task
+ * @param metadata - Task metadata (category, displayName, dataType, ttl)
+ */
+export function reportTaskResultWithData(
+  taskName: string,
+  data: unknown,
+  metadata: { type?: string; category?: string; displayName?: string; dataType?: string; ttl?: number }
+): void {
+  const timestamp = new Date().toISOString();
+  const payload = {
+    taskName,
+    timestamp,
+    data,
+    metadata: {
+      category: metadata.category || 'Uncategorized',
+      displayName: metadata.displayName || taskName,
+      dataType: metadata.dataType || 'key-value',
+      ttl: metadata.ttl ?? DEFAULT_TTL_MS
+    }
+  };
+  console.log(`${STATUS_PREFIX}COMPLETED_WITH_DATA]${JSON.stringify(payload)}`);
 }

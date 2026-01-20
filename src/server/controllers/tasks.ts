@@ -4,6 +4,17 @@ import { Request, Response } from 'express';
 import { TASKS_DIR, ROOT_DIR } from '../config';
 import { getTasksFromDir } from '../utils/fileSystem';
 import * as failuresController from '../controllers/failures';
+import * as infoGatheringController from '../controllers/infoGathering';
+
+/**
+ * Metadata for info-gathering task results.
+ */
+export interface InfoGatheringMetadata {
+  category?: string;
+  displayName?: string;
+  dataType?: string;
+  ttl?: number;
+}
 
 /**
  * Parsed task status data from stdout markers.
@@ -14,21 +25,33 @@ export interface TaskStatusData {
   errorType?: string;
   errorMessage?: string;
   errorContext?: Record<string, unknown>;
+  data?: unknown; // For COMPLETED_WITH_DATA status
+  metadata?: InfoGatheringMetadata; // For COMPLETED_WITH_DATA status
+}
+
+/**
+ * Type guard to check if TaskStatusData contains info-gathering data.
+ */
+function isInfoGatheringData(data: TaskStatusData): data is TaskStatusData & {
+  data: unknown;
+  metadata: InfoGatheringMetadata;
+} {
+  return data.data !== undefined && data.metadata !== undefined;
 }
 
 /**
  * Parsed task status result.
  */
 export interface ParsedTaskStatus {
-  status: 'STARTED' | 'COMPLETED' | 'FAILED';
+  status: 'STARTED' | 'COMPLETED' | 'COMPLETED_WITH_DATA' | 'FAILED';
   data: TaskStatusData;
 }
 
 /**
  * Type guard for valid task status values.
  */
-function isValidTaskStatus(status: string): status is 'STARTED' | 'COMPLETED' | 'FAILED' {
-  return status === 'STARTED' || status === 'COMPLETED' || status === 'FAILED';
+function isValidTaskStatus(status: string): status is 'STARTED' | 'COMPLETED' | 'COMPLETED_WITH_DATA' | 'FAILED' {
+  return status === 'STARTED' || status === 'COMPLETED' || status === 'COMPLETED_WITH_DATA' || status === 'FAILED';
 }
 
 /**
@@ -134,6 +157,25 @@ export const runTask = (req: Request, res: Response): void => {
           case 'COMPLETED':
             io.emit('task-completed', { taskName: currentTaskName, timestamp: data.timestamp });
             io.emit('log', `[Task: ${currentTaskName}] ✓ Completed successfully`);
+            break;
+          case 'COMPLETED_WITH_DATA':
+            // Store the info-gathering result using type guard for safety
+            if (isInfoGatheringData(data)) {
+              infoGatheringController.storeInfoGatheringResult(
+                currentTaskName,
+                data.data,
+                data.metadata || {},
+                io
+              );
+            } else {
+              console.warn(`[Task: ${currentTaskName}] COMPLETED_WITH_DATA status missing data or metadata`);
+            }
+            io.emit('task-completed', {
+              taskName: currentTaskName,
+              timestamp: data.timestamp,
+              hasData: true
+            });
+            io.emit('log', `[Task: ${currentTaskName}] ✓ Completed with data`);
             break;
           case 'FAILED':
             // Record the failure

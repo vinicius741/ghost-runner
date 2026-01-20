@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from "@/components/dashboard/Header";
 import { TaskCalendar } from "@/components/dashboard/TaskCalendar";
 import { SettingsManager } from "@/components/dashboard/SettingsManager";
@@ -11,7 +11,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, Calendar, Settings as SettingsIcon } from 'lucide-react';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { DragEndEvent } from '@dnd-kit/core';
-import type { Task, LogEntry, ScheduleItem, Settings, DashboardCardId, DashboardLayoutExtended, DashboardColumn, FailureRecord, MinimizedCard } from '@/types';
+import type { Task, LogEntry, ScheduleItem, Settings, DashboardCardId, DashboardLayoutExtended, DashboardColumn, FailureRecord, MinimizedCard, InfoGatheringResult } from '@/types';
+import type { StoredLayoutResult } from '@/lib/dashboardLayout';
 import { DEFAULT_LOCATION } from '@/types';
 import { getStoredLayout, saveLayout, getSidebarState, saveSidebarState } from '@/lib/dashboardLayout';
 
@@ -25,9 +26,15 @@ function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [locationWarningDismissed, setLocationWarningDismissed] = useState(false);
-  const [layout, setLayout] = useState<DashboardLayoutExtended>(() => getStoredLayout());
+  // Initialize layout and handle migration message
+  const initialLayoutResult: StoredLayoutResult = getStoredLayout();
+  const [layout, setLayout] = useState<DashboardLayoutExtended>(() => initialLayoutResult.layout);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => getSidebarState());
   const [failures, setFailures] = useState<FailureRecord[]>([]);
+  const [infoGatheringResults, setInfoGatheringResults] = useState<InfoGatheringResult[]>([]);
+  const [refreshingInfoGatheringTasks, setRefreshingInfoGatheringTasks] = useState<string[]>([]);
+  // Track if migration message has been shown
+  const migrationMessageShownRef = useRef(false);
 
   const addLog = useCallback((message: string, type: 'normal' | 'error' | 'system' = 'normal') => {
     setLogs(prev => [...prev, {
@@ -91,12 +98,30 @@ function App() {
     }
   }, [addLog]);
 
+  const fetchInfoGathering = useCallback(async () => {
+    try {
+      const res = await fetch('/api/info-gathering');
+      const data = await res.json();
+      setInfoGatheringResults(data.results || []);
+    } catch (error) {
+      addLog('Error fetching info-gathering data', 'error');
+      console.error('Error fetching info-gathering data:', error);
+    }
+  }, [addLog]);
+
   useEffect(() => {
+    // Show migration message if one exists (only once on mount)
+    if (!migrationMessageShownRef.current && initialLayoutResult.migrationMessage) {
+      addLog(initialLayoutResult.migrationMessage, 'system');
+      migrationMessageShownRef.current = true;
+    }
+
     fetchTasks();
     fetchSchedule();
     fetchSchedulerStatus();
     fetchSettings();
     fetchFailures();
+    fetchInfoGathering();
 
     socket.on('log', (message: string) => {
       addLog(message);
@@ -120,14 +145,40 @@ function App() {
       setFailures(prev => prev.filter(f => f.id !== id));
     });
 
+    socket.on('info-gathering-result-updated', (result: InfoGatheringResult) => {
+      setInfoGatheringResults(prev => {
+        const existing = prev.findIndex(r => r.taskName === result.taskName);
+        if (existing >= 0) {
+          const updated = [...prev];
+          updated[existing] = result;
+          return updated;
+        }
+        return [...prev, result];
+      });
+      addLog(`Information updated: ${result.displayName}`, 'system');
+    });
+
+    socket.on('info-gathering-result-cleared', ({ taskName }: { taskName: string }) => {
+      setInfoGatheringResults(prev => prev.filter(r => r.taskName !== taskName));
+      addLog(`Information cleared: ${taskName}`, 'system');
+    });
+
+    socket.on('info-gathering-all-cleared', () => {
+      setInfoGatheringResults([]);
+      addLog('All information cleared', 'system');
+    });
+
     return () => {
       socket.off('log');
       socket.off('scheduler-status');
       socket.off('failure-recorded');
       socket.off('failures-cleared');
       socket.off('failure-dismissed');
+      socket.off('info-gathering-result-updated');
+      socket.off('info-gathering-result-cleared');
+      socket.off('info-gathering-all-cleared');
     };
-  }, [addLog, fetchTasks, fetchSchedule, fetchSchedulerStatus, fetchSettings, fetchFailures]);
+  }, [addLog, fetchTasks, fetchSchedule, fetchSchedulerStatus, fetchSettings, fetchFailures, fetchInfoGathering, initialLayoutResult.migrationMessage]);
 
   const handleStartScheduler = async () => {
     addLog('Starting Scheduler...', 'system');
@@ -237,6 +288,50 @@ function App() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       addLog(`Error dismissing failure: ${message}`, 'error');
+    }
+  };
+
+  const handleRefreshInfoGatheringTask = async (taskName: string) => {
+    setRefreshingInfoGatheringTasks(prev => [...prev, taskName]);
+    addLog(`Refreshing information: ${taskName}...`, 'system');
+    try {
+      await fetch('/api/run-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskName })
+      });
+      // Socket.io will update results when complete
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error refreshing task: ${message}`, 'error');
+    } finally {
+      setRefreshingInfoGatheringTasks(prev => prev.filter(t => t !== taskName));
+    }
+  };
+
+  const handleClearInfoGatheringResult = async (taskName: string) => {
+    try {
+      const res = await fetch(`/api/info-gathering/${taskName}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setInfoGatheringResults(prev => prev.filter(r => r.taskName !== taskName));
+      addLog(`Information cleared: ${taskName}`, 'system');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error clearing result: ${message}`, 'error');
+    }
+  };
+
+  const handleClearAllInfoGatheringResults = async () => {
+    try {
+      const res = await fetch('/api/info-gathering', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setInfoGatheringResults([]);
+      addLog('All information cleared', 'system');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error clearing results: ${message}`, 'error');
     }
   };
 
@@ -457,6 +552,11 @@ function App() {
                   failures={failures}
                   onClearFailures={handleClearFailures}
                   onDismissFailure={handleDismissFailure}
+                  infoGatheringResults={infoGatheringResults}
+                  onRefreshInfoGatheringTask={handleRefreshInfoGatheringTask}
+                  onClearInfoGatheringResult={handleClearInfoGatheringResult}
+                  onClearAllInfoGatheringResults={handleClearAllInfoGatheringResults}
+                  refreshingInfoGatheringTasks={refreshingInfoGatheringTasks}
                 />
               </TabsContent>
 

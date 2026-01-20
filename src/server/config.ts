@@ -10,3 +10,4 @@ export const SETTINGS_FILE: string = path.resolve(__dirname, '../../settings.jso
 export const SCHEDULE_FILE: string = path.resolve(__dirname, '../../schedule.json');
 export const ROOT_DIR: string = path.resolve(__dirname, '../../');
 export const FAILURES_FILE: string = path.resolve(__dirname, '../../failures.json');
+export const INFO_GATHERING_FILE: string = path.resolve(__dirname, '../../info-gathering.json');

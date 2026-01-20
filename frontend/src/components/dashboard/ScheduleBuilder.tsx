@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,12 +40,18 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
   const [delayHours, setDelayHours] = useState(0);
   const [delayMinutes, setDelayMinutes] = useState(30);
 
-  // Calculate the preview time for one-time tasks (computed on render to show current time)
-  const executeAtTime = new Date(Date.now() + (delayHours * 3600000) + (delayMinutes * 60000)).toLocaleTimeString(
-    [],
-    { hour: '2-digit', minute: '2-digit' }
-  );
+  // Calculate the preview time for one-time tasks
+  /* eslint-disable react-hooks/purity */
+  const executeAtTime = useMemo(() => {
+    const now = Date.now();
+    return new Date(now + (delayHours * 3600000) + (delayMinutes * 60000)).toLocaleTimeString(
+      [],
+      { hour: '2-digit', minute: '2-digit' }
+    );
+  }, [delayHours, delayMinutes]);
+  /* eslint-enable react-hooks/purity */
 
+  // Update cron preview based on selected tab and inputs
   useEffect(() => {
     let cron = '* * * * *';
     if (cronTab === 'minutes') {

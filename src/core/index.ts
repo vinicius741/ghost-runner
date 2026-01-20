@@ -1,12 +1,29 @@
 import { launchBrowser } from '../config/browserConfig';
 import { createMonitoredPage, MonitoredPage } from './pageWrapper';
-import { reportTaskResult, reportTaskStarted, getExitCode } from './taskReporter';
+import { reportTaskResult, reportTaskStarted, getExitCode, reportTaskResultWithData } from './taskReporter';
 import fs from 'fs';
 import path from 'path';
 import type { Page } from 'playwright';
 
+/**
+ * Task metadata for declaring task type and display settings.
+ */
+export interface TaskMetadata {
+  /** Task type - 'action' for side-effect tasks, 'info-gathering' for data-returning tasks */
+  type?: 'action' | 'info-gathering';
+  /** Category for grouping in UI */
+  category?: string;
+  /** Human-readable display name */
+  displayName?: string;
+  /** How to render the data in UI */
+  dataType?: 'key-value' | 'table' | 'custom';
+  /** Time-to-live for cached data in milliseconds (default 7 days) */
+  ttl?: number;
+}
+
 interface TaskModule {
-  run: (page: Page) => Promise<void>;
+  run: (page: Page) => Promise<void | unknown>;
+  metadata?: TaskMetadata;
 }
 
 async function main(): Promise<void> {
@@ -82,7 +99,12 @@ async function main(): Promise<void> {
 
     // Execute the task (with automatic error detection via MonitoredPage)
     // Cast to Page since MonitoredPage implements all needed methods
-    await taskModule.run(page as unknown as Page);
+    const result = await taskModule.run(page as unknown as Page);
+
+    // If this is an info-gathering task and returned data, emit the result
+    if (taskModule.metadata?.type === 'info-gathering' && result !== undefined) {
+      reportTaskResultWithData(taskName, result, taskModule.metadata);
+    }
 
     console.log(`Task '${taskName}' completed successfully.`);
   } catch (error) {
