@@ -4,15 +4,16 @@ import { TaskCalendar } from "@/components/dashboard/TaskCalendar";
 import { SettingsManager } from "@/components/dashboard/SettingsManager";
 import { LocationWarning } from "@/components/dashboard/LocationWarning";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
+import { MinimizedCardsSidebar } from "@/components/dashboard/MinimizedCardsSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, Calendar, Settings as SettingsIcon } from 'lucide-react';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { DragEndEvent } from '@dnd-kit/core';
-import type { Task, LogEntry, ScheduleItem, Settings, DashboardCardId, DashboardLayout, DashboardColumn, FailureRecord } from '@/types';
+import type { Task, LogEntry, ScheduleItem, Settings, DashboardCardId, DashboardLayoutExtended, DashboardColumn, FailureRecord, MinimizedCard } from '@/types';
 import { DEFAULT_LOCATION } from '@/types';
-import { getStoredLayout, saveLayout } from '@/lib/dashboardLayout';
+import { getStoredLayout, saveLayout, getSidebarState, saveSidebarState } from '@/lib/dashboardLayout';
 
 const socket = io();
 
@@ -24,7 +25,8 @@ function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [locationWarningDismissed, setLocationWarningDismissed] = useState(false);
-  const [layout, setLayout] = useState<DashboardLayout>(() => getStoredLayout());
+  const [layout, setLayout] = useState<DashboardLayoutExtended>(() => getStoredLayout());
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => getSidebarState());
   const [failures, setFailures] = useState<FailureRecord[]>([]);
 
   const addLog = useCallback((message: string, type: 'normal' | 'error' | 'system' = 'normal') => {
@@ -258,7 +260,7 @@ function App() {
       const oldIndex = sourceArray.indexOf(activeId);
       const newIndex = targetArray.indexOf(overId);
 
-      let newLayout: DashboardLayout;
+      let newLayout: DashboardLayoutExtended;
 
       if (activeColumn === overColumn) {
         // Moving within the same column
@@ -289,6 +291,83 @@ function App() {
     });
   };
 
+  const handleMinimizeCard = (cardId: DashboardCardId) => {
+    setLayout((currentLayout) => {
+      // Find which column the card is in and its index
+      let sourceColumn: DashboardColumn | null = null;
+      let sourceIndex = -1;
+
+      if (currentLayout.left.includes(cardId)) {
+        sourceColumn = 'left';
+        sourceIndex = currentLayout.left.indexOf(cardId);
+      } else if (currentLayout.right.includes(cardId)) {
+        sourceColumn = 'right';
+        sourceIndex = currentLayout.right.indexOf(cardId);
+      }
+
+      if (!sourceColumn || sourceIndex === -1) {
+        return currentLayout;
+      }
+
+      // Create minimized card entry
+      const minimizedCard: MinimizedCard = {
+        id: cardId,
+        column: sourceColumn,
+        index: sourceIndex
+      };
+
+      // Remove from column and add to minimized array
+      const newColumnArray = [...currentLayout[sourceColumn]];
+      newColumnArray.splice(sourceIndex, 1);
+
+      const newLayout: DashboardLayoutExtended = {
+        ...currentLayout,
+        [sourceColumn]: newColumnArray,
+        minimized: [...currentLayout.minimized, minimizedCard]
+      };
+
+      saveLayout(newLayout);
+      return newLayout;
+    });
+  };
+
+  const handleRestoreCard = (cardId: DashboardCardId) => {
+    setLayout((currentLayout) => {
+      // Find the minimized card
+      const minimizedCardIndex = currentLayout.minimized.findIndex(m => m.id === cardId);
+      if (minimizedCardIndex === -1) {
+        return currentLayout;
+      }
+
+      const minimizedCard = currentLayout.minimized[minimizedCardIndex];
+      const targetColumn = minimizedCard.column;
+
+      // Remove from minimized array
+      const newMinimized = [...currentLayout.minimized];
+      newMinimized.splice(minimizedCardIndex, 1);
+
+      // Append to the end of the target column
+      const newColumnArray = [...currentLayout[targetColumn], cardId];
+
+      const newLayout: DashboardLayoutExtended = {
+        ...currentLayout,
+        [targetColumn]: newColumnArray,
+        minimized: newMinimized
+      };
+
+      saveLayout(newLayout);
+      return newLayout;
+    });
+  };
+
+  const handleToggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const newState = !prev;
+      saveSidebarState(newState);
+      return newState;
+    });
+  };
+
   const isUsingDefaultLocation = settings?.geolocation &&
     settings.geolocation.latitude === DEFAULT_LOCATION.latitude &&
     settings.geolocation.longitude === DEFAULT_LOCATION.longitude;
@@ -296,11 +375,19 @@ function App() {
   const showLocationWarning = isUsingDefaultLocation && !locationWarningDismissed;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans transition-colors duration-500">
+    <div className={`min-h-screen bg-slate-950 text-slate-100 font-sans transition-colors duration-500 ${sidebarOpen ? 'pr-52' : 'pr-8'}`}>
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))]" />
       <div className="fixed inset-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-50 contrast-150" />
 
-      <div className="max-w-7xl mx-auto space-y-10 relative">
+      {/* Sidebar */}
+      <MinimizedCardsSidebar
+        isOpen={sidebarOpen}
+        minimizedCards={layout.minimized}
+        onRestoreCard={handleRestoreCard}
+        onToggle={handleToggleSidebar}
+      />
+
+      <div className="max-w-7xl mx-auto space-y-10 relative py-8 px-8">
         <Header />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
@@ -349,6 +436,8 @@ function App() {
                 </AnimatePresence>
                 <DashboardGrid
                   layout={layout}
+                  minimizedCards={layout.minimized}
+                  onMinimize={handleMinimizeCard}
                   onDragEnd={handleCardReorder}
                   onStartScheduler={handleStartScheduler}
                   onStopScheduler={handleStopScheduler}

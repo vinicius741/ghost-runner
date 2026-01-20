@@ -11,9 +11,10 @@ interface NextTask {
 
 interface NextTaskTimerProps {
     schedulerRunning: boolean;
+    onHeaderDoubleClick?: () => void;
 }
 
-export function NextTaskTimer({ schedulerRunning }: NextTaskTimerProps) {
+export function NextTaskTimer({ schedulerRunning, onHeaderDoubleClick }: NextTaskTimerProps) {
     const [nextTask, setNextTask] = useState<NextTask | null>(null);
     const [timeLeft, setTimeLeft] = useState<string>('');
 
@@ -74,7 +75,7 @@ export function NextTaskTimer({ schedulerRunning }: NextTaskTimerProps) {
             transition={{ duration: 0.5, delay: 0.3 }}
         >
             <Card className="card-premium">
-                <CardHeader className="pb-4">
+                <CardHeader className="pb-4" onDoubleClick={onHeaderDoubleClick}>
                     <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                         Next Automation

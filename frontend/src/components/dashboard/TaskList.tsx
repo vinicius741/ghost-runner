@@ -19,9 +19,10 @@ interface Task {
 interface TaskListProps {
   tasks: Task[];
   onRunTask: (taskName: string) => void;
+  onHeaderDoubleClick?: () => void;
 }
 
-export function TaskList({ tasks, onRunTask }: TaskListProps) {
+export function TaskList({ tasks, onRunTask, onHeaderDoubleClick }: TaskListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "public" | "private">("all");
   const [sortBy, setSortBy] = useState<"name_asc" | "name_desc" | "type">("name_asc");
@@ -48,7 +49,7 @@ export function TaskList({ tasks, onRunTask }: TaskListProps) {
       transition={{ duration: 0.5, delay: 0.4 }}
     >
       <Card className="card-premium h-full overflow-hidden">
-        <CardHeader className="flex flex-col gap-6 pb-6 border-b border-slate-800/50">
+        <CardHeader className="flex flex-col gap-6 pb-6 border-b border-slate-800/50" onDoubleClick={onHeaderDoubleClick}>
           <div className="flex flex-row items-center justify-between">
             <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
               <Layers className="w-4 h-4 text-blue-500" />

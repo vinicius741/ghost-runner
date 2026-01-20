@@ -21,6 +21,7 @@ interface WarningsPanelProps {
   failures: FailureRecord[];
   onClearFailures: () => void;
   onDismissFailure: (id: string) => void;
+  onHeaderDoubleClick?: () => void;
 }
 
 // Helper function for error border color
@@ -45,7 +46,7 @@ function getErrorBorder(errorType: FailureRecord['errorType']): string {
  * - Details dialog with full error context
  * - Real-time updates via props
  */
-export function WarningsPanel({ failures, onClearFailures, onDismissFailure }: WarningsPanelProps) {
+export function WarningsPanel({ failures, onClearFailures, onDismissFailure, onHeaderDoubleClick }: WarningsPanelProps) {
   const [filter, setFilter] = useState<'all' | 'element_not_found' | 'navigation_failure' | 'timeout'>('all');
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
   const [selectedFailure, setSelectedFailure] = useState<FailureRecord | null>(null);
@@ -136,7 +137,7 @@ export function WarningsPanel({ failures, onClearFailures, onDismissFailure }: W
       transition={{ duration: 0.5, delay: 0.3 }}
     >
       <Card className="card-premium flex flex-col overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-800/50 bg-slate-900/20">
+        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-800/50 bg-slate-900/20" onDoubleClick={onHeaderDoubleClick}>
           <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
             Task Failures

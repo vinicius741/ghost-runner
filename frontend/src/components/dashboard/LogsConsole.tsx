@@ -14,9 +14,10 @@ interface LogEntry {
 interface LogsConsoleProps {
   logs: LogEntry[];
   onClearLogs: () => void;
+  onHeaderDoubleClick?: () => void;
 }
 
-export function LogsConsole({ logs, onClearLogs }: LogsConsoleProps) {
+export function LogsConsole({ logs, onClearLogs, onHeaderDoubleClick }: LogsConsoleProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export function LogsConsole({ logs, onClearLogs }: LogsConsoleProps) {
       transition={{ duration: 0.5, delay: 0.5 }}
     >
       <Card className="card-premium mt-6 flex flex-col overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-800/50 bg-slate-900/20">
+        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-800/50 bg-slate-900/20" onDoubleClick={onHeaderDoubleClick}>
           <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
             <Terminal className="w-4 h-4 text-blue-400" />
             System Runtime Logs

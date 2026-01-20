@@ -59,8 +59,30 @@ export interface DashboardLayout {
   right: DashboardCardId[];
 }
 
-export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayout = {
-  version: 3,
+export interface MinimizedCard {
+  id: DashboardCardId;
+  column: DashboardColumn;
+  index: number;
+}
+
+export interface DashboardLayoutExtended extends DashboardLayout {
+  minimized: MinimizedCard[];
+}
+
+export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutExtended = {
+  version: 4,
   left: ['controlPanel', 'nextTaskTimer', 'scheduleBuilder'],
-  right: ['taskList', 'warningsPanel', 'logsConsole']
+  right: ['taskList', 'warningsPanel', 'logsConsole'],
+  minimized: []
+} as const;
+
+export const CARD_METADATA: Record<DashboardCardId, {
+  displayName: string;
+}> = {
+  controlPanel: { displayName: 'Controls' },
+  taskList: { displayName: 'Tasks' },
+  scheduleBuilder: { displayName: 'Schedule' },
+  logsConsole: { displayName: 'Logs' },
+  warningsPanel: { displayName: 'Failures' },
+  nextTaskTimer: { displayName: 'Timer' },
 } as const;

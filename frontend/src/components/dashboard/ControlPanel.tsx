@@ -10,9 +10,10 @@ interface ControlPanelProps {
   onStopScheduler: () => void;
   onRecordTask: (name: string, type: 'private' | 'public') => void;
   schedulerStatus: boolean;
+  onHeaderDoubleClick?: () => void;
 }
 
-export function ControlPanel({ onStartScheduler, onStopScheduler, onRecordTask, schedulerStatus }: ControlPanelProps) {
+export function ControlPanel({ onStartScheduler, onStopScheduler, onRecordTask, schedulerStatus, onHeaderDoubleClick }: ControlPanelProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -22,7 +23,7 @@ export function ControlPanel({ onStartScheduler, onStopScheduler, onRecordTask, 
       transition={{ duration: 0.5, delay: 0.2 }}
     >
       <Card className="card-premium">
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-4" onDoubleClick={onHeaderDoubleClick}>
           <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
             Global Controls

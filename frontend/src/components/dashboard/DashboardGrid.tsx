@@ -21,13 +21,16 @@ import { ScheduleBuilder } from './ScheduleBuilder';
 import { TaskList } from './TaskList';
 import { LogsConsole } from './LogsConsole';
 import { WarningsPanel } from './WarningsPanel';
-import type { DashboardCardId, DashboardColumn, Task, LogEntry, ScheduleItem, FailureRecord } from '@/types';
+import type { DashboardCardId, DashboardColumn, Task, LogEntry, ScheduleItem, FailureRecord, MinimizedCard } from '@/types';
+import { CARD_METADATA } from '@/types';
 
 interface DashboardGridProps {
   layout: {
     left: DashboardCardId[];
     right: DashboardCardId[];
   };
+  minimizedCards: MinimizedCard[];
+  onMinimize?: (cardId: DashboardCardId) => void;
   onDragEnd: (event: DragEndEvent) => void;
   // ControlPanel props
   onStartScheduler: () => void;
@@ -72,6 +75,8 @@ function DroppableColumn({ column, items, renderCard }: DroppableColumnProps) {
 
 export function DashboardGrid({
   layout,
+  minimizedCards,
+  onMinimize,
   onDragEnd,
   onStartScheduler,
   onStopScheduler,
@@ -90,6 +95,11 @@ export function DashboardGrid({
 }: DashboardGridProps) {
   const [activeId, setActiveId] = useState<DashboardCardId | null>(null);
 
+  // Filter out minimized cards from layout
+  const minimizedIds = new Set(minimizedCards.map(m => m.id));
+  const visibleLeft = layout.left.filter(id => !minimizedIds.has(id));
+  const visibleRight = layout.right.filter(id => !minimizedIds.has(id));
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -102,59 +112,64 @@ export function DashboardGrid({
   );
 
   const renderCard = (id: DashboardCardId) => {
+    const title = CARD_METADATA[id].displayName;
+
     switch (id) {
       case 'controlPanel':
         return (
-          <SortableCard key={id} id={id}>
+          <SortableCard key={id} id={id} onMinimize={onMinimize ? () => onMinimize(id) : undefined} title={title}>
             <ControlPanel
               onStartScheduler={onStartScheduler}
               onStopScheduler={onStopScheduler}
               onRecordTask={onRecordTask}
               schedulerStatus={schedulerStatus}
+              onHeaderDoubleClick={onMinimize ? () => onMinimize(id) : undefined}
             />
           </SortableCard>
         );
 
       case 'nextTaskTimer':
         return (
-          <SortableCard key={id} id={id}>
-            <NextTaskTimer schedulerRunning={schedulerStatus} />
+          <SortableCard key={id} id={id} onMinimize={onMinimize ? () => onMinimize(id) : undefined} title={title}>
+            <NextTaskTimer schedulerRunning={schedulerStatus} onHeaderDoubleClick={onMinimize ? () => onMinimize(id) : undefined} />
           </SortableCard>
         );
 
       case 'scheduleBuilder':
         return (
-          <SortableCard key={id} id={id}>
+          <SortableCard key={id} id={id} onMinimize={onMinimize ? () => onMinimize(id) : undefined} title={title}>
             <ScheduleBuilder
               tasks={tasks}
               schedule={schedule}
               onAddSchedule={onAddSchedule}
               onDeleteSchedule={onDeleteSchedule}
+              onHeaderDoubleClick={onMinimize ? () => onMinimize(id) : undefined}
             />
           </SortableCard>
         );
 
       case 'taskList':
         return (
-          <SortableCard key={id} id={id}>
-            <TaskList tasks={tasks} onRunTask={onRunTask} />
+          <SortableCard key={id} id={id} onMinimize={onMinimize ? () => onMinimize(id) : undefined} title={title}>
+            <TaskList tasks={tasks} onRunTask={onRunTask} onHeaderDoubleClick={onMinimize ? () => onMinimize(id) : undefined} />
           </SortableCard>
         );
 
       case 'logsConsole':
         return (
-          <SortableCard key={id} id={id}>
-            <LogsConsole logs={logs} onClearLogs={onClearLogs} />
+          <SortableCard key={id} id={id} onMinimize={onMinimize ? () => onMinimize(id) : undefined} title={title}>
+            <LogsConsole logs={logs} onClearLogs={onClearLogs} onHeaderDoubleClick={onMinimize ? () => onMinimize(id) : undefined} />
           </SortableCard>
         );
 
       case 'warningsPanel':
         return (
-          <SortableCard key={id} id={id}>
+          <SortableCard key={id} id={id} onMinimize={onMinimize ? () => onMinimize(id) : undefined} title={title}>
             <WarningsPanel
               failures={failures}
               onClearFailures={onClearFailures}
               onDismissFailure={onDismissFailure}
+              onHeaderDoubleClick={onMinimize ? () => onMinimize(id) : undefined}
             />
           </SortableCard>
         );
@@ -204,7 +219,7 @@ export function DashboardGrid({
     }
   };
 
-  const allItems = [...layout.left, ...layout.right];
+  const allItems = [...visibleLeft, ...visibleRight];
 
   return (
     <DndContext
@@ -226,7 +241,7 @@ export function DashboardGrid({
           <div className="lg:col-span-4">
             <DroppableColumn
               column="left"
-              items={layout.left}
+              items={visibleLeft}
               renderCard={renderCard}
             />
           </div>
@@ -235,7 +250,7 @@ export function DashboardGrid({
           <div className="lg:col-span-8">
             <DroppableColumn
               column="right"
-              items={layout.right}
+              items={visibleRight}
               renderCard={renderCard}
             />
           </div>

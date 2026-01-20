@@ -23,9 +23,10 @@ interface ScheduleBuilderProps {
   schedule: ScheduleItem[];
   onAddSchedule: (task: string, cron?: string, executeAt?: string) => void;
   onDeleteSchedule: (index: number) => void;
+  onHeaderDoubleClick?: () => void;
 }
 
-export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedule }: ScheduleBuilderProps) {
+export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedule, onHeaderDoubleClick }: ScheduleBuilderProps) {
   const [selectedTask, setSelectedTask] = useState<string>('');
   const [cronTab, setCronTab] = useState('minutes');
 
@@ -81,7 +82,7 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
       transition={{ duration: 0.5, delay: 0.3 }}
     >
       <Card className="card-premium h-full">
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-4" onDoubleClick={onHeaderDoubleClick}>
           <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
             Schedule Builder
