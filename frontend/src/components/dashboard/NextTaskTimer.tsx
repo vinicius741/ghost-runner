@@ -22,13 +22,14 @@ export function NextTaskTimer({ schedulerRunning }: NextTaskTimerProps) {
             const res = await fetch('/api/scheduler/next-task');
             const data = await res.json();
             setNextTask(data.nextTask);
-        } catch (e) {
-            console.error('Error fetching next task:', e);
+        } catch {
+            console.error('Error fetching next task');
         }
     };
 
     useEffect(() => {
         if (schedulerRunning) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             fetchNextTask();
             const interval = setInterval(fetchNextTask, 30000); // Poll every 30s
             return () => clearInterval(interval);

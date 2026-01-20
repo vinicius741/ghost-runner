@@ -24,6 +24,21 @@ export interface Settings {
   geolocation: GeolocationSettings;
 }
 
+/**
+ * Failure record from the failures API.
+ * Represents a task failure with deduplication (count increments for similar errors).
+ */
+export interface FailureRecord {
+  id: string;
+  taskName: string;
+  errorType: 'element_not_found' | 'navigation_failure' | 'timeout' | 'unknown';
+  context: Record<string, unknown>;
+  timestamp: string;
+  count: number;
+  lastSeen: string;
+  dismissed?: boolean;
+}
+
 // Default location (São Paulo) - used to detect if user hasn't set their location
 export const DEFAULT_LOCATION = { latitude: -23.55052, longitude: -46.633308 } as const;
 
@@ -33,7 +48,8 @@ export type DashboardCardId =
   | 'nextTaskTimer'
   | 'scheduleBuilder'
   | 'taskList'
-  | 'logsConsole';
+  | 'logsConsole'
+  | 'warningsPanel';
 
 export type DashboardColumn = 'left' | 'right';
 
@@ -44,7 +60,7 @@ export interface DashboardLayout {
 }
 
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayout = {
-  version: 2,
+  version: 3,
   left: ['controlPanel', 'nextTaskTimer', 'scheduleBuilder'],
-  right: ['taskList', 'logsConsole']
+  right: ['taskList', 'warningsPanel', 'logsConsole']
 } as const;

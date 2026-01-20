@@ -1,4 +1,6 @@
 import { launchBrowser } from '../config/browserConfig';
+import { createMonitoredPage, MonitoredPage } from './pageWrapper';
+import { reportTaskResult, reportTaskStarted, getExitCode } from './taskReporter';
 import fs from 'fs';
 import path from 'path';
 import type { Page } from 'playwright';
@@ -52,7 +54,8 @@ async function main(): Promise<void> {
   console.log(`Loading task: ${taskName}`);
 
   let browserContext;
-  let page: Page;
+  let page: MonitoredPage;
+  let taskError: unknown = undefined;
 
   try {
     // Launch the browser using our centralized config (Stealth + Persistent Profile)
@@ -60,9 +63,15 @@ async function main(): Promise<void> {
 
     // Get the default page or create new one
     const pages = browserContext.pages();
-    page = pages.length > 0 ? pages[0] : await browserContext.newPage();
+    const rawPage = pages.length > 0 ? pages[0] : await browserContext.newPage();
 
-    console.log('Browser launched. executing task...');
+    // Wrap the page with monitoring for automatic failure detection
+    page = createMonitoredPage(rawPage, taskName);
+
+    // Report task start to server for real-time tracking
+    reportTaskStarted(taskName);
+
+    console.log('Browser launched. Executing task...');
 
     // Load the task module
     const taskModule = require(taskPath) as TaskModule;
@@ -71,21 +80,25 @@ async function main(): Promise<void> {
       throw new Error(`Task ${taskName} does not export a 'run' function.`);
     }
 
-    // Execute the task
-    await taskModule.run(page);
+    // Execute the task (with automatic error detection via MonitoredPage)
+    // Cast to Page since MonitoredPage implements all needed methods
+    await taskModule.run(page as unknown as Page);
 
     console.log(`Task '${taskName}' completed successfully.`);
-
   } catch (error) {
+    taskError = error;
     console.error(`Task execution failed:`, error);
   } finally {
+    // Report the task result (emits [TASK_STATUS:...] to stdout)
+    const result = reportTaskResult(taskName, taskError);
+
     if (browserContext) {
       console.log('Closing browser...');
-      // await browserContext.close(); // Optional: Comment out if you want to inspect after run
-      // For a bot runner, we usually close it.
       await browserContext.close();
     }
-    process.exit(0);
+
+    // Exit with appropriate code (0 for success, 1 for failure)
+    process.exit(getExitCode(result));
   }
 }
 

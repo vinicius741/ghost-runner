@@ -10,6 +10,7 @@ import tasksRoutes from './routes/tasks';
 import schedulerRoutes from './routes/scheduler';
 import settingsRoutes from './routes/settings';
 import logsRoutes from './routes/logs';
+import failuresRoutes from './routes/failures';
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -55,6 +56,7 @@ app.use('/api', tasksRoutes);
 app.use('/api', schedulerRoutes);
 app.use('/api', settingsRoutes);
 app.use('/api', logsRoutes);
+app.use('/api', failuresRoutes);
 
 // --- Global Error Handlers ---
 process.on('uncaughtException', (err: Error) => {

@@ -39,6 +39,12 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
   const [delayHours, setDelayHours] = useState(0);
   const [delayMinutes, setDelayMinutes] = useState(30);
 
+  // Calculate the preview time for one-time tasks (computed on render to show current time)
+  const executeAtTime = new Date(Date.now() + (delayHours * 3600000) + (delayMinutes * 60000)).toLocaleTimeString(
+    [],
+    { hour: '2-digit', minute: '2-digit' }
+  );
+
   useEffect(() => {
     let cron = '* * * * *';
     if (cronTab === 'minutes') {
@@ -180,7 +186,7 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
                 {cronTab === 'once' ? (
                   <div className="flex items-center gap-2 text-xs font-mono text-blue-400 bg-blue-500/5 px-3 py-1 rounded-full border border-blue-500/10">
                     <Clock className="w-3 h-3" />
-                    {new Date(Date.now() + (delayHours * 3600000) + (delayMinutes * 60000)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {executeAtTime}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-xs font-mono text-blue-400 bg-blue-500/5 px-3 py-1 rounded-full border border-blue-500/10">

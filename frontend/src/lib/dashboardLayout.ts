@@ -2,10 +2,10 @@ import type { DashboardLayout, DashboardCardId } from '@/types';
 import { DEFAULT_DASHBOARD_LAYOUT } from '@/types';
 
 const STORAGE_KEY = 'ghost-runner-dashboard-layout';
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 
 const isValidCardId = (id: string): id is DashboardCardId => {
-  return ['controlPanel', 'nextTaskTimer', 'scheduleBuilder', 'taskList', 'logsConsole'].includes(id);
+  return ['controlPanel', 'nextTaskTimer', 'scheduleBuilder', 'taskList', 'logsConsole', 'warningsPanel'].includes(id);
 };
 
 const isValidCardArray = (arr: unknown): arr is DashboardCardId[] => {
@@ -33,6 +33,18 @@ const migrateV1ToV2 = (oldLayout: { order: DashboardCardId[] }): DashboardLayout
   };
 };
 
+// Migrate version 2 to version 3 (add warningsPanel to right column)
+const migrateV2ToV3 = (v2Layout: DashboardLayout): DashboardLayout => {
+  return {
+    version: 3,
+    left: v2Layout.left,
+    // Insert warningsPanel between taskList and logsConsole
+    right: v2Layout.right.flatMap((card) =>
+      card === 'logsConsole' ? ['warningsPanel', card] : [card]
+    ) as DashboardCardId[]
+  };
+};
+
 export const getStoredLayout = (): DashboardLayout => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -43,6 +55,13 @@ export const getStoredLayout = (): DashboardLayout => {
     // Migrate version 1 to version 2
     if (parsed.version === 1 && Array.isArray(parsed.order) && typeof parsed.order !== 'undefined') {
       const migrated = migrateV1ToV2(parsed);
+      saveLayout(migrated);
+      return migrated;
+    }
+
+    // Migrate version 2 to version 3
+    if (parsed.version === 2 && isValidLayout(parsed)) {
+      const migrated = migrateV2ToV3(parsed);
       saveLayout(migrated);
       return migrated;
     }

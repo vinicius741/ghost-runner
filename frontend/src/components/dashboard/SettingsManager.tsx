@@ -11,7 +11,7 @@ import type { Settings, GeolocationSettings } from '@/types';
 import { DEFAULT_LOCATION } from '@/types';
 
 // Fix for default marker icon in leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -51,6 +51,7 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
 
     useEffect(() => {
         fetchSettings();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchSettings = async () => {
@@ -61,8 +62,8 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
             if (data.settings && data.settings.geolocation) {
                 setSettings(data.settings);
             }
-        } catch (e) {
-            console.error('Error fetching settings:', e);
+        } catch (error) {
+            console.error('Error fetching settings:', error);
             onLog?.('Error fetching settings', 'error');
         } finally {
             setLoading(false);
@@ -79,8 +80,8 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             return true;
-        } catch (e) {
-            console.error('Error saving settings:', e);
+        } catch (error) {
+            console.error('Error saving settings:', error);
             onLog?.('Failed to save settings', 'error');
             return false;
         }
@@ -102,9 +103,10 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             onLog?.(data.message, 'system');
-        } catch (e: any) {
-            console.error('Error starting setup login:', e);
-            onLog?.(`Failed to start setup login: ${e.message}`, 'error');
+        } catch (error) {
+            console.error('Error starting setup login:', error);
+            const message = error instanceof Error ? error.message : String(error);
+            onLog?.(`Failed to start setup login: ${message}`, 'error');
         } finally {
             setSettingUpLogin(false);
         }

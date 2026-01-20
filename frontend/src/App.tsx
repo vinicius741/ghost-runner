@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Header } from "@/components/dashboard/Header";
 import { TaskCalendar } from "@/components/dashboard/TaskCalendar";
 import { SettingsManager } from "@/components/dashboard/SettingsManager";
@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, Calendar, Settings as SettingsIcon } from 'lucide-react';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { DragEndEvent } from '@dnd-kit/core';
-import type { Task, LogEntry, ScheduleItem, Settings, DashboardCardId, DashboardLayout, DashboardColumn } from '@/types';
+import type { Task, LogEntry, ScheduleItem, Settings, DashboardCardId, DashboardLayout, DashboardColumn, FailureRecord } from '@/types';
 import { DEFAULT_LOCATION } from '@/types';
 import { getStoredLayout, saveLayout } from '@/lib/dashboardLayout';
 
@@ -25,20 +25,76 @@ function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [locationWarningDismissed, setLocationWarningDismissed] = useState(false);
   const [layout, setLayout] = useState<DashboardLayout>(() => getStoredLayout());
+  const [failures, setFailures] = useState<FailureRecord[]>([]);
 
-  const addLog = (message: string, type: 'normal' | 'error' | 'system' = 'normal') => {
+  const addLog = useCallback((message: string, type: 'normal' | 'error' | 'system' = 'normal') => {
     setLogs(prev => [...prev, {
       message,
       timestamp: new Date().toLocaleTimeString(),
       type
     }]);
-  };
+  }, []);
+
+  const fetchTasks = useCallback(async () => {
+    try {
+      const res = await fetch('/api/tasks');
+      const data = await res.json();
+      setTasks(data.tasks || []);
+    } catch {
+      addLog('Error fetching tasks', 'error');
+    }
+  }, [addLog]);
+
+  const fetchSchedule = useCallback(async () => {
+    try {
+      const res = await fetch('/api/schedule');
+      const data = await res.json();
+      setSchedule(data.schedule || []);
+    } catch {
+      addLog('Error fetching schedule', 'error');
+    }
+  }, [addLog]);
+
+  const fetchSchedulerStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/scheduler/status');
+      const data = await res.json();
+      setSchedulerStatus(data.running);
+    } catch {
+      // Quiet fail or log
+    }
+  }, []);
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      if (data.settings && data.settings.geolocation) {
+        setSettings(data.settings);
+      }
+    } catch (error) {
+      addLog('Error fetching settings', 'error');
+      console.error('Error fetching settings:', error);
+    }
+  }, [addLog]);
+
+  const fetchFailures = useCallback(async () => {
+    try {
+      const res = await fetch('/api/failures');
+      const data = await res.json();
+      setFailures(data.failures || []);
+    } catch (error) {
+      addLog('Error fetching failures', 'error');
+      console.error('Error fetching failures:', error);
+    }
+  }, [addLog]);
 
   useEffect(() => {
     fetchTasks();
     fetchSchedule();
     fetchSchedulerStatus();
     fetchSettings();
+    fetchFailures();
 
     socket.on('log', (message: string) => {
       addLog(message);
@@ -48,54 +104,28 @@ function App() {
       setSchedulerStatus(status);
     });
 
+    socket.on('failure-recorded', (failure: FailureRecord) => {
+      setFailures(prev => [...prev, failure]);
+      addLog(`Task failure recorded: ${failure.taskName}`, 'error');
+    });
+
+    socket.on('failures-cleared', () => {
+      setFailures([]);
+      addLog('All failures cleared', 'system');
+    });
+
+    socket.on('failure-dismissed', (id: string) => {
+      setFailures(prev => prev.filter(f => f.id !== id));
+    });
+
     return () => {
       socket.off('log');
       socket.off('scheduler-status');
+      socket.off('failure-recorded');
+      socket.off('failures-cleared');
+      socket.off('failure-dismissed');
     };
-  }, []);
-
-  const fetchTasks = async () => {
-    try {
-      const res = await fetch('/api/tasks');
-      const data = await res.json();
-      setTasks(data.tasks || []);
-    } catch (e) {
-      addLog('Error fetching tasks', 'error');
-    }
-  };
-
-  const fetchSchedule = async () => {
-    try {
-      const res = await fetch('/api/schedule');
-      const data = await res.json();
-      setSchedule(data.schedule || []);
-    } catch (e) {
-      addLog('Error fetching schedule', 'error');
-    }
-  };
-
-  const fetchSchedulerStatus = async () => {
-    try {
-      const res = await fetch('/api/scheduler/status');
-      const data = await res.json();
-      setSchedulerStatus(data.running);
-    } catch (e) {
-      // Quiet fail or log
-    }
-  };
-
-  const fetchSettings = async () => {
-    try {
-      const res = await fetch('/api/settings');
-      const data = await res.json();
-      if (data.settings && data.settings.geolocation) {
-        setSettings(data.settings);
-      }
-    } catch (e) {
-      addLog('Error fetching settings', 'error');
-      console.error('Error fetching settings:', e);
-    }
-  };
+  }, [addLog, fetchTasks, fetchSchedule, fetchSchedulerStatus, fetchSettings, fetchFailures]);
 
   const handleStartScheduler = async () => {
     addLog('Starting Scheduler...', 'system');
@@ -103,8 +133,9 @@ function App() {
       const res = await fetch('/api/scheduler/start', { method: 'POST' });
       const data = await res.json();
       addLog(data.message, 'system');
-    } catch (error: any) {
-      addLog(`Error starting scheduler: ${error.message}`, 'error');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error starting scheduler: ${message}`, 'error');
     }
   };
 
@@ -114,8 +145,9 @@ function App() {
       const res = await fetch('/api/scheduler/stop', { method: 'POST' });
       const data = await res.json();
       addLog(data.message, 'system');
-    } catch (error: any) {
-      addLog(`Error stopping scheduler: ${error.message}`, 'error');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error stopping scheduler: ${message}`, 'error');
     }
   };
 
@@ -127,8 +159,9 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskName, type })
       });
-    } catch (error: any) {
-      addLog(`Error starting recorder: ${error.message}`, 'error');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error starting recorder: ${message}`, 'error');
     }
   };
 
@@ -140,8 +173,9 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskName })
       });
-    } catch (error: any) {
-      addLog(`Error starting task: ${error.message}`, 'error');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error starting task: ${message}`, 'error');
     }
   };
 
@@ -172,9 +206,35 @@ function App() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       addLog('Schedule updated successfully.', 'system');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving schedule:', error);
-      addLog(`Error saving schedule: ${error.message}`, 'error');
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error saving schedule: ${message}`, 'error');
+    }
+  };
+
+  const handleClearFailures = async () => {
+    try {
+      const res = await fetch('/api/failures', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setFailures([]);
+      addLog('All failures cleared', 'system');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error clearing failures: ${message}`, 'error');
+    }
+  };
+
+  const handleDismissFailure = async (id: string) => {
+    try {
+      const res = await fetch(`/api/failures/${id}/dismiss`, { method: 'POST' });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setFailures(prev => prev.filter(f => f.id !== id));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error dismissing failure: ${message}`, 'error');
     }
   };
 
@@ -305,6 +365,9 @@ function App() {
                   onRunTask={handleRunTask}
                   logs={logs}
                   onClearLogs={() => setLogs([])}
+                  failures={failures}
+                  onClearFailures={handleClearFailures}
+                  onDismissFailure={handleDismissFailure}
                 />
               </TabsContent>
 

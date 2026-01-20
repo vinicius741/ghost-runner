@@ -71,7 +71,7 @@ export function TaskList({ tasks, onRunTask }: TaskListProps) {
             </div>
 
             <div className="md:col-span-3">
-              <Select value={typeFilter} onValueChange={(v: any) => setTypeFilter(v)}>
+              <Select value={typeFilter} onValueChange={(v: "all" | "public" | "private") => setTypeFilter(v)}>
                 <SelectTrigger className="bg-slate-950/50 border-slate-800/50 rounded-xl h-10 text-xs font-semibold uppercase tracking-tight focus:ring-blue-500/10">
                   <div className="flex items-center gap-2">
                     <Filter className="w-3.5 h-3.5 text-slate-500" />
@@ -87,7 +87,7 @@ export function TaskList({ tasks, onRunTask }: TaskListProps) {
             </div>
 
             <div className="md:col-span-3">
-              <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+              <Select value={sortBy} onValueChange={(v: "name_asc" | "name_desc" | "type") => setSortBy(v)}>
                 <SelectTrigger className="bg-slate-950/50 border-slate-800/50 rounded-xl h-10 text-xs font-semibold uppercase tracking-tight focus:ring-blue-500/10">
                   <div className="flex items-center gap-2">
                     <ArrowUpDown className="w-3.5 h-3.5 text-slate-500" />

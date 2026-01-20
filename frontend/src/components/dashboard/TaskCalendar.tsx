@@ -96,11 +96,11 @@ export function TaskCalendar({ schedule, onDeleteSchedule }: TaskCalendarProps) 
                 originalIndex: index,
                 isCron: true
               });
-            } catch (e) {
+            } catch {
               break;
             }
           }
-        } catch (err) {
+        } catch {
           console.error(`Invalid cron: ${item.cron}`);
         }
       }

@@ -20,7 +20,8 @@ import { NextTaskTimer } from './NextTaskTimer';
 import { ScheduleBuilder } from './ScheduleBuilder';
 import { TaskList } from './TaskList';
 import { LogsConsole } from './LogsConsole';
-import type { DashboardCardId, DashboardColumn, Task, LogEntry, ScheduleItem } from '@/types';
+import { WarningsPanel } from './WarningsPanel';
+import type { DashboardCardId, DashboardColumn, Task, LogEntry, ScheduleItem, FailureRecord } from '@/types';
 
 interface DashboardGridProps {
   layout: {
@@ -43,6 +44,10 @@ interface DashboardGridProps {
   // LogsConsole props
   logs: LogEntry[];
   onClearLogs: () => void;
+  // WarningsPanel props
+  failures: FailureRecord[];
+  onClearFailures: () => void;
+  onDismissFailure: (id: string) => void;
 }
 
 interface DroppableColumnProps {
@@ -79,6 +84,9 @@ export function DashboardGrid({
   onRunTask,
   logs,
   onClearLogs,
+  failures,
+  onClearFailures,
+  onDismissFailure,
 }: DashboardGridProps) {
   const [activeId, setActiveId] = useState<DashboardCardId | null>(null);
 
@@ -140,6 +148,17 @@ export function DashboardGrid({
           </SortableCard>
         );
 
+      case 'warningsPanel':
+        return (
+          <SortableCard key={id} id={id}>
+            <WarningsPanel
+              failures={failures}
+              onClearFailures={onClearFailures}
+              onDismissFailure={onDismissFailure}
+            />
+          </SortableCard>
+        );
+
       default:
         return null;
     }
@@ -172,6 +191,14 @@ export function DashboardGrid({
         return <TaskList tasks={tasks} onRunTask={onRunTask} />;
       case 'logsConsole':
         return <LogsConsole logs={logs} onClearLogs={onClearLogs} />;
+      case 'warningsPanel':
+        return (
+          <WarningsPanel
+            failures={failures}
+            onClearFailures={onClearFailures}
+            onDismissFailure={onDismissFailure}
+          />
+        );
       default:
         return null;
     }

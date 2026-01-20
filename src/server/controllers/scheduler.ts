@@ -39,8 +39,8 @@ export const getSchedule = async (req: Request, res: Response): Promise<void> =>
     const data = await fs.readFile(SCHEDULE_FILE, 'utf8');
     const schedule: ScheduleItem[] = JSON.parse(data);
     res.json({ schedule });
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
+  } catch (error) {
+    if (error instanceof Object && 'code' in error && error.code === 'ENOENT') {
       res.json({ schedule: [] });
     } else {
       res.status(500).json({ error: 'Failed to read schedule file.' });
@@ -95,8 +95,8 @@ export const getNextTask = async (req: Request, res: Response): Promise<void> =>
     });
 
     res.json({ nextTask: nearestTask });
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
+  } catch (error) {
+    if (error instanceof Object && 'code' in error && error.code === 'ENOENT') {
       res.json({ nextTask: null });
     } else {
       res.status(500).json({ error: 'Invalid JSON in schedule file.' });
