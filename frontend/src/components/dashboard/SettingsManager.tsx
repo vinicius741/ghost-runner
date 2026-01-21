@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Save, RefreshCw, Navigation, Globe, Lock as LockIcon } from 'lucide-react';
+import { MapPin, Save, RefreshCw, Navigation, Globe, Lock as LockIcon, Monitor, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMap, MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -249,6 +249,53 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
                                 }} />
                             </MapContainer>
                         </div>
+                    </div>
+
+                    <div className="flex flex-col gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Monitor className="w-4 h-4 text-purple-500" />
+                            <h3 className="text-slate-100 font-medium tracking-tight">Browser Mode</h3>
+                        </div>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Headless Mode</p>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900 border border-slate-800">
+                            <div className="flex items-center gap-3">
+                                {settings.headless ? (
+                                    <EyeOff className="w-4 h-4 text-purple-500" />
+                                ) : (
+                                    <Eye className="w-4 h-4 text-purple-500" />
+                                )}
+                                <div className="flex flex-col">
+                                    <span className="text-sm text-slate-200">
+                                        {settings.headless ? 'Headless (Hidden)' : 'Headful (Visible)'}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500">
+                                        {settings.headless
+                                            ? 'Browser runs without visible window'
+                                            : 'Browser window will be visible'}
+                                    </span>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setSettings((prev: Settings) => ({
+                                    ...prev,
+                                    headless: !prev.headless
+                                }))}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
+                                    settings.headless ? 'bg-purple-600' : 'bg-slate-700'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                                        settings.headless ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-slate-500 leading-relaxed">
+                            Headless mode is recommended on macOS to avoid browser crashes.
+                            Set to false to see the browser window during automation.
+                        </p>
                     </div>
 
                     <div className="flex flex-col gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">

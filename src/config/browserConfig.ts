@@ -14,6 +14,7 @@ interface Geolocation {
 
 interface Settings {
   geolocation?: Geolocation;
+  headless?: boolean;
 }
 
 /**
@@ -25,6 +26,7 @@ const launchBrowser = async (): Promise<BrowserContext> => {
   const settingsFile = path.resolve(__dirname, '../../settings.json');
 
   let geolocation: Geolocation = { latitude: -23.55052, longitude: -46.633308 }; // Default (São Paulo)
+  let headless = true; // Default to headless on macOS to avoid SIGTRAP crashes
 
   try {
     if (fs.existsSync(settingsFile)) {
@@ -33,6 +35,9 @@ const launchBrowser = async (): Promise<BrowserContext> => {
       if (settings.geolocation) {
         geolocation = settings.geolocation;
       }
+      if (settings.headless !== undefined) {
+        headless = settings.headless;
+      }
     }
   } catch (err) {
     console.error('Error loading settings for geolocation:', err);
@@ -40,20 +45,49 @@ const launchBrowser = async (): Promise<BrowserContext> => {
 
   console.log(`User Data Directory: ${userDataDir}`);
   console.log(`Using Geolocation: ${JSON.stringify(geolocation)}`);
+  console.log(`Headless mode: ${headless}`);
 
-  // launchPersistentContext is used to maintain a persistent profile (cookies, localStorage, etc.)
-  const context = await chromiumExtra.launchPersistentContext(userDataDir, {
-    headless: false, // Visible window as requested for anti-bot
-    viewport: null, // detailed in stealth guides to match window size
-    ignoreHTTPSErrors: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      // Additional args can be added here if needed for specific bypassing
-    ],
-    permissions: ['geolocation', 'notifications'],
-    geolocation: geolocation,
-  });
+  // Check for corrupted user data and clean if needed
+  try {
+    const lockFile = path.join(userDataDir, 'lockfile');
+    if (fs.existsSync(lockFile)) {
+      console.log('Removing stale browser lock file...');
+      fs.unlinkSync(lockFile);
+    }
+  } catch {
+    // Ignore cleanup errors
+  }
+
+  // Retry logic for transient Chrome crashes on macOS
+  let context: BrowserContext | null = null;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      context = await chromiumExtra.launchPersistentContext(userDataDir, {
+        headless,
+        viewport: null,
+        ignoreHTTPSErrors: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+        ],
+        permissions: ['geolocation', 'notifications'],
+        geolocation: geolocation,
+      });
+      break; // Success - exit retry loop
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.log(`Launch attempt ${attempt + 1} failed, retrying...`);
+      // Small delay before retry
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  if (!context) {
+    throw lastError || new Error('Failed to launch browser after multiple attempts');
+  }
 
   // Ensure permissions are granted for all origins in the context
   await context.grantPermissions(['geolocation', 'notifications']);

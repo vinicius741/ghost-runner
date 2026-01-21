@@ -22,6 +22,7 @@ export interface GeolocationSettings {
 
 export interface Settings {
   geolocation: GeolocationSettings;
+  headless?: boolean;
 }
 
 /**
