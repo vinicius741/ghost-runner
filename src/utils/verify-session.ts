@@ -18,7 +18,9 @@ import { launchBrowser } from '../config/browserConfig';
 
     console.log('Closing verification browser...');
     await context.close();
+    console.log('Verification complete.');
   } catch (error) {
     console.error('Error verifying session:', error);
+    process.exit(1);
   }
 })();

@@ -53,7 +53,9 @@ app.get('/health', (req: Request, res: Response) => {
 if (!fs.existsSync(SETTINGS_FILE)) {
     console.log('Initializing settings file...');
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify({
-        geolocation: { latitude: -23.55052, longitude: -46.633308 }
+        geolocation: { latitude: -23.55052, longitude: -46.633308 },
+        headless: false,
+        browserChannel: 'chrome'
     }, null, 2));
 }
 

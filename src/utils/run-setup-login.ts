@@ -5,6 +5,7 @@ import { launchBrowser } from '../config/browserConfig';
     console.log('Starting Setup Login...');
     console.log('This script will launch the browser and keep it open for 5 minutes.');
     console.log('PLEASE LOG IN TO GOOGLE MANUALLY NOW.');
+    console.log('The session will be saved to the profile directory for future use.');
 
     const context = await launchBrowser();
     const pages = context.pages();
@@ -20,9 +21,10 @@ import { launchBrowser } from '../config/browserConfig';
 
     console.log('Time is up. Closing browser...');
     await context.close();
-    console.log('Setup script finished.');
+    console.log('Setup script finished. Your login session has been saved.');
 
   } catch (error) {
     console.error('An error occurred:', error);
+    process.exit(1);
   }
 })();

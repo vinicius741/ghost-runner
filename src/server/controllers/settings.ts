@@ -7,6 +7,10 @@ export interface Settings {
     latitude: number;
     longitude: number;
   };
+  headless?: boolean;
+  profileDir?: string;
+  browserChannel?: string;
+  executablePath?: string;
   [key: string]: unknown;
 }
 

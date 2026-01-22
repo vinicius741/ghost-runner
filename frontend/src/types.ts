@@ -23,6 +23,9 @@ export interface GeolocationSettings {
 export interface Settings {
   geolocation: GeolocationSettings;
   headless?: boolean;
+  profileDir?: string;
+  browserChannel?: string;
+  executablePath?: string;
 }
 
 /**

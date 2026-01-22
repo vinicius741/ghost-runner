@@ -1,9 +1,9 @@
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import { getProfileDir } from '../config/browserConfig';
 
 // Configuration matching browserConfig.ts
-const userDataDir = path.resolve(__dirname, '../../user_data');
 const tasksDir = path.resolve(__dirname, '../../tasks');
 
 // Parse args
@@ -44,17 +44,18 @@ if (nameArg && typeArg) {
 }
 
 console.log('Starting Playwright Recorder...');
-console.log(`Loading Profile from: ${userDataDir}`);
+const profileDir = getProfileDir();
+console.log(`Loading Profile from: ${profileDir}`);
 console.log('Note: This will open a browser window. Perform your actions, then copy the code from the inspector.');
 
 // Arguments for Playwright Codegen
-// We use --channel=chrome to ensure we use the same browser binary as the bot (local Chrome)
+// We use --channel=chrome to ensure we use the same browser binary as the bot (system Chrome)
 // to avoid profile version conflicts.
 const playwrightArgs: string[] = [
   'playwright',
   'codegen',
   `--viewport-size=1920,1080`,
-  `--user-data-dir=${userDataDir}`,
+  `--user-data-dir=${profileDir}`,
   '--channel=chrome'
 ];
 

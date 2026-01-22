@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Save, RefreshCw, Navigation, Globe, Lock as LockIcon, Monitor, Eye, EyeOff } from 'lucide-react';
+import { MapPin, Save, RefreshCw, Navigation, Globe, Lock as LockIcon, Monitor, Eye, EyeOff, Settings as SettingsIcon, Chrome } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMap, MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -42,7 +42,9 @@ interface SettingsManagerProps {
 
 export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps) {
     const [settings, setSettings] = useState<Settings>({
-        geolocation: { ...DEFAULT_LOCATION }
+        geolocation: { ...DEFAULT_LOCATION },
+        headless: false,
+        browserChannel: 'chrome'
     });
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -59,8 +61,15 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
         try {
             const res = await fetch('/api/settings');
             const data = await res.json();
-            if (data.settings && data.settings.geolocation) {
-                setSettings(data.settings);
+            if (data.settings) {
+                // Merge with defaults to ensure all fields are present
+                setSettings({
+                    geolocation: data.settings.geolocation || { ...DEFAULT_LOCATION },
+                    headless: data.settings.headless ?? false,
+                    browserChannel: data.settings.browserChannel || 'chrome',
+                    executablePath: data.settings.executablePath,
+                    profileDir: data.settings.profileDir
+                });
             }
         } catch (error) {
             console.error('Error fetching settings:', error);
@@ -296,6 +305,53 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
                             Headless mode is recommended on macOS to avoid browser crashes.
                             Set to false to see the browser window during automation.
                         </p>
+                    </div>
+
+                    <div className="flex flex-col gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Chrome className="w-4 h-4 text-green-500" />
+                            <h3 className="text-slate-100 font-medium tracking-tight">Browser Configuration</h3>
+                        </div>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Browser Channel</p>
+                        <div className="space-y-2">
+                            <select
+                                value={settings.browserChannel || 'chrome'}
+                                onChange={(e) => setSettings((prev: Settings) => ({
+                                    ...prev,
+                                    browserChannel: e.target.value
+                                }))}
+                                className="w-full h-10 bg-slate-900 border border-slate-800 text-slate-200 focus:border-green-500/50 focus:ring-green-500/20 rounded-lg px-3 text-sm"
+                            >
+                                <option value="chrome">System Chrome (Recommended)</option>
+                                <option value="chromium">Chromium</option>
+                                <option value="msedge">Microsoft Edge</option>
+                            </select>
+                            <p className="text-[10px] text-slate-500 leading-relaxed">
+                                Select which browser to use. System Chrome is recommended for best compatibility.
+                            </p>
+                        </div>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3 mt-4">Custom Executable Path (Advanced)</p>
+                        <div className="space-y-2">
+                            <Input
+                                type="text"
+                                value={settings.executablePath || ''}
+                                onChange={(e) => setSettings((prev: Settings) => ({
+                                    ...prev,
+                                    executablePath: e.target.value || undefined
+                                }))}
+                                placeholder="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+                                className="h-10 bg-slate-900 border-slate-800 text-slate-200 focus:border-green-500/50 focus:ring-green-500/20 transition-all font-mono text-sm"
+                            />
+                            <p className="text-[10px] text-slate-500 leading-relaxed">
+                                Optional: Specify a custom Chrome executable path. Leave empty to use system Chrome.
+                            </p>
+                        </div>
+                        {settings.profileDir && (
+                            <div className="mt-4 p-3 rounded-lg bg-slate-900/50 border border-slate-800">
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Current Profile</p>
+                                <p className="text-xs text-slate-400 font-mono break-all">{settings.profileDir}</p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex flex-col gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">
