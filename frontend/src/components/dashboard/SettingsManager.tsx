@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Save, RefreshCw, Navigation, Globe, Lock as LockIcon, Monitor, Eye, EyeOff, Settings as SettingsIcon, Chrome } from 'lucide-react';
+import { MapPin, Save, RefreshCw, Navigation, Globe, Lock as LockIcon, Monitor, Eye, EyeOff, Chrome } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMap, MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
