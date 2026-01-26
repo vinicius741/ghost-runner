@@ -28,7 +28,7 @@ interface ScheduleBuilderProps {
 
 export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedule, onHeaderDoubleClick }: ScheduleBuilderProps) {
   const [selectedTask, setSelectedTask] = useState<string>('');
-  const [cronTab, setCronTab] = useState('minutes');
+  const [cronTab, setCronTab] = useState('once');
 
   // Cron inputs
   const [minutes, setMinutes] = useState(15);
@@ -37,8 +37,8 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
   const [cronPreview, setCronPreview] = useState('* * * * *');
 
   // One-time inputs
-  const [delayHours, setDelayHours] = useState(0);
-  const [delayMinutes, setDelayMinutes] = useState(30);
+  const [delayHours, setDelayHours] = useState(1);
+  const [delayMinutes, setDelayMinutes] = useState(0);
 
   // Calculate the preview time for one-time tasks
   /* eslint-disable react-hooks/purity */
@@ -111,13 +111,41 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
             <div className="bg-slate-950/50 border border-slate-800/50 rounded-2xl p-5 space-y-4">
               <Tabs value={cronTab} onValueChange={setCronTab} className="w-full">
                 <TabsList className="bg-slate-900/50 border border-slate-800/50 w-full p-1 h-11">
+                  <TabsTrigger value="once" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Once</TabsTrigger>
                   <TabsTrigger value="minutes" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Min</TabsTrigger>
                   <TabsTrigger value="hourly" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Hour</TabsTrigger>
                   <TabsTrigger value="daily" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Day</TabsTrigger>
-                  <TabsTrigger value="once" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Once</TabsTrigger>
                 </TabsList>
 
                 <div className="pt-4 text-slate-300 min-h-[60px] flex items-center justify-center">
+                  <TabsContent value="once" className="mt-0 w-full">
+                    <div className="flex items-center justify-center gap-3 text-sm font-medium">
+                      <span>In</span>
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={delayHours}
+                          onChange={(e) => setDelayHours(parseInt(e.target.value) || 0)}
+                          className="w-16 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+                          placeholder="HH"
+                        />
+                        <span className="text-slate-500 text-xs">h</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={59}
+                          value={delayMinutes}
+                          onChange={(e) => setDelayMinutes(parseInt(e.target.value) || 0)}
+                          className="w-16 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+                          placeholder="MM"
+                        />
+                        <span className="text-slate-500 text-xs">m</span>
+                      </div>
+                    </div>
+                  </TabsContent>
                   <TabsContent value="minutes" className="mt-0 w-full">
                     <div className="flex items-center justify-center gap-3 text-sm font-medium">
                       <span>Every</span>
@@ -155,34 +183,6 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
                         onChange={(e) => setDailyTime(e.target.value)}
                         className="w-32 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
                       />
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="once" className="mt-0 w-full">
-                    <div className="flex items-center justify-center gap-3 text-sm font-medium">
-                      <span>In</span>
-                      <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          min={0}
-                          value={delayHours}
-                          onChange={(e) => setDelayHours(parseInt(e.target.value) || 0)}
-                          className="w-16 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
-                          placeholder="HH"
-                        />
-                        <span className="text-slate-500 text-xs">h</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          min={0}
-                          max={59}
-                          value={delayMinutes}
-                          onChange={(e) => setDelayMinutes(parseInt(e.target.value) || 0)}
-                          className="w-16 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
-                          placeholder="MM"
-                        />
-                        <span className="text-slate-500 text-xs">m</span>
-                      </div>
                     </div>
                   </TabsContent>
                 </div>
