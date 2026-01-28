@@ -1,5 +1,5 @@
 /**
- * Failure Styles Hook for Ghost Runner Frontend
+ * FailureRecord Styles Hook for Ghost Runner Frontend
  *
  * This hook provides memoized style calculations for failure cards
  * based on error type. Prevents unnecessary recalculations and
@@ -9,7 +9,7 @@
  */
 
 import { useCallback } from 'react';
-import type { Failure } from '@/types';
+import type { FailureRecord } from '@/types';
 import {
   getErrorBorder,
   getErrorColor,
@@ -69,9 +69,9 @@ export interface UseFailureStylesResult {
   /** Get gradient class for a specific failure type */
   getGradient: (errorType: ErrorType) => string;
   /** Get style configuration for a failure record */
-  getFailureStyles: (failure: Failure) => FailureStyleConfig;
+  getFailureRecordStyles: (failure: FailureRecord) => FailureStyleConfig;
   /** Get style configuration for a failure record with label */
-  getFailureStylesWithLabel: (failure: Failure) => FailureStyleConfigWithLabel;
+  getFailureRecordStylesWithLabel: (failure: FailureRecord) => FailureStyleConfigWithLabel;
 }
 
 /**
@@ -82,7 +82,7 @@ function getErrorLabel(errorType: ErrorType): string {
     case 'element_not_found':
       return 'Element Not Found';
     case 'navigation_failure':
-      return 'Navigation Failure';
+      return 'Navigation FailureRecord';
     case 'timeout':
       return 'Timeout';
     default:
@@ -123,7 +123,7 @@ const STYLE_CACHE: Record<ErrorType, FailureStyleConfig> = {
  * @returns Object with style getter functions
  *
  * @example
- * const { getStyles, getColor, getFailureStyles } = useFailureStyles();
+ * const { getStyles, getColor, getFailureRecordStyles } = useFailureStyles();
  *
  * // Get all styles for an error type
  * const styles = getStyles('element_not_found');
@@ -134,7 +134,7 @@ const STYLE_CACHE: Record<ErrorType, FailureStyleConfig> = {
  * // color => 'text-orange-400'
  *
  * // Get styles for a specific failure record
- * const failureStyles = getFailureStyles(failureRecord);
+ * const failureStyles = getFailureRecordStyles(failureRecord);
  */
 export function useFailureStyles(): UseFailureStylesResult {
   /**
@@ -192,8 +192,8 @@ export function useFailureStyles(): UseFailureStylesResult {
    * Get style configuration for a failure record.
    * Extracts error type from the record and returns styles.
    */
-  const getFailureStyles = useCallback(
-    (failure: Failure): FailureStyleConfig => {
+  const getFailureRecordStyles = useCallback(
+    (failure: FailureRecord): FailureStyleConfig => {
       return getStyles(failure.errorType);
     },
     [getStyles]
@@ -202,8 +202,8 @@ export function useFailureStyles(): UseFailureStylesResult {
   /**
    * Get style configuration with label for a failure record.
    */
-  const getFailureStylesWithLabel = useCallback(
-    (failure: Failure): FailureStyleConfigWithLabel => {
+  const getFailureRecordStylesWithLabel = useCallback(
+    (failure: FailureRecord): FailureStyleConfigWithLabel => {
       return getStylesWithLabel(failure.errorType);
     },
     [getStylesWithLabel]
@@ -216,8 +216,8 @@ export function useFailureStyles(): UseFailureStylesResult {
     getIconName,
     getBorder,
     getGradient,
-    getFailureStyles,
-    getFailureStylesWithLabel,
+    getFailureRecordStyles,
+    getFailureRecordStylesWithLabel,
   };
 }
 

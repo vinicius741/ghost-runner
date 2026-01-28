@@ -9,14 +9,14 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
-import type { Failure } from '@/types';
+import type { FailureRecord } from '@/types';
 
 /**
  * Filter options for the failures panel.
  */
 export interface FailureFilters {
   /** Filter by error type */
-  errorType: Failure['errorType'] | 'all';
+  errorType: FailureRecord['errorType'] | 'all';
   /** Filter by task name (partial match) */
   taskName?: string;
   /** Show only active (non-dismissed) failures */
@@ -54,9 +54,9 @@ export interface UseFailureFiltersResult {
   /** Reset all filters to defaults */
   resetFilters: () => void;
   /** Filtered failures array (memoized) */
-  filteredFailures: Failure[];
+  filteredFailures: FailureRecord[];
   /** Grouped failures by task name (memoized) */
-  groupedFailures: Record<string, Failure[]>;
+  groupedFailures: Record<string, FailureRecord[]>;
   /** Count of failures matching current filters (memoized) */
   filteredCount: number;
   /** Count of unique tasks with failures (memoized) */
@@ -87,7 +87,7 @@ export interface UseFailureFiltersResult {
  * setFilters({ errorType: 'timeout', activeOnly: true });
  */
 export function useFailureFilters(
-  failures: Failure[]
+  failures: FailureRecord[]
 ): UseFailureFiltersResult {
   const [filters, setFiltersState] = useState<FailureFilters>(DEFAULT_FILTERS);
 
@@ -137,7 +137,7 @@ export function useFailureFilters(
    * Filter failures based on current filter settings.
    * Memoized for performance - only recalculates when filters or failures change.
    */
-  const filteredFailures = useMemo((): Failure[] => {
+  const filteredFailures = useMemo((): FailureRecord[] => {
     return failures.filter((failure) => {
       // Filter by error type
       if (filters.errorType !== 'all' && failure.errorType !== filters.errorType) {
@@ -182,14 +182,14 @@ export function useFailureFilters(
    * Group filtered failures by task name.
    * Memoized for performance.
    */
-  const groupedFailures = useMemo((): Record<string, Failure[]> => {
+  const groupedFailures = useMemo((): Record<string, FailureRecord[]> => {
     return filteredFailures.reduce((acc, failure) => {
       if (!acc[failure.taskName]) {
         acc[failure.taskName] = [];
       }
       acc[failure.taskName].push(failure);
       return acc;
-    }, {} as Record<string, Failure[]>);
+    }, {} as Record<string, FailureRecord[]>);
   }, [filteredFailures]);
 
   /**
@@ -240,7 +240,7 @@ export function useFailureFilters(
  * @example
  * const { groupedFailures, setSortOrder } = useFailureFiltersWithSort(failures);
  */
-export function useFailureFiltersWithSort(failures: Failure[]) {
+export function useFailureFiltersWithSort(failures: FailureRecord[]) {
   const baseFilters = useFailureFilters(failures);
 
   const [sortOrder, setSortOrder] = useState<'recent' | 'oldest' | 'count'>('recent');
