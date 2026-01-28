@@ -1,186 +1,85 @@
-import { spawn, ChildProcess } from 'child_process';
-import * as fs from 'fs/promises';
-import { Request, Response } from 'express';
-import { TASKS_DIR, ROOT_DIR } from '../config';
-import { getTasksFromDir } from '../utils/fileSystem';
-import * as failuresController from '../controllers/failures';
-import * as infoGatheringController from '../controllers/infoGathering';
-import type { TaskStatusData } from '../../types/task.types';
-import { isInfoGatheringData } from '../../types/task.types';
-import { parseTaskStatus } from '../utils/taskParser';
+/**
+ * Tasks controller - handles HTTP requests for task management.
+ *
+ * This controller has been refactored to use the service layer pattern:
+ * - TaskRepository handles task file discovery
+ * - TaskExecutionService orchestrates task execution workflow
+ * - TaskRunner manages child process lifecycle
+ * - FailureRepository handles failure persistence
+ *
+ * The controller is now a thin HTTP layer that delegates to services.
+ *
+ * @module server/controllers/tasks
+ */
 
+import { Request, Response } from 'express';
+import type { Server } from 'socket.io';
+import { taskRepository } from '../repositories/TaskRepository';
+import { taskExecutionService } from '../services/TaskExecutionService';
+
+/**
+ * Controller function: GET /api/tasks
+ *
+ * Returns a list of all available tasks from public and private directories.
+ * Tasks are returned with priority: private > public > root.
+ */
 export const getTasks = async (req: Request, res: Response): Promise<void> => {
   try {
-    const [publicTasks, privateTasks] = await Promise.all([
-      getTasksFromDir('public'),
-      getTasksFromDir('private')
-    ]);
+    const tasks = await taskRepository.findAll();
 
-    // Also check root for backward compatibility
-    let rootTasks: Array<{ name: string; type: 'root' }> = [];
-    try {
-      const rootPath = TASKS_DIR;
-      const files = await fs.readdir(rootPath);
-      rootTasks = files
-        .filter(f => f.endsWith('.js'))
-        .map(f => ({
-          name: f.replace('.js', ''),
-          type: 'root' as const
-        }));
-    } catch {
-      // Root directory doesn't exist or can't be read
-      rootTasks = [];
-    }
+    // Transform to simple format for API response
+    const taskList = tasks.map(({ name, type }) => ({ name, type }));
 
-    const taskMap = new Map<string, { name: string; type: string }>();
-
-    // Root first (lowest priority)
-    rootTasks.forEach(t => taskMap.set(t.name, t));
-    // Private next
-    privateTasks.forEach(t => taskMap.set(t.name, t));
-    // Public last (highest priority)
-    publicTasks.forEach(t => taskMap.set(t.name, t));
-
-    res.json({ tasks: Array.from(taskMap.values()) });
+    res.json({ tasks: taskList });
   } catch (err) {
     console.error('Error reading tasks:', err);
     res.status(500).json({ error: 'Failed to read tasks directory.' });
   }
 };
 
-export const runTask = (req: Request, res: Response): void => {
-  const io = req.app.get('io');
+/**
+ * Controller function: POST /api/tasks/run
+ *
+ * Executes a task by spawning a child process.
+ * Emits real-time updates via Socket.io.
+ */
+export const runTask = async (req: Request, res: Response): Promise<void> => {
+  const io = req.app.get('io') as Server;
   const { taskName } = req.body;
+
   if (!taskName) {
     res.status(400).json({ error: 'Task name is required.' });
     return;
   }
 
-  const child: ChildProcess = spawn('npm', ['run', 'bot', '--', `--task=${taskName}`], {
-    cwd: ROOT_DIR,
-    shell: true
-  });
+  try {
+    const result = await taskExecutionService.execute(taskName, { io });
 
-  let currentTaskName = taskName;
-
-  child.stdout?.on('data', (data: Buffer) => {
-    const output = data.toString();
-
-    // Check each line for task status markers
-    const lines = output.split('\n');
-    for (const line of lines) {
-      if (!line.trim()) continue;
-
-      const parsed = parseTaskStatus(line);
-      if (parsed) {
-        const { status, data } = parsed;
-
-        if (data.taskName) {
-          currentTaskName = data.taskName;
-        }
-
-        switch (status) {
-          case 'STARTED':
-            io.emit('task-started', { taskName: currentTaskName, timestamp: data.timestamp });
-            break;
-          case 'COMPLETED':
-            io.emit('task-completed', { taskName: currentTaskName, timestamp: data.timestamp });
-            io.emit('log', `[Task: ${currentTaskName}] ✓ Completed successfully`);
-            break;
-          case 'COMPLETED_WITH_DATA':
-            // Store the info-gathering result using type guard for safety
-            if (isInfoGatheringData(data)) {
-              infoGatheringController.storeInfoGatheringResult(
-                currentTaskName,
-                data.data,
-                data.metadata || {},
-                io
-              );
-            } else {
-              console.warn(`[Task: ${currentTaskName}] COMPLETED_WITH_DATA status missing data or metadata`);
-            }
-            io.emit('task-completed', {
-              taskName: currentTaskName,
-              timestamp: data.timestamp,
-              hasData: true
-            });
-            io.emit('log', `[Task: ${currentTaskName}] ✓ Completed with data`);
-            break;
-          case 'FAILED':
-            // Record the failure
-            const errorContext = data.errorContext || {};
-            failuresController.recordFailure(
-              currentTaskName,
-              data.errorType || 'unknown',
-              data.errorMessage || 'Unknown error',
-              errorContext,
-              io
-            );
-            io.emit('task-failed', {
-              taskName: currentTaskName,
-              errorType: data.errorType,
-              errorMessage: data.errorMessage,
-              timestamp: data.timestamp
-            });
-            io.emit('log', `[Task: ${currentTaskName}] ✗ Failed: ${data.errorMessage || 'Unknown error'}`, 'error');
-            break;
-        }
-      } else {
-        // No status marker - emit as regular log
-        io.emit('log', `[Task: ${taskName}] ${line}`);
-      }
+    if (!result.success) {
+      res.status(404).json({ error: result.message });
+      return;
     }
-  });
 
-  child.stderr?.on('data', (data: Buffer) => {
-    io.emit('log', `[Task: ${taskName} ERROR] ${data.toString()}`);
-  });
-
-  child.on('close', (code: number | null) => {
-    io.emit('log', `[Task: ${taskName}] process exited with code ${code}`);
-  });
-
-  res.json({ message: `Task ${taskName} started.` });
+    res.json({ message: result.message });
+  } catch (error) {
+    console.error('Error in /api/tasks/run:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: `Internal Server Error: ${message}` });
+  }
 };
 
+/**
+ * Controller function: POST /api/record
+ *
+ * Launches the Playwright Codegen recorder for recording new tasks.
+ */
 export const recordTask = (req: Request, res: Response): void => {
-  const io = req.app.get('io');
+  const io = req.app.get('io') as Server;
+  const { taskName, type } = req.body;
+
   try {
-    const { taskName, type } = req.body;
-
-    const args: string[] = ['run', 'record'];
-
-    if (taskName && type) {
-      args.push('--');
-      args.push(`--name=${taskName}`);
-      args.push(`--type=${type}`);
-    }
-
-    const child: ChildProcess = spawn('npm', args, {
-      cwd: ROOT_DIR,
-      shell: true
-    });
-
-    child.stdout?.on('data', (data: Buffer) => {
-      io.emit('log', `[Recorder] ${data.toString()}`);
-    });
-
-    child.stderr?.on('data', (data: Buffer) => {
-      io.emit('log', `[Recorder ERROR] ${data.toString()}`);
-    });
-
-    child.on('error', (err: Error) => {
-      console.error('Spawn error:', err);
-      io.emit('log', `[Recorder SYSTEM ERROR] Failed to spawn process: ${err.message}`);
-    });
-
-    child.on('close', (code: number | null) => {
-      if (code !== 0) {
-        io.emit('log', `[Recorder] Process exited with code ${code}`);
-      }
-    });
-
-    res.json({ message: 'Recorder started.' });
+    const result = taskExecutionService.record(taskName, type, { io });
+    res.json({ message: result.message });
   } catch (error) {
     console.error('Error in /api/record:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -188,32 +87,17 @@ export const recordTask = (req: Request, res: Response): void => {
   }
 };
 
+/**
+ * Controller function: POST /api/setup-login
+ *
+ * Launches a browser for manual login session setup.
+ */
 export const setupLogin = (req: Request, res: Response): void => {
-  const io = req.app.get('io');
+  const io = req.app.get('io') as Server;
+
   try {
-    const child: ChildProcess = spawn('npm', ['run', 'setup-login'], {
-      cwd: ROOT_DIR,
-      shell: true
-    });
-
-    child.stdout?.on('data', (data: Buffer) => {
-      io.emit('log', `[Setup Login] ${data.toString()}`);
-    });
-
-    child.stderr?.on('data', (data: Buffer) => {
-      io.emit('log', `[Setup Login ERROR] ${data.toString()}`);
-    });
-
-    child.on('error', (err: Error) => {
-      console.error('Spawn error:', err);
-      io.emit('log', `[Setup Login SYSTEM ERROR] Failed to spawn process: ${err.message}`);
-    });
-
-    child.on('close', (code: number | null) => {
-      io.emit('log', `[Setup Login] Process finished with code ${code}`);
-    });
-
-    res.json({ message: 'Setup login started. Browser should open soon.' });
+    const result = taskExecutionService.setupLogin({ io });
+    res.json({ message: result.message });
   } catch (error) {
     console.error('Error in /api/setup-login:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';

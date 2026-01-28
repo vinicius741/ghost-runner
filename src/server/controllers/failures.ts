@@ -1,91 +1,33 @@
 /**
- * Failures controller - manages failure records persistence.
- * Failures are stored in failures.json in the root directory.
+ * Failures controller - handles HTTP requests for failure management.
+ *
+ * This controller has been refactored to use the repository pattern:
+ * - FailureRepository handles all failure record persistence
+ * - Controller is now a thin HTTP layer that delegates to the repository
+ * - Socket.io event emission is handled at the controller level
+ *
+ * @module server/controllers/failures
  */
 
-import { promises as fs } from 'fs';
 import type { Server } from 'socket.io';
-import { FAILURES_FILE } from '../config';
+import { failureRepository, type FailureRecord } from '../repositories/FailureRepository';
+
+// Re-export FailureRecord type for use by other modules
+export type { FailureRecord };
 
 /**
- * Failure record structure (shared with frontend)
- */
-export interface FailureRecord {
-  id: string;
-  taskName: string;
-  errorType: 'element_not_found' | 'navigation_failure' | 'timeout' | 'unknown';
-  context: Record<string, unknown>;
-  timestamp: string;
-  count: number;
-  lastSeen: string;
-  dismissed?: boolean;
-}
-
-/**
- * Creates a failure record from task failure data.
- */
-export function createFailureRecord(
-  taskName: string,
-  errorType: string,
-  errorMessage: string,
-  errorContext: Record<string, unknown>
-): FailureRecord {
-  const now = new Date().toISOString();
-  const id = `${taskName}-${errorType}-${Date.now()}`;
-
-  // Validate errorType - default to 'unknown' if invalid
-  const validErrorTypes: ReadonlyArray<FailureRecord['errorType']> = ['element_not_found', 'navigation_failure', 'timeout', 'unknown'];
-  const validatedErrorType: FailureRecord['errorType'] = validErrorTypes.includes(
-    errorType as FailureRecord['errorType']
-  )
-    ? (errorType as FailureRecord['errorType'])
-    : 'unknown';
-
-  return {
-    id,
-    taskName,
-    errorType: validatedErrorType,
-    context: {
-      ...errorContext,
-      errorMessage, // Include errorMessage in context for UI display
-    },
-    timestamp: now,
-    count: 1,
-    lastSeen: now,
-    dismissed: false,
-  };
-}
-
-/**
- * Reads all failure records from the JSON file.
- */
-export async function getFailures(): Promise<FailureRecord[]> {
-  try {
-    const content = await fs.readFile(FAILURES_FILE, 'utf-8');
-    const failures = JSON.parse(content) as FailureRecord[];
-    return failures;
-  } catch (error) {
-    // File doesn't exist yet - return empty array (normal on first run)
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return [];
-    }
-    // Log unexpected errors
-    console.error('Error reading failures file:', error);
-    return [];
-  }
-}
-
-/**
- * Writes failure records to the JSON file.
- */
-async function writeFailures(failures: FailureRecord[]): Promise<void> {
-  await fs.writeFile(FAILURES_FILE, JSON.stringify(failures, null, 2), 'utf-8');
-}
-
-/**
- * Records a new failure.
+ * Records a new failure and emits Socket.io event.
+ *
+ * This function is used by the TaskExecutionService to record failures.
  * If a similar failure exists (same task + errorType within 24 hours),
  * increment its count instead of creating a new entry.
+ *
+ * @param taskName - Name of the task that failed
+ * @param errorType - Type of error that occurred
+ * @param errorMessage - Human-readable error message
+ * @param errorContext - Additional structured context about the error
+ * @param io - Optional Socket.io instance for emitting events
+ * @returns The recorded failure record
  */
 export async function recordFailure(
   taskName: string,
@@ -94,51 +36,28 @@ export async function recordFailure(
   errorContext: Record<string, unknown>,
   io?: Server
 ): Promise<FailureRecord> {
-  const failures = await getFailures();
-  const now = new Date();
-  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-
-  // Check for similar recent failure to deduplicate
-  const existingFailure = failures.find(
-    (f) =>
-      f.taskName === taskName &&
-      f.errorType === errorType &&
-      !f.dismissed &&
-      f.lastSeen >= oneDayAgo
+  const failure = await failureRepository.record(
+    taskName,
+    errorType,
+    errorMessage,
+    errorContext
   );
-
-  if (existingFailure) {
-    // Update existing failure
-    existingFailure.count += 1;
-    existingFailure.lastSeen = now.toISOString();
-    await writeFailures(failures);
-
-    // Emit Socket.io event
-    if (io) {
-      io.emit('failure-recorded', existingFailure);
-    }
-
-    return existingFailure;
-  }
-
-  // Create new failure record
-  const newFailure = createFailureRecord(taskName, errorType, errorMessage, errorContext);
-  failures.push(newFailure);
-  await writeFailures(failures);
 
   // Emit Socket.io event
   if (io) {
-    io.emit('failure-recorded', newFailure);
+    io.emit('failure-recorded', failure);
   }
 
-  return newFailure;
+  return failure;
 }
 
 /**
- * Clears all failure records.
+ * Clears all failure records and emits Socket.io event.
+ *
+ * @param io - Optional Socket.io instance for emitting events
  */
 export async function clearFailures(io?: Server): Promise<void> {
-  await writeFailures([]);
+  await failureRepository.clear();
 
   // Emit Socket.io event
   if (io) {
@@ -147,39 +66,37 @@ export async function clearFailures(io?: Server): Promise<void> {
 }
 
 /**
- * Dismisses a specific failure by ID.
+ * Dismisses a specific failure by ID and emits Socket.io event.
+ *
+ * @param id - The unique identifier of the failure record
+ * @param io - Optional Socket.io instance for emitting events
+ * @returns True if the failure was found and dismissed, false otherwise
  */
 export async function dismissFailure(id: string, io?: Server): Promise<boolean> {
-  const failures = await getFailures();
-  const failure = failures.find((f) => f.id === id);
+  const success = await failureRepository.dismiss(id);
 
-  if (!failure) {
-    return false;
-  }
-
-  failure.dismissed = true;
-  await writeFailures(failures);
-
-  // Emit Socket.io event
-  if (io) {
+  if (success && io) {
     io.emit('failure-dismissed', id);
   }
 
-  return true;
+  return success;
 }
 
 /**
  * Controller function: GET /api/failures
+ *
+ * Returns all active (non-dismissed) failure records.
+ * If all failures are dismissed, returns all records.
  */
 export const getFailuresHandler = async (): Promise<{ failures: FailureRecord[] }> => {
-  const failures = await getFailures();
-  // Filter out dismissed failures unless all are dismissed
-  const activeFailures = failures.filter((f) => !f.dismissed);
-  return { failures: activeFailures.length > 0 ? activeFailures : failures };
+  const failures = await failureRepository.getActive();
+  return { failures };
 };
 
 /**
  * Controller function: DELETE /api/failures
+ *
+ * Clears all failure records.
  */
 export const clearFailuresHandler = async (io?: Server): Promise<{ message: string }> => {
   await clearFailures(io);
@@ -188,6 +105,8 @@ export const clearFailuresHandler = async (io?: Server): Promise<{ message: stri
 
 /**
  * Controller function: POST /api/failures/:id/dismiss
+ *
+ * Dismisses a specific failure by ID.
  */
 export const dismissFailureHandler = async (id: string, io?: Server): Promise<{ success: boolean; message?: string }> => {
   const success = await dismissFailure(id, io);

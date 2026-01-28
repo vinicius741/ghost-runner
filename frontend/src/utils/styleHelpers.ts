@@ -7,12 +7,12 @@
  * Related: Development Execution Plan Task 1.2.2
  */
 
-import type { Failure } from '@/types/api.types';
+import type { FailureRecord } from '@/types';
 
 /**
  * Error type supported by the failure tracking system.
  */
-export type ErrorType = Failure['errorType'] | 'unknown';
+export type ErrorType = FailureRecord['errorType'];
 
 /**
  * Get the border color class for a specific error type.
