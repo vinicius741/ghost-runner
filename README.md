@@ -135,3 +135,13 @@ If you are developing the frontend:
 1.  Navigate to `frontend/`: `cd frontend`
 2.  Install dependencies: `npm install`
 3.  Run dev server: `npm run dev` (Note: Backend API calls require the backend server running on port 3333).
+
+## Documentation
+
+Additional project documentation is available in the `documentation/` directory:
+
+- **[Maintenance & Architecture Improvement Plan](documentation/Maintenance%20&%20Architecture%20Improvement%20Plan.md)** - Identifies technical debt, architectural issues, and provides actionable recommendations for improving code quality.
+
+- **[Development Execution Plan](documentation/Development%20Execution%20Plan.md)** - A comprehensive, actionable development plan organized by phases to execute the architectural improvements. Includes task breakdowns, parallelization guidance, and team coordination protocols.
+
+These documents track the ongoing refactoring effort to improve maintainability, scalability, and code quality.

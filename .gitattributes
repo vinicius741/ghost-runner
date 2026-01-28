@@ -1,0 +1,6 @@
+# Documentation files - mark as linguist-generated to reduce merge conflict sensitivity
+documentation/*.md linguist-generated
+
+# Lock files - already handled by git but explicit here
+package-lock.json binary
+frontend/package-lock.json binary
