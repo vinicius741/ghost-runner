@@ -9,56 +9,36 @@ import {
   NavigationFailureError,
   isTaskError,
 } from './errors';
-
-// Extract option types from Page methods using Parameters utility type
-type PageMethods = Page;
-type ClickOptions = Parameters<PageMethods['click']>[1];
-type FillOptions = Parameters<PageMethods['fill']>[2];
-type TypeOptions = Parameters<PageMethods['type']>[2];
-type PressOptions = Parameters<PageMethods['press']>[2];
-type CheckOptions = Parameters<PageMethods['check']>[1];
-type UncheckOptions = Parameters<PageMethods['uncheck']>[1];
-type HoverOptions = Parameters<PageMethods['hover']>[1];
-type FocusOptions = Parameters<PageMethods['focus']>[1];
-type TapOptions = Parameters<PageMethods['tap']>[1];
-type DragAndDropOptions = Parameters<PageMethods['dragAndDrop']>[2];
-type PageScreenshotOptions = Parameters<PageMethods['screenshot']>[0];
-type PdfOptions = Parameters<PageMethods['pdf']>[0];
-type SelectOptionValue = Parameters<PageMethods['selectOption']>[1];
-type SelectOptionOptions = Parameters<PageMethods['selectOption']>[2];
-type GotoOptions = Parameters<PageMethods['goto']>[1];
-type WaitForNavigationOptions = Parameters<PageMethods['waitForNavigation']>[0];
-type ScriptTagOptions = Parameters<PageMethods['addScriptTag']>[0];
-type StyleTagOptions = Parameters<PageMethods['addStyleTag']>[0];
-type WaitForFunctionOptions = Parameters<PageMethods['waitForFunction']>[1];
-type WaitForURLOptions = Parameters<PageMethods['waitForURL']>[1];
-type ReloadOptions = Parameters<PageMethods['reload']>[0];
-type GoBackOptions = Parameters<PageMethods['goBack']>[0];
-type GoForwardOptions = Parameters<PageMethods['goForward']>[0];
-type SetContentOptions = Parameters<PageMethods['setContent']>[1];
-type EmulateMediaOptions = Parameters<PageMethods['emulateMedia']>[0];
-type CloseOptions = Parameters<PageMethods['close']>[0];
-
-/**
- * Options for creating a monitored page.
- */
-export interface MonitoredPageOptions {
-  /** Name of the task using this page (for error reporting) */
-  taskName: string;
-  /** Default timeout for selector waits (ms) */
-  defaultSelectorTimeout?: number;
-  /** Default timeout for navigation (ms) */
-  defaultNavigationTimeout?: number;
-}
-
-/**
- * Internal state for the monitored page.
- */
-interface MonitoredPageState {
-  taskName: string;
-  defaultSelectorTimeout: number;
-  defaultNavigationTimeout: number;
-}
+import type {
+  ClickOptions,
+  FillOptions,
+  TypeOptions,
+  PressOptions,
+  CheckOptions,
+  UncheckOptions,
+  HoverOptions,
+  FocusOptions,
+  TapOptions,
+  DragAndDropOptions,
+  PageScreenshotOptions,
+  PdfOptions,
+  SelectOptionValue,
+  SelectOptionOptions,
+  GotoOptions,
+  WaitForNavigationOptions,
+  ScriptTagOptions,
+  StyleTagOptions,
+  WaitForFunctionOptions,
+  WaitForURLOptions,
+  ReloadOptions,
+  GoBackOptions,
+  GoForwardOptions,
+  SetContentOptions,
+  EmulateMediaOptions,
+  CloseOptions,
+  MonitoredPageOptions,
+  MonitoredPageState,
+} from './page/types/page.types';
 
 /**
  * A wrapper around Playwright's Page that throws structured errors on failure.

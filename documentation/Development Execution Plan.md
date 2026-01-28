@@ -284,6 +284,8 @@ Before starting parallel work:
 
 **Phase Goal**: Extract utilities, create hooks, and separate type definitions without changing business logic. These changes are low risk and establish patterns for subsequent phases.
 
+**Phase 1 Type Definitions**: All TypeScript types for Phase 1 are documented in [`Phase 1 Type Definitions.md`](./Phase%1%20Type%20Definitions.md). Refer to this document when implementing Phase 1 tasks to ensure type consistency.
+
 **Estimated Duration**: 1-2 weeks (consider adding 20-30% buffer time for unforeseen issues)
 
 **Rollback Strategy**: Each task in this phase can be independently reverted. Keep branches short-lived and merge frequently to minimize rollback scope.
@@ -1077,6 +1079,12 @@ Before starting parallel work:
 ---
 
 ## Quick Reference
+
+### Type Definitions Reference
+
+| Phase | Types Document | Description |
+|-------|-----------------|-------------|
+| 1 | [`Phase 1 Type Definitions.md`](./Phase%1%20Type%20Definitions.md) | Foundation types - TaskStatus, TaskInfo, ExtendedPage, API types, utility types, hook types |
 
 ### Phase Priority Matrix
 

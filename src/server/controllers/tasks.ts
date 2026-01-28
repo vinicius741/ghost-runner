@@ -5,80 +5,9 @@ import { TASKS_DIR, ROOT_DIR } from '../config';
 import { getTasksFromDir } from '../utils/fileSystem';
 import * as failuresController from '../controllers/failures';
 import * as infoGatheringController from '../controllers/infoGathering';
-
-/**
- * Metadata for info-gathering task results.
- */
-export interface InfoGatheringMetadata {
-  category?: string;
-  displayName?: string;
-  dataType?: string;
-  ttl?: number;
-}
-
-/**
- * Parsed task status data from stdout markers.
- */
-export interface TaskStatusData {
-  taskName?: string;
-  timestamp?: string;
-  errorType?: string;
-  errorMessage?: string;
-  errorContext?: Record<string, unknown>;
-  data?: unknown; // For COMPLETED_WITH_DATA status
-  metadata?: InfoGatheringMetadata; // For COMPLETED_WITH_DATA status
-}
-
-/**
- * Type guard to check if TaskStatusData contains info-gathering data.
- */
-function isInfoGatheringData(data: TaskStatusData): data is TaskStatusData & {
-  data: unknown;
-  metadata: InfoGatheringMetadata;
-} {
-  return data.data !== undefined && data.metadata !== undefined;
-}
-
-/**
- * Parsed task status result.
- */
-export interface ParsedTaskStatus {
-  status: 'STARTED' | 'COMPLETED' | 'COMPLETED_WITH_DATA' | 'FAILED';
-  data: TaskStatusData;
-}
-
-/**
- * Type guard for valid task status values.
- */
-function isValidTaskStatus(status: string): status is 'STARTED' | 'COMPLETED' | 'COMPLETED_WITH_DATA' | 'FAILED' {
-  return status === 'STARTED' || status === 'COMPLETED' || status === 'COMPLETED_WITH_DATA' || status === 'FAILED';
-}
-
-/**
- * Parses task status from stdout lines.
- * Looks for [TASK_STATUS:STARTED|COMPLETED|FAILED] markers.
- */
-function parseTaskStatus(line: string): ParsedTaskStatus | null {
-  const STATUS_PREFIX = '[TASK_STATUS:';
-  const startIndex = line.indexOf(STATUS_PREFIX);
-
-  if (startIndex === -1) return null;
-
-  const endIndex = line.indexOf(']', startIndex);
-  if (endIndex === -1) return null;
-
-  const status = line.substring(startIndex + STATUS_PREFIX.length, endIndex);
-  const jsonPart = line.substring(endIndex + 1);
-
-  if (!isValidTaskStatus(status)) return null;
-
-  try {
-    const data = jsonPart ? JSON.parse(jsonPart) : {};
-    return { status, data };
-  } catch {
-    return { status, data: {} };
-  }
-}
+import type { TaskStatusData } from '../../types/task.types';
+import { isInfoGatheringData } from '../../types/task.types';
+import { parseTaskStatus } from '../utils/taskParser';
 
 export const getTasks = async (req: Request, res: Response): Promise<void> => {
   try {

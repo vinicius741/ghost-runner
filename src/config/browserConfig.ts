@@ -24,6 +24,11 @@ interface Settings {
 /**
  * Gets or creates the profile directory for browser sessions.
  * Creates a new profile under user_data/profiles/ if not specified in settings.
+ *
+ * Error handling:
+ * - Falls back to base user_data directory if profile creation fails
+ * - Logs detailed error messages for debugging
+ * - Handles permission errors gracefully
  */
 function getOrCreateProfileDir(settings: Settings): string {
   const baseUserDataDir = path.resolve(__dirname, '../../user_data');
@@ -34,25 +39,56 @@ function getOrCreateProfileDir(settings: Settings): string {
     const specifiedProfile = path.isAbsolute(settings.profileDir)
       ? settings.profileDir
       : path.resolve(baseUserDataDir, settings.profileDir);
-    
+
     if (fs.existsSync(specifiedProfile)) {
-      return specifiedProfile;
+      try {
+        // Verify directory is accessible by checking stats
+        const stats = fs.statSync(specifiedProfile);
+        if (!stats.isDirectory()) {
+          console.warn(`Specified profile path is not a directory: ${specifiedProfile}, creating new profile...`);
+        } else {
+          console.log(`Using existing profile directory: ${specifiedProfile}`);
+          return specifiedProfile;
+        }
+      } catch (err) {
+        const error = err as Error;
+        console.warn(`Cannot access specified profile directory '${specifiedProfile}': ${error.message}`);
+        console.warn('Falling back to creating a new profile...');
+      }
+    } else {
+      console.log(`Specified profile directory not found: ${specifiedProfile}, creating new profile...`);
     }
-    console.log(`Specified profile directory not found: ${specifiedProfile}, creating new profile...`);
   }
 
   // Create profiles directory if it doesn't exist
-  if (!fs.existsSync(profilesDir)) {
-    fs.mkdirSync(profilesDir, { recursive: true });
+  try {
+    if (!fs.existsSync(profilesDir)) {
+      fs.mkdirSync(profilesDir, { recursive: true });
+      console.log(`Created profiles directory: ${profilesDir}`);
+    }
+  } catch (err) {
+    const error = err as Error;
+    console.error(`Failed to create profiles directory '${profilesDir}': ${error.message}`);
+    console.error('Falling back to base user_data directory');
+    // Fallback: return base directory if profiles dir cannot be created
+    return baseUserDataDir;
   }
 
   // Create a new profile with timestamp
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
   const newProfileDir = path.join(profilesDir, `profile-${timestamp}`);
-  fs.mkdirSync(newProfileDir, { recursive: true });
 
-  console.log(`Created new profile directory: ${newProfileDir}`);
-  return newProfileDir;
+  try {
+    fs.mkdirSync(newProfileDir, { recursive: true });
+    console.log(`Created new profile directory: ${newProfileDir}`);
+    return newProfileDir;
+  } catch (err) {
+    const error = err as Error;
+    console.error(`Failed to create profile directory '${newProfileDir}': ${error.message}`);
+    console.error('Falling back to base user_data directory');
+    // Fallback: return base directory if profile creation fails
+    return baseUserDataDir;
+  }
 }
 
 /**
@@ -90,15 +126,28 @@ const launchBrowser = async (): Promise<BrowserContext> => {
     browserChannel: 'chrome', // Default to system Chrome
   };
 
-  // Load settings from file
+  // Load settings from file with comprehensive error handling
   try {
     if (fs.existsSync(settingsFile)) {
-      const settingsContent = fs.readFileSync(settingsFile, 'utf8');
-      const loadedSettings = JSON.parse(settingsContent);
-      settings = { ...settings, ...loadedSettings };
+      try {
+        const settingsContent = fs.readFileSync(settingsFile, 'utf8');
+        const loadedSettings = JSON.parse(settingsContent);
+        settings = { ...settings, ...loadedSettings };
+        console.log(`Loaded settings from: ${settingsFile}`);
+      } catch (parseError) {
+        const error = parseError as Error;
+        console.error(`Failed to parse settings file '${settingsFile}': ${error.message}`);
+        console.warn('Using default settings due to parse error');
+        // Continue with default settings
+      }
+    } else {
+      console.log(`Settings file not found at '${settingsFile}', using defaults`);
     }
-  } catch (err) {
-    console.error('Error loading settings:', err);
+  } catch (readError) {
+    const error = readError as Error;
+    console.error(`Failed to read settings file '${settingsFile}': ${error.message}`);
+    console.warn('Using default settings due to read error');
+    // Continue with default settings
   }
 
   // Get or create profile directory

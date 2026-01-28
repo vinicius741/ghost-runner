@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import fs from 'fs';
 import path from 'path';
 import { spawn, ChildProcess } from 'child_process';
+import { validateTaskName } from '../server/utils/taskValidators';
 
 const LOG_FILE = path.resolve(__dirname, '../../scheduler.log');
 const CONFIG_FILE = path.resolve(__dirname, '../../schedule.json');
@@ -98,23 +99,14 @@ function updateCaffeinateStatus(): void {
 }
 
 /**
- * Validates a task name to prevent command injection and other security issues.
- * Only allows alphanumeric characters, hyphens, underscores, and forward slashes.
- */
-function validateTaskName(taskName: string): boolean {
-  // Task names should be alphanumeric with hyphens, underscores, and path separators
-  const validPattern = /^[a-zA-Z0-9_/-]+$/;
-  return validPattern.test(taskName) && taskName.length > 0 && taskName.length < 100;
-}
-
-/**
  * Executes a specific task by spawning a child process running tsx on index.ts
  */
 function runTask(taskName: string): Promise<void> {
   return new Promise((resolve) => {
     // Validate task name for security
-    if (!validateTaskName(taskName)) {
-      log(`Invalid task name '${taskName}'. Skipping execution.`);
+    const validationResult = validateTaskName(taskName);
+    if (!validationResult.valid) {
+      log(`Invalid task name '${taskName}': ${validationResult.error}. Skipping execution.`);
       updateCaffeinateStatus();
       resolve();
       return;
@@ -189,12 +181,13 @@ function startScheduler(): void {
 
       log(`Scheduling '${task}' with cron: '${cronExpression}'`);
 
-      cron.schedule(cronExpression, () => {
+      cron.schedule(cronExpression, async () => {
         try {
-          runTask(task);
+          await runTask(task);
         } catch (err) {
           const error = err as Error;
-          log(`Unexpected error triggering task '${task}': ${error.message}`);
+          log(`Unexpected error triggering cron task '${task}': ${error.message}`);
+          log(`Error stack: ${error.stack}`);
         }
       });
 
@@ -226,11 +219,13 @@ function startScheduler(): void {
             log(`Removed one-time task '${task}' from schedule.`);
           } catch (ioErr) {
             const error = ioErr as Error;
-            log(`Error removing task from schedule: ${error.message}`);
+            log(`Error removing one-time task '${task}' from schedule: ${error.message}`);
+            log(`Error stack: ${error.stack}`);
           }
         } catch (err) {
           const error = err as Error;
-          log(`Unexpected error triggering task '${task}': ${error.message}`);
+          log(`Unexpected error triggering one-time task '${task}': ${error.message}`);
+          log(`Error stack: ${error.stack}`);
         }
       }, Math.max(0, delay));
 
