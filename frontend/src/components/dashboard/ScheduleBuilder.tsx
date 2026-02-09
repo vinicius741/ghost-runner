@@ -13,6 +13,28 @@ import {
   type ScheduleConfigState,
 } from './schedule-builder';
 
+export interface NormalizedOnceDelay {
+  delayHours: number;
+  delayMinutes: number;
+}
+
+function sanitizeDelayPart(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.floor(value));
+}
+
+export function normalizeOnceDelay(hours: number, minutes: number): NormalizedOnceDelay {
+  const safeHours = sanitizeDelayPart(hours);
+  const safeMinutes = sanitizeDelayPart(minutes);
+  const additionalHours = Math.floor(safeMinutes / 60);
+  const remainingMinutes = safeMinutes % 60;
+
+  return {
+    delayHours: safeHours + additionalHours,
+    delayMinutes: remainingMinutes,
+  };
+}
+
 interface ScheduleBuilderProps {
   tasks: Task[];
   schedule: ScheduleItem[];
@@ -41,8 +63,9 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
   // Calculate the preview time for one-time tasks
   /* eslint-disable react-hooks/purity */
   const executeAtTime = useMemo(() => {
+    const normalizedDelay = normalizeOnceDelay(config.delayHours, config.delayMinutes);
     const now = Date.now();
-    return new Date(now + (config.delayHours * 3600000) + (config.delayMinutes * 60000)).toLocaleTimeString(
+    return new Date(now + (normalizedDelay.delayHours * 3600000) + (normalizedDelay.delayMinutes * 60000)).toLocaleTimeString(
       [],
       { hour: '2-digit', minute: '2-digit' }
     );
@@ -69,8 +92,11 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
     if (!selectedTask) return;
 
     if (cronTab === 'once') {
+      const normalizedDelay = normalizeOnceDelay(config.delayHours, config.delayMinutes);
       const now = new Date();
-      const executeAt = new Date(now.getTime() + (config.delayHours * 60 * 60 * 1000) + (config.delayMinutes * 60 * 1000));
+      const executeAt = new Date(
+        now.getTime() + (normalizedDelay.delayHours * 60 * 60 * 1000) + (normalizedDelay.delayMinutes * 60 * 1000)
+      );
       onAddSchedule(selectedTask, undefined, executeAt.toISOString());
     } else {
       onAddSchedule(selectedTask, cronPreview, undefined);
@@ -80,7 +106,16 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
   };
 
   const handleConfigChange = (updates: Partial<ScheduleConfigState>) => {
-    setConfig(prev => ({ ...prev, ...updates }));
+    setConfig(prev => {
+      const merged = { ...prev, ...updates };
+      if ('delayHours' in updates || 'delayMinutes' in updates) {
+        return {
+          ...merged,
+          ...normalizeOnceDelay(merged.delayHours, merged.delayMinutes),
+        };
+      }
+      return merged;
+    });
   };
 
   return (
