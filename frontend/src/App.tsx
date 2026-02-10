@@ -131,6 +131,10 @@ function App() {
       setSchedulerStatus(status);
     });
 
+    socket.on('schedule-updated', ({ schedule: updatedSchedule }: { schedule?: ScheduleItem[] }) => {
+      setSchedule(Array.isArray(updatedSchedule) ? updatedSchedule : []);
+    });
+
     socket.on('failure-recorded', (failure: FailureRecord) => {
       setFailures(prev => [...prev, failure]);
       addLog(`Task failure recorded: ${failure.taskName}`, 'error');
@@ -171,6 +175,7 @@ function App() {
     return () => {
       socket.off('log');
       socket.off('scheduler-status');
+      socket.off('schedule-updated');
       socket.off('failure-recorded');
       socket.off('failures-cleared');
       socket.off('failure-dismissed');
@@ -580,4 +585,3 @@ function App() {
 }
 
 export default App;
-

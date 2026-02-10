@@ -4,7 +4,7 @@ import http from 'http';
 import path from 'path';
 import fs from 'fs';
 import { Server } from 'socket.io';
-import { PORT, SETTINGS_FILE } from './config';
+import { PORT, SETTINGS_FILE, SCHEDULE_FILE } from './config';
 
 import tasksRoutes from './routes/tasks';
 import schedulerRoutes from './routes/scheduler';
@@ -16,6 +16,13 @@ import infoGatheringRoutes from './routes/infoGathering';
 const app: Express = express();
 const server = http.createServer(app);
 const io = new Server(server);
+let scheduleWatchDebounce: NodeJS.Timeout | null = null;
+
+interface ScheduleItem {
+    task: string;
+    cron?: string;
+    executeAt?: string;
+}
 
 // Share io instance with controllers
 app.set('io', io);
@@ -59,6 +66,59 @@ if (!fs.existsSync(SETTINGS_FILE)) {
     }, null, 2));
 }
 
+/**
+ * Emit the latest schedule to connected clients.
+ * This keeps UI schedule state in sync when external processes mutate schedule.json.
+ */
+async function emitScheduleUpdate(retryCount = 0): Promise<void> {
+    try {
+        const data = await fs.promises.readFile(SCHEDULE_FILE, 'utf8');
+        const parsed: unknown = JSON.parse(data);
+        if (!Array.isArray(parsed)) {
+            throw new Error('Schedule file does not contain an array');
+        }
+        io.emit('schedule-updated', { schedule: parsed as ScheduleItem[] });
+    } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+            io.emit('schedule-updated', { schedule: [] as ScheduleItem[] });
+            return;
+        }
+
+        if (retryCount < 1) {
+            setTimeout(() => {
+                void emitScheduleUpdate(retryCount + 1);
+            }, 100);
+            return;
+        }
+
+        console.error('Failed to emit schedule update:', error);
+    }
+}
+
+/**
+ * Watch schedule.json and broadcast updates over Socket.io.
+ */
+function watchScheduleFile(): void {
+    fs.watchFile(SCHEDULE_FILE, { interval: 500 }, (current, previous) => {
+        if (current.mtimeMs === previous.mtimeMs) {
+            return;
+        }
+
+        if (scheduleWatchDebounce) {
+            clearTimeout(scheduleWatchDebounce);
+        }
+
+        scheduleWatchDebounce = setTimeout(() => {
+            void emitScheduleUpdate();
+            scheduleWatchDebounce = null;
+        }, 100);
+    });
+
+    process.on('exit', () => {
+        fs.unwatchFile(SCHEDULE_FILE);
+    });
+}
+
 // --- API Routes ---
 app.use('/api', tasksRoutes);
 app.use('/api', schedulerRoutes);
@@ -66,6 +126,8 @@ app.use('/api', settingsRoutes);
 app.use('/api', logsRoutes);
 app.use('/api', failuresRoutes);
 app.use('/api', infoGatheringRoutes);
+
+watchScheduleFile();
 
 // --- Global Error Handlers ---
 process.on('uncaughtException', (err: Error) => {
