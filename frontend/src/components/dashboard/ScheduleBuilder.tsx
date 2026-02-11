@@ -126,8 +126,8 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
     >
       <Card className="card-premium h-full">
         <CardHeader className="pb-4" onDoubleClick={onHeaderDoubleClick}>
-          <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+          <CardTitle className="text-foreground font-medium tracking-tight flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary" style={{ boxShadow: 'var(--glow-primary)' }} />
             Schedule Builder
           </CardTitle>
         </CardHeader>
@@ -153,10 +153,10 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
             </ScheduleConfigPanel>
 
             <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-sky-400 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000" />
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000" />
               <Button
                 onClick={handleAdd}
-                className="relative w-full h-11 bg-slate-100 text-slate-950 hover:bg-white transition-all duration-300 shadow-[0-0_20px_rgba(255,255,255,0.1)] disabled:opacity-50 disabled:grayscale"
+                className="relative w-full h-11 bg-primary-foreground text-primary hover:bg-white transition-all duration-300 shadow-[0-0_20px_rgba(255,255,255,0.1)] disabled:opacity-50 disabled:grayscale"
                 disabled={!selectedTask}
               >
                 <span className="font-bold uppercase tracking-widest text-xs">Add to Schedule</span>

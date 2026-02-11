@@ -6,6 +6,7 @@ import { LocationWarning } from "@/components/dashboard/LocationWarning";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { MinimizedCardsSidebar } from "@/components/dashboard/MinimizedCardsSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, Calendar, Settings as SettingsIcon } from 'lucide-react';
@@ -468,23 +469,133 @@ function App() {
     });
   };
 
-  const isUsingDefaultLocation = settings?.geolocation &&
+  const isUsingDefaultLocation = Boolean(
+    settings?.geolocation &&
     settings.geolocation.latitude === DEFAULT_LOCATION.latitude &&
-    settings.geolocation.longitude === DEFAULT_LOCATION.longitude;
+    settings.geolocation.longitude === DEFAULT_LOCATION.longitude
+  );
 
-  const showLocationWarning = isUsingDefaultLocation && !locationWarningDismissed;
+  const showLocationWarning: boolean = isUsingDefaultLocation && !locationWarningDismissed;
 
   return (
-    <div className={`min-h-screen bg-slate-950 text-slate-100 font-sans transition-colors duration-500 ${sidebarOpen ? 'pr-52' : 'pr-8'}`}>
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))]" />
-      <div className="fixed inset-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-50 contrast-150" />
+    <ThemeProvider>
+      <AppContent
+        sidebarOpen={sidebarOpen}
+        layout={layout}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        showLocationWarning={showLocationWarning}
+        setLocationWarningDismissed={setLocationWarningDismissed}
+        schedulerStatus={schedulerStatus}
+        tasks={tasks}
+        schedule={schedule}
+        logs={logs}
+        failures={failures}
+        infoGatheringResults={infoGatheringResults}
+        refreshingInfoGatheringTasks={refreshingInfoGatheringTasks}
+        onToggleSidebar={handleToggleSidebar}
+        onRestoreCard={handleRestoreCard}
+        onMinimizeCard={handleMinimizeCard}
+        onCardReorder={handleCardReorder}
+        onStartScheduler={handleStartScheduler}
+        onStopScheduler={handleStopScheduler}
+        onRecordTask={handleRecordTask}
+        onAddSchedule={handleAddSchedule}
+        onDeleteSchedule={handleDeleteSchedule}
+        onRunTask={handleRunTask}
+        onClearLogs={() => setLogs([])}
+        onClearFailures={handleClearFailures}
+        onDismissFailure={handleDismissFailure}
+        onRefreshInfoGatheringTask={handleRefreshInfoGatheringTask}
+        onClearInfoGatheringResult={handleClearInfoGatheringResult}
+        onClearAllInfoGatheringResults={handleClearAllInfoGatheringResults}
+        fetchSettings={fetchSettings}
+        addLog={addLog}
+      />
+    </ThemeProvider>
+  );
+}
+
+// Separate content component to use theme context
+interface AppContentProps {
+  sidebarOpen: boolean;
+  layout: DashboardLayoutExtended;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  showLocationWarning: boolean;
+  setLocationWarningDismissed: (dismissed: boolean) => void;
+  schedulerStatus: boolean;
+  tasks: Task[];
+  schedule: ScheduleItem[];
+  logs: LogEntry[];
+  failures: FailureRecord[];
+  infoGatheringResults: InfoGatheringResult[];
+  refreshingInfoGatheringTasks: string[];
+  onToggleSidebar: () => void;
+  onRestoreCard: (cardId: DashboardCardId) => void;
+  onMinimizeCard: (cardId: DashboardCardId) => void;
+  onCardReorder: (event: DragEndEvent) => void;
+  onStartScheduler: () => void;
+  onStopScheduler: () => void;
+  onRecordTask: (name: string, type: 'private' | 'public') => void;
+  onAddSchedule: (task: string, cron?: string, executeAt?: string) => void;
+  onDeleteSchedule: (index: number) => void;
+  onRunTask: (taskName: string) => void;
+  onClearLogs: () => void;
+  onClearFailures: () => void;
+  onDismissFailure: (id: string) => void;
+  onRefreshInfoGatheringTask: (taskName: string) => void;
+  onClearInfoGatheringResult: (taskName: string) => void;
+  onClearAllInfoGatheringResults: () => void;
+  fetchSettings: () => void;
+  addLog: (message: string, type?: 'normal' | 'error' | 'system') => void;
+}
+
+function AppContent({
+  sidebarOpen,
+  layout,
+  activeTab,
+  setActiveTab,
+  showLocationWarning,
+  setLocationWarningDismissed,
+  schedulerStatus,
+  tasks,
+  schedule,
+  logs,
+  failures,
+  infoGatheringResults,
+  refreshingInfoGatheringTasks,
+  onToggleSidebar,
+  onRestoreCard,
+  onMinimizeCard,
+  onCardReorder,
+  onStartScheduler,
+  onStopScheduler,
+  onRecordTask,
+  onAddSchedule,
+  onDeleteSchedule,
+  onRunTask,
+  onClearLogs,
+  onClearFailures,
+  onDismissFailure,
+  onRefreshInfoGatheringTask,
+  onClearInfoGatheringResult,
+  onClearAllInfoGatheringResults,
+  fetchSettings,
+  addLog,
+}: AppContentProps) {
+  return (
+    <div className={`min-h-screen bg-background text-foreground font-sans transition-all duration-500 ${sidebarOpen ? 'pr-52' : 'pr-8'}`}>
+      {/* Theme-aware background overlay */}
+      <div className="fixed inset-0 pointer-events-none theme-bg-overlay" />
+      <div className="fixed inset-0 pointer-events-none theme-bg-texture" />
 
       {/* Sidebar */}
       <MinimizedCardsSidebar
         isOpen={sidebarOpen}
         minimizedCards={layout.minimized}
-        onRestoreCard={handleRestoreCard}
-        onToggle={handleToggleSidebar}
+        onRestoreCard={onRestoreCard}
+        onToggle={onToggleSidebar}
       />
 
       <div className="max-w-7xl mx-auto space-y-10 relative py-8 px-8">
@@ -492,24 +603,24 @@ function App() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
           <div className="flex justify-center">
-            <TabsList className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 h-14 p-1.5 gap-1.5 rounded-2xl shadow-2xl shadow-black/20">
+            <TabsList className="bg-card/40 backdrop-blur-xl border border-border/50 h-14 p-1.5 gap-1.5 rounded-2xl shadow-2xl">
               <TabsTrigger
                 value="dashboard"
-                className="px-8 py-2.5 gap-2.5 rounded-xl text-slate-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-sky-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all duration-300 hover:text-slate-200"
+                className="px-8 py-2.5 gap-2.5 rounded-xl text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 hover:text-foreground"
               >
                 <LayoutDashboard className="w-4 h-4" />
                 <span className="font-bold uppercase tracking-widest text-[10px]">Dashboard</span>
               </TabsTrigger>
               <TabsTrigger
                 value="calendar"
-                className="px-8 py-2.5 gap-2.5 rounded-xl text-slate-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-sky-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all duration-300 hover:text-slate-200"
+                className="px-8 py-2.5 gap-2.5 rounded-xl text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 hover:text-foreground"
               >
                 <Calendar className="w-4 h-4" />
                 <span className="font-bold uppercase tracking-widest text-[10px]">Calendar</span>
               </TabsTrigger>
               <TabsTrigger
                 value="settings"
-                className="px-8 py-2.5 gap-2.5 rounded-xl text-slate-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-sky-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all duration-300 hover:text-slate-200"
+                className="px-8 py-2.5 gap-2.5 rounded-xl text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 hover:text-foreground"
               >
                 <SettingsIcon className="w-4 h-4" />
                 <span className="font-bold uppercase tracking-widest text-[10px]">Settings</span>
@@ -537,37 +648,37 @@ function App() {
                 <DashboardGrid
                   layout={layout}
                   minimizedCards={layout.minimized}
-                  onMinimize={handleMinimizeCard}
-                  onDragEnd={handleCardReorder}
-                  onStartScheduler={handleStartScheduler}
-                  onStopScheduler={handleStopScheduler}
-                  onRecordTask={handleRecordTask}
+                  onMinimize={onMinimizeCard}
+                  onDragEnd={onCardReorder}
+                  onStartScheduler={onStartScheduler}
+                  onStopScheduler={onStopScheduler}
+                  onRecordTask={onRecordTask}
                   schedulerStatus={schedulerStatus}
                   tasks={tasks}
                   schedule={schedule}
-                  onAddSchedule={handleAddSchedule}
+                  onAddSchedule={onAddSchedule}
                   onDeleteSchedule={(index) => {
                     if (confirm('Are you sure you want to delete this schedule?')) {
-                      handleDeleteSchedule(index);
+                      onDeleteSchedule(index);
                     }
                   }}
-                  onRunTask={handleRunTask}
+                  onRunTask={onRunTask}
                   logs={logs}
-                  onClearLogs={() => setLogs([])}
+                  onClearLogs={onClearLogs}
                   failures={failures}
-                  onClearFailures={handleClearFailures}
-                  onDismissFailure={handleDismissFailure}
+                  onClearFailures={onClearFailures}
+                  onDismissFailure={onDismissFailure}
                   infoGatheringResults={infoGatheringResults}
-                  onRefreshInfoGatheringTask={handleRefreshInfoGatheringTask}
-                  onClearInfoGatheringResult={handleClearInfoGatheringResult}
-                  onClearAllInfoGatheringResults={handleClearAllInfoGatheringResults}
+                  onRefreshInfoGatheringTask={onRefreshInfoGatheringTask}
+                  onClearInfoGatheringResult={onClearInfoGatheringResult}
+                  onClearAllInfoGatheringResults={onClearAllInfoGatheringResults}
                   refreshingInfoGatheringTasks={refreshingInfoGatheringTasks}
                 />
               </TabsContent>
 
               <TabsContent value="calendar" className="mt-0">
-                <div className="card-premium p-6 rounded-3xl bg-slate-900/30">
-                  <TaskCalendar schedule={schedule} onDeleteSchedule={handleDeleteSchedule} />
+                <div className="card-premium p-6 rounded-3xl">
+                  <TaskCalendar schedule={schedule} onDeleteSchedule={onDeleteSchedule} />
                 </div>
               </TabsContent>
 

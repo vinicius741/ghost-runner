@@ -10,17 +10,17 @@ interface TaskSelectorProps {
 export function TaskSelector({ tasks, selectedTask, onTaskChange }: TaskSelectorProps) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Select Automation</label>
+      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Select Automation</label>
       <Select value={selectedTask} onValueChange={onTaskChange}>
-        <SelectTrigger className="bg-slate-950/50 border-slate-800/50 text-slate-100 h-11 focus:ring-blue-500/20">
+        <SelectTrigger className="bg-card/50 border-border/50 text-foreground h-11 focus:ring-primary/20">
           <SelectValue placeholder="Choose a task..." />
         </SelectTrigger>
-        <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+        <SelectContent className="bg-card border-border text-foreground">
           {tasks.map(t => (
             <SelectItem
               key={`${t.name}-${t.type}`}
               value={t.name}
-              className="focus:bg-blue-500/10 focus:text-blue-200 uppercase text-xs font-semibold tracking-tight"
+              className="focus:bg-primary/10 focus:text-primary uppercase text-xs font-semibold tracking-tight"
             >
               {t.name}
             </SelectItem>

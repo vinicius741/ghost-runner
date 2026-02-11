@@ -44,7 +44,7 @@ export interface WarningsPanelProps {
  */
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-slate-600">
+    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/60">
       <CheckCircle className="w-12 h-12 mb-3 text-emerald-500/20" />
       <p className="text-sm font-medium">No failures recorded</p>
       <p className="text-xs mt-1">Task failures will appear here</p>
@@ -84,8 +84,8 @@ export function WarningsPanel({
     >
       <Card className="card-premium flex flex-col overflow-hidden">
         {/* Header */}
-        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-800/50 bg-slate-900/20" onDoubleClick={onHeaderDoubleClick}>
-          <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
+        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border/50 bg-muted/20" onDoubleClick={onHeaderDoubleClick}>
+          <CardTitle className="text-foreground font-medium tracking-tight flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
             Task Failures
             {filteredCount > 0 && (
@@ -95,9 +95,9 @@ export function WarningsPanel({
             )}
           </CardTitle>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-800/50 border border-slate-700/50">
-              <Clock className="w-3 h-3 text-slate-400" />
-              <span className="text-[10px] font-mono text-slate-400">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/50 border border-border/50">
+              <Clock className="w-3 h-3 text-muted-foreground" />
+              <span className="text-[10px] font-mono text-muted-foreground">
                 {uniqueTaskCount} task{uniqueTaskCount !== 1 ? 's' : ''}
               </span>
             </div>
@@ -106,7 +106,7 @@ export function WarningsPanel({
                 variant="ghost"
                 size="sm"
                 onClick={onClearFailures}
-                className="h-8 text-slate-500 hover:text-red-400 hover:bg-red-500/5 transition-colors gap-2"
+                className="h-8 text-muted-foreground hover:text-red-400 hover:bg-red-500/5 transition-colors gap-2"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span className="text-xs">Clear</span>

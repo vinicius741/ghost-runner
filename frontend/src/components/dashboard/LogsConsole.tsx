@@ -39,28 +39,28 @@ export function LogsConsole({ logs, onClearLogs, onHeaderDoubleClick }: LogsCons
       transition={{ duration: 0.5, delay: 0.5 }}
     >
       <Card className="card-premium mt-6 flex flex-col overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-800/50 bg-slate-900/20" onDoubleClick={onHeaderDoubleClick}>
-          <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-blue-400" />
+        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border/50 bg-muted/20" onDoubleClick={onHeaderDoubleClick}>
+          <CardTitle className="text-foreground font-medium tracking-tight flex items-center gap-2">
+            <Terminal className="w-4 h-4 text-primary" />
             System Runtime Logs
           </CardTitle>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-800/50 border border-slate-700/50">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/50 border border-border/50">
               <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
-              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter italic">Streaming</span>
+              <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-tighter italic">Streaming</span>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClearLogs}
-              className="h-8 text-slate-500 hover:text-red-400 hover:bg-red-500/5 transition-colors gap-2"
+              className="h-8 text-muted-foreground hover:text-red-400 hover:bg-red-500/5 transition-colors gap-2"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span className="text-xs">Clear</span>
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-0 bg-black/40">
+        <CardContent className="p-0 bg-black/20">
           <ScrollArea className="h-[350px] w-full" ref={scrollRef}>
             <div className="font-mono text-[13px] p-4 pt-4 space-y-1.5">
               <AnimatePresence mode="popLayout">
@@ -68,9 +68,9 @@ export function LogsConsole({ logs, onClearLogs, onHeaderDoubleClick }: LogsCons
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-slate-600 italic py-4 flex items-center gap-2"
+                    className="text-muted-foreground italic py-4 flex items-center gap-2"
                   >
-                    <span className="w-1 h-3 bg-blue-500/50 animate-pulse" />
+                    <span className="w-1 h-3 bg-primary/50 animate-pulse" />
                     Listening for bot signals...
                   </motion.div>
                 ) : (
@@ -80,11 +80,11 @@ export function LogsConsole({ logs, onClearLogs, onHeaderDoubleClick }: LogsCons
                       initial={{ opacity: 0, x: -5 }}
                       animate={{ opacity: 1, x: 0 }}
                       className={`flex gap-3 leading-relaxed group ${log.type === 'error' ? 'text-red-400 bg-red-500/5 -mx-4 px-4' :
-                          log.type === 'system' ? 'text-blue-400/80 font-semibold' :
-                            'text-slate-300'
+                          log.type === 'system' ? 'text-primary/80 font-semibold' :
+                            'text-foreground/80'
                         }`}
                     >
-                      <span className="text-slate-600 select-none flex-shrink-0 min-w-[85px] group-hover:text-slate-500 transition-colors">
+                      <span className="text-muted-foreground/70 select-none flex-shrink-0 min-w-[85px] group-hover:text-muted-foreground transition-colors">
                         [{log.timestamp}]
                       </span>
                       <span className="break-all whitespace-pre-wrap">

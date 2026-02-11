@@ -3,37 +3,225 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==================================================
+   MIDNIGHT PROTOCOL (Default Theme)
+   Cyberpunk command center with electric blue accents
+   ================================================== */
 @layer base {
-  :root {
-    --background: 230 40% 4%;
-    --foreground: 210 40% 98%;
+  :root,
+  [data-theme="midnight-protocol"] {
+    --background: 222 47% 6%;
+    --foreground: 213 31% 91%;
 
-    --card: 230 40% 6%;
-    --card-foreground: 210 40% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 213 31% 91%;
 
-    --popover: 230 40% 5%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 222 47% 7%;
+    --popover-foreground: 213 31% 91%;
 
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 217 91% 60%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 222.2 47.4% 11.2%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 222 47% 14%;
+    --secondary-foreground: 213 31% 91%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 222 47% 14%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 222 47% 14%;
+    --accent-foreground: 213 31% 91%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 222 47% 14%;
+    --input: 222 47% 14%;
+    --ring: 217 91% 60%;
 
     --radius: 0.75rem;
+
+    /* Typography */
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --font-display: 'Inter', system-ui, sans-serif;
+
+    /* Effects */
+    --shadow-color: 222 47% 4%;
+    --glow-primary: 0 0 20px hsl(217 91% 60% / 0.4);
+    --glow-secondary: 0 0 30px hsl(217 91% 60% / 0.2);
+
+    /* Transitions */
+    --transition-fast: 150ms;
+    --transition-normal: 300ms;
+    --transition-slow: 500ms;
+
+    /* Background */
+    --bg-gradient-start: 222 47% 6%;
+    --bg-gradient-end: 222 47% 3%;
+    --bg-overlay: radial-gradient(circle at 50% -20%, hsla(217, 91%, 60%, 0.12), transparent 70%);
+    --bg-texture: url('https://grainy-gradients.vercel.app/noise.svg');
+    --bg-texture-opacity: 0.2;
+
+    /* Primary color variants for components */
+    --primary-50: 214 100% 97%;
+    --primary-100: 214 95% 93%;
+    --primary-200: 213 94% 85%;
+    --primary-300: 212 95% 75%;
+    --primary-400: 213 94% 68%;
+    --primary-500: 217 91% 60%;
+    --primary-600: 221 83% 53%;
+    --primary-700: 224 76% 48%;
+    --primary-800: 226 72% 40%;
+    --primary-900: 224 65% 33%;
+    --primary-950: 226 59% 22%;
+  }
+
+  /* ==================================================
+     OBSIDIAN NOIR
+     Luxury dark mode with warm copper/gold accents
+     ================================================== */
+  [data-theme="obsidian-noir"] {
+    --background: 0 0% 3%;
+    --foreground: 30 20% 92%;
+
+    --card: 0 0% 5%;
+    --card-foreground: 30 20% 92%;
+
+    --popover: 0 0% 4%;
+    --popover-foreground: 30 20% 92%;
+
+    --primary: 28 70% 54%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 30 20% 92%;
+
+    --muted: 0 0% 10%;
+    --muted-foreground: 30 10% 50%;
+
+    --accent: 0 0% 10%;
+    --accent-foreground: 30 20% 92%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 28 70% 54%;
+
+    --radius: 0.375rem;
+
+    /* Typography */
+    --font-sans: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --font-display: 'Crimson Pro', Georgia, serif;
+
+    /* Effects */
+    --shadow-color: 0 0% 0%;
+    --glow-primary: 0 0 25px hsl(28 70% 54% / 0.35);
+    --glow-secondary: 0 0 40px hsl(45 70% 50% / 0.15);
+
+    /* Transitions */
+    --transition-fast: 150ms;
+    --transition-normal: 350ms;
+    --transition-slow: 600ms;
+
+    /* Background */
+    --bg-gradient-start: 0 0% 3%;
+    --bg-gradient-end: 0 0% 1%;
+    --bg-overlay: linear-gradient(135deg, hsla(28, 70%, 54%, 0.03) 0%, transparent 50%);
+    --bg-texture: url('https://www.transparenttextures.com/patterns/linen.png');
+    --bg-texture-opacity: 0.03;
+
+    /* Primary color variants for components */
+    --primary-50: 25 80% 95%;
+    --primary-100: 26 75% 88%;
+    --primary-200: 27 70% 78%;
+    --primary-300: 27 70% 68%;
+    --primary-400: 28 70% 60%;
+    --primary-500: 28 70% 54%;
+    --primary-600: 28 65% 48%;
+    --primary-700: 28 60% 40%;
+    --primary-800: 28 55% 33%;
+    --primary-900: 27 50% 26%;
+    --primary-950: 25 45% 18%;
+
+    /* Gold accent for highlights */
+    --accent-gold: 45 70% 50%;
+  }
+
+  /* ==================================================
+     SYNTHWAVE SUNSET
+     80s retro-futurism with neon pink/cyan
+     ================================================== */
+  [data-theme="synthwave-sunset"] {
+    --background: 280 50% 8%;
+    --foreground: 300 50% 95%;
+
+    --card: 280 50% 10%;
+    --card-foreground: 300 50% 95%;
+
+    --popover: 280 50% 9%;
+    --popover-foreground: 300 50% 95%;
+
+    --primary: 330 85% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 280 50% 16%;
+    --secondary-foreground: 300 50% 95%;
+
+    --muted: 280 50% 16%;
+    --muted-foreground: 280 30% 55%;
+
+    --accent: 180 85% 55%;
+    --accent-foreground: 280 50% 8%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 280 50% 18%;
+    --input: 280 50% 18%;
+    --ring: 330 85% 60%;
+
+    --radius: 1.25rem;
+
+    /* Typography */
+    --font-sans: 'Outfit', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+
+    /* Effects */
+    --shadow-color: 280 50% 5%;
+    --glow-primary: 0 0 25px hsl(330 85% 60% / 0.5);
+    --glow-secondary: 0 0 30px hsl(180 85% 55% / 0.3);
+
+    /* Transitions */
+    --transition-fast: 100ms;
+    --transition-normal: 250ms;
+    --transition-slow: 400ms;
+
+    /* Background */
+    --bg-gradient-start: 280 50% 8%;
+    --bg-gradient-end: 320 50% 5%;
+    --bg-overlay: linear-gradient(180deg, hsla(280, 50%, 8%, 0) 0%, hsla(330, 85%, 60%, 0.05) 100%);
+    --bg-texture: url('https://grainy-gradients.vercel.app/noise.svg');
+    --bg-texture-opacity: 0.15;
+
+    /* Primary color variants for components */
+    --primary-50: 330 100% 97%;
+    --primary-100: 330 100% 92%;
+    --primary-200: 330 95% 82%;
+    --primary-300: 330 90% 72%;
+    --primary-400: 330 88% 65%;
+    --primary-500: 330 85% 60%;
+    --primary-600: 330 80% 52%;
+    --primary-700: 330 75% 44%;
+    --primary-800: 330 70% 36%;
+    --primary-900: 330 65% 28%;
+    --primary-950: 330 60% 20%;
+
+    /* Cyan accent */
+    --accent-cyan: 180 85% 55%;
   }
 }
 
@@ -44,21 +232,42 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Apply display font to headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+
+  /* Apply mono font to code elements */
+  code, pre, .font-mono {
+    font-family: var(--font-mono);
   }
 }
 
 @layer components {
   .glass {
-    @apply bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-xl;
+    background-color: hsl(var(--card) / 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: 0 8px 32px hsl(var(--shadow-color) / 0.4);
   }
 
   .text-glow {
-    text-shadow: 0 0 20px theme('colors.blue.500/0.4');
+    text-shadow: var(--glow-primary);
   }
 
   .card-premium {
-    @apply bg-slate-900/40 backdrop-blur-sm border border-slate-800 hover:border-slate-700 transition-all duration-300;
+    background-color: hsl(var(--card) / 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid hsl(var(--border) / 0.6);
+    transition: all var(--transition-normal) ease;
+  }
+
+  .card-premium:hover {
+    border-color: hsl(var(--border));
   }
 
   /* Drag and drop styles for dashboard cards */
@@ -73,78 +282,132 @@
   .sortable-card.dragging {
     @apply opacity-50 shadow-2xl scale-[1.02] z-50;
   }
+
+  /* Theme-aware background with gradient and texture */
+  .theme-bg {
+    background: linear-gradient(180deg, hsl(var(--bg-gradient-start)) 0%, hsl(var(--bg-gradient-end)) 100%);
+  }
+
+  .theme-bg-overlay::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: var(--bg-overlay);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .theme-bg-texture::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: var(--bg-texture);
+    opacity: var(--bg-texture-opacity);
+    pointer-events: none;
+    z-index: 0;
+    filter: brightness(0.5) contrast(1.5);
+  }
 }
 
 
-/* React Big Calendar Overrides for Dark Mode */
+/* React Big Calendar Overrides - Theme Aware */
 .dark-calendar .rbc-toolbar {
-  @apply text-slate-100 mb-4;
+  @apply mb-4;
+  color: hsl(var(--foreground));
 }
 
 .dark-calendar .rbc-toolbar button {
-  @apply text-slate-100 border-slate-700 hover:bg-slate-800;
+  color: hsl(var(--muted-foreground));
+  border-color: hsl(var(--border));
+  background-color: transparent;
+}
+
+.dark-calendar .rbc-toolbar button:hover {
+  background-color: hsl(var(--muted) / 0.5);
 }
 
 .dark-calendar .rbc-toolbar button.rbc-active {
-  @apply bg-blue-600 border-blue-600 text-white hover:bg-blue-700 shadow-none;
+  background-color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: var(--glow-primary);
 }
 
 .dark-calendar .rbc-header {
-  @apply border-slate-700 text-slate-400 font-medium py-2;
+  border-color: hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  @apply font-medium py-2;
 }
 
 .dark-calendar .rbc-month-view {
-  @apply border-slate-700 rounded-lg overflow-hidden;
+  border-color: hsl(var(--border));
+  border-radius: var(--radius);
+  @apply overflow-hidden;
 }
 
 .dark-calendar .rbc-day-bg {
-  @apply border-slate-800;
+  border-color: hsl(var(--border));
 }
 
 .dark-calendar .rbc-off-range-bg {
-  @apply bg-slate-900/50;
+  background-color: hsl(var(--muted) / 0.3);
 }
 
 .dark-calendar .rbc-date-cell {
-  @apply text-slate-400 p-2;
+  color: hsl(var(--muted-foreground));
+  @apply p-2;
 }
 
 .dark-calendar .rbc-now {
-  @apply text-blue-400 font-bold;
+  color: hsl(var(--primary));
+  @apply font-bold;
 }
 
 .dark-calendar .rbc-event {
-  @apply bg-blue-600/20 border border-blue-500/40 rounded-lg text-blue-200 text-[10px] font-bold uppercase tracking-wider p-1.5 transition-all duration-300 hover:bg-blue-600/40 hover:border-blue-500/60 shadow-sm border-blue-500/20;
+  background-color: hsl(var(--primary) / 0.2);
+  border: 1px solid hsl(var(--primary) / 0.4);
+  border-radius: var(--radius);
+  color: hsl(var(--primary));
+  @apply text-[10px] font-bold uppercase tracking-wider p-1.5 transition-all duration-300;
+}
+
+.dark-calendar .rbc-event:hover {
+  background-color: hsl(var(--primary) / 0.4);
+  border-color: hsl(var(--primary) / 0.6);
+  box-shadow: var(--glow-secondary);
 }
 
 .dark-calendar .rbc-time-view {
-  @apply border-slate-700 rounded-lg;
+  border-color: hsl(var(--border));
+  border-radius: var(--radius);
 }
 
 .dark-calendar .rbc-time-header {
-  @apply border-slate-700;
+  border-color: hsl(var(--border));
 }
 
 .dark-calendar .rbc-time-content {
-  @apply border-slate-700;
+  border-color: hsl(var(--border));
 }
 
 .dark-calendar .rbc-timeslot-group {
-  @apply border-slate-800;
+  border-color: hsl(var(--border));
 }
 
 .dark-calendar .rbc-time-slot {
-  @apply border-slate-800;
+  border-color: hsl(var(--border));
 }
 
 .dark-calendar .rbc-time-gutter .rbc-timeslot-group {
-  @apply border-slate-800 text-slate-500 text-xs;
+  border-color: hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  @apply text-xs;
 }
 
 .dark-calendar .rbc-day-slot .rbc-time-slot {
-  @apply border-slate-800;
+  border-color: hsl(var(--border));
 }
 
 .dark-calendar .rbc-today {
-  @apply bg-slate-800/30;
+  background-color: hsl(var(--primary) / 0.08);
 }

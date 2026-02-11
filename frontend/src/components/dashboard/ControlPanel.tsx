@@ -24,29 +24,29 @@ export function ControlPanel({ onStartScheduler, onStopScheduler, onRecordTask, 
     >
       <Card className="card-premium">
         <CardHeader className="pb-4" onDoubleClick={onHeaderDoubleClick}>
-          <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+          <CardTitle className="text-foreground font-medium tracking-tight flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary" style={{ boxShadow: 'var(--glow-primary)' }} />
             Global Controls
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-sky-400 rounded-lg blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200" />
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200" />
             <Button
               onClick={() => setIsModalOpen(true)}
-              className="relative w-full bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-100"
+              className="relative w-full bg-card border border-border hover:bg-muted text-foreground"
             >
-              <Circle className="w-4 h-4 mr-2 fill-blue-500 animate-pulse text-blue-500" />
+              <Circle className="w-4 h-4 mr-2 fill-primary animate-pulse text-primary" />
               <span className="font-semibold tracking-wide">Record New Task</span>
             </Button>
           </div>
 
-          <div className="flex flex-col gap-3 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">
+          <div className="flex flex-col gap-3 p-4 rounded-xl bg-card/50 border border-border/50">
             <div className="flex items-center justify-between">
-              <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest">Scheduler Engine</h3>
+              <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest">Scheduler Engine</h3>
               <div className="flex items-center gap-2">
-                <span className={`w-1.5 h-1.5 rounded-full ${schedulerStatus ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'}`} />
-                <span className={`text-[10px] font-bold uppercase tracking-tight ${schedulerStatus ? 'text-emerald-400' : 'text-slate-500'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${schedulerStatus ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/50'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-tight ${schedulerStatus ? 'text-emerald-400' : 'text-muted-foreground'}`}>
                   {schedulerStatus ? 'Active' : 'Standby'}
                 </span>
               </div>

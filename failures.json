@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": "iniciar-almoco-unknown-1770818359447",
+    "taskName": "iniciar-almoco",
+    "errorType": "unknown",
+    "context": {
+      "name": "Error",
+      "stack": "page.waitForTimeout: Target page, context or browser has been closed\n    at MonitoredPage.waitForTimeout (/Users/ilia/Documents/ghost-runner/src/core/pageWrapper.ts:349:22)\n    at Object.run (/Users/ilia/Documents/ghost-runner/tasks/private/iniciar-almoco.js:11:16)\n    at async main (/Users/ilia/Documents/ghost-runner/src/core/index.ts:102:20)",
+      "errorMessage": "page.waitForTimeout: Target page, context or browser has been closed"
+    },
+    "timestamp": "2026-02-11T13:59:19.447Z",
+    "count": 1,
+    "lastSeen": "2026-02-11T13:59:19.447Z",
+    "dismissed": false
+  }
+]

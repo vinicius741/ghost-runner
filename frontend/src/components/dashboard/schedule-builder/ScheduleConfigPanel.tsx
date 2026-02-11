@@ -12,16 +12,16 @@ interface ScheduleConfigPanelProps {
 
 export function ScheduleConfigPanel({ cronTab, onTabChange, config, onConfigChange, children }: ScheduleConfigPanelProps) {
   return (
-    <div className="bg-slate-950/50 border border-slate-800/50 rounded-2xl p-5 space-y-4">
+    <div className="bg-card/50 border border-border/50 rounded-2xl p-5 space-y-4">
       <Tabs value={cronTab} onValueChange={(v) => onTabChange(v as CronTab)} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800/50 w-full p-1 h-11">
-          <TabsTrigger value="once" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Once</TabsTrigger>
-          <TabsTrigger value="minutes" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Min</TabsTrigger>
-          <TabsTrigger value="hourly" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Hour</TabsTrigger>
-          <TabsTrigger value="daily" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-slate-800 data-[state=active]:text-blue-400">Day</TabsTrigger>
+        <TabsList className="bg-muted/50 border border-border/50 w-full p-1 h-11">
+          <TabsTrigger value="once" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-muted data-[state=active]:text-primary">Once</TabsTrigger>
+          <TabsTrigger value="minutes" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-muted data-[state=active]:text-primary">Min</TabsTrigger>
+          <TabsTrigger value="hourly" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-muted data-[state=active]:text-primary">Hour</TabsTrigger>
+          <TabsTrigger value="daily" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-muted data-[state=active]:text-primary">Day</TabsTrigger>
         </TabsList>
 
-        <div className="pt-4 text-slate-300 min-h-[60px] flex items-center justify-center">
+        <div className="pt-4 text-foreground/80 min-h-[60px] flex items-center justify-center">
           <TabsContent value="once" className="mt-0 w-full">
             <OnceTabContent
               delayHours={config.delayHours}
@@ -77,10 +77,10 @@ function OnceTabContent({
           min={0}
           value={delayHours}
           onChange={(e) => onDelayHoursChange(parseInt(e.target.value) || 0)}
-          className="w-16 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+          className="w-16 h-9 bg-muted border-border text-center font-bold text-primary focus:ring-primary/20"
           placeholder="HH"
         />
-        <span className="text-slate-500 text-xs">h</span>
+        <span className="text-muted-foreground text-xs">h</span>
       </div>
       <div className="flex items-center gap-1">
         <Input
@@ -89,10 +89,10 @@ function OnceTabContent({
           max={59}
           value={delayMinutes}
           onChange={(e) => onDelayMinutesChange(parseInt(e.target.value) || 0)}
-          className="w-16 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+          className="w-16 h-9 bg-muted border-border text-center font-bold text-primary focus:ring-primary/20"
           placeholder="MM"
         />
-        <span className="text-slate-500 text-xs">m</span>
+        <span className="text-muted-foreground text-xs">m</span>
       </div>
     </div>
   );
@@ -114,7 +114,7 @@ function MinutesTabContent({
         max={59}
         value={minutes}
         onChange={(e) => onMinutesChange(parseInt(e.target.value))}
-        className="w-20 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+        className="w-20 h-9 bg-muted border-border text-center font-bold text-primary focus:ring-primary/20"
       />
       <span>minutes</span>
     </div>
@@ -137,7 +137,7 @@ function HourlyTabContent({
         max={59}
         value={hourlyMinute}
         onChange={(e) => onHourlyMinuteChange(parseInt(e.target.value))}
-        className="w-20 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+        className="w-20 h-9 bg-muted border-border text-center font-bold text-primary focus:ring-primary/20"
       />
       <span>past the hour</span>
     </div>
@@ -158,7 +158,7 @@ function DailyTabContent({
         type="time"
         value={dailyTime}
         onChange={(e) => onDailyTimeChange(e.target.value)}
-        className="w-32 h-9 bg-slate-900 border-slate-800 text-center font-bold text-blue-400 focus:ring-blue-500/20"
+        className="w-32 h-9 bg-muted border-border text-center font-bold text-primary focus:ring-primary/20"
       />
     </div>
   );
