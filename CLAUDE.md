@@ -2,102 +2,262 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Tech Stack Summary
+
+| Layer | Technologies |
+|-------|-------------|
+| Backend | Node.js, TypeScript (tsx runtime), Express 5, Socket.io |
+| Frontend | React 19, Vite, TypeScript, Tailwind CSS, shadcn/ui (Radix UI) |
+| Automation | Playwright 1.57, playwright-extra, puppeteer-extra-plugin-stealth |
+| Scheduling | node-cron, cron-parser |
+| State | Socket.io (real-time), localStorage (dashboard layout) |
+| Testing | Node.js built-in test runner (backend), Vitest + Testing Library (frontend) |
+
 ## Common Commands
 
 ### Development
-- `npm run ui` - Start development environment (runs both backend server and frontend dev server with hot reload). Backend on :3333, frontend on :5173 with Vite proxy.
-- `cd frontend && npm run dev` - Start frontend dev server only (requires backend running separately)
-- `cd frontend && npm run build` - Build frontend for production
-- `npm run lint` - Run frontend linting
-
-### Production
-- `npm run ui:prod` - Build frontend and start production server on :3333 (serves both API and built frontend)
-- `npm run deploy:frontend` - Build frontend and copy to backend static files
+```bash
+npm run ui                 # Start dev environment (backend :3333 + frontend :5173)
+npm run ui:prod            # Build frontend and start production server
+cd frontend && npm run dev # Frontend dev server only (requires backend running)
+cd frontend && npm run build # Build frontend for production
+```
 
 ### CLI / Automation
-- `npm run setup-login` - Launch browser for manual Google/login setup (saves session to `user_data/`)
-- `npm run verify-login` - Verify session persistence
-- `npm run bot -- --task=task_name` - Run a specific task via CLI
-- `npm run record -- --name=mytask --type=private` - Launch Playwright Codegen recorder
-- `npm run schedule` - Run scheduler headless (reads from `schedule.json`)
+```bash
+npm run setup-login        # Launch browser for manual login setup (saves to user_data/)
+npm run verify-login       # Verify session persistence
+npm run bot -- --task=name # Run a specific task via CLI
+npm run record -- --name=mytask --type=private # Launch Playwright Codegen recorder
+npm run schedule           # Run scheduler headless (reads from schedule.json)
+```
 
-### Frontend Development
-The frontend is a React + TypeScript app built with Vite:
-- `cd frontend && npm install` - Install frontend dependencies
-- `cd frontend && npm run dev` - Start Vite dev server (:5173)
-- `cd frontend && npm run build` - TypeScript check + build
-- `cd frontend && npm run preview` - Preview production build locally
+### Testing
+```bash
+npm test                   # Backend tests (Node.js built-in runner)
+npm run test:watch         # Backend tests in watch mode
+npm run test:coverage      # Backend tests with coverage (c8)
+
+cd frontend && npm run test        # Frontend unit tests (Vitest)
+cd frontend && npm run test:ui     # Frontend tests with UI
+cd frontend && npm run test:run    # Frontend tests single run
+cd frontend && npm run test:coverage # Frontend tests with coverage
+```
+
+### Linting
+```bash
+npm run lint               # Run frontend linting
+```
 
 ## Architecture Overview
 
-Ghost Runner is a **hybrid CLI tool and Web UI** for stealthy browser automation using Playwright with anti-detection plugins.
+Ghost Runner is a **hybrid CLI tool and Web UI** for stealthy browser automation. The system has three main layers running as separate processes:
 
-### Core Architecture
+1. **Core runtime** - Task execution + scheduler (child processes)
+2. **Server** - Express + Socket.io (orchestration layer)
+3. **Frontend** - React dashboard (UI layer)
 
-**Backend (Node.js, TypeScript):**
-- `src/core/index.ts` - Main task runner (CLI entry point). Accepts `--task=` argument, loads browser with stealth config, executes tasks from `tasks/` directory. Now wraps Page with monitored wrapper for structured error tracking.
-- `src/core/scheduler.ts` - Cron scheduler supporting both recurring (cron expressions) and one-time tasks. Auto-removes executed one-time tasks from `schedule.json`. Includes macOS `caffeinate` integration to prevent system sleep when tasks are scheduled. Uses `tsx` for runtime TypeScript execution.
-- `src/core/errors.ts` - Structured error types for task failure tracking: `TaskError`, `ElementNotFoundError`, `NavigationFailureError`, `TaskTimeoutError`.
-- `src/core/pageWrapper.ts` - Monitored Playwright Page wrapper that intercepts common failure points (waitForSelector, goto, waitForNavigation) and throws structured errors.
-- `src/core/taskReporter.ts` - Task execution status reporting via stdout markers: `[TASK_STATUS:STARTED]`, `[TASK_STATUS:COMPLETED]`, `[TASK_STATUS:FAILED]`.
-- `src/core/record-new-task.ts` - Playwright Codegen launcher with stealth configuration for recording tasks.
-- `src/config/browserConfig.ts` - Stealth browser configuration using `playwright-extra` + `puppeteer-extra-plugin-stealth`. Launches persistent context with `user_data/` directory for session persistence.
-- `src/server/index.ts` - Express server with Socket.io for Web UI and real-time logs.
-- `src/server/routes/` + `src/server/controllers/` - API endpoints for tasks, scheduler, settings, logs, and failures.
-- `src/server/config.ts` - Backend configuration constants including `FAILURES_FILE`.
+```
+┌─────────────────┐     REST/Socket.io     ┌─────────────────┐
+│  Frontend       │ ◄─────────────────────► │  Server         │
+│  (React + Vite) │                        │  (Express)      │
+└─────────────────┘                        └────────┬────────┘
+                                                    │ spawn
+                                           ┌────────▼────────┐
+                                           │  Task Runner    │
+                                           │  (child_process)│
+                                           └────────┬────────┘
+                                                    │
+                                           ┌────────▼────────┐
+                                           │  Playwright     │
+                                           │  (Core runtime) │
+                                           └─────────────────┘
+```
 
-**Frontend (React + TypeScript):**
-- Built with Vite, Tailwind CSS, and shadcn/ui components (Radix UI primitives)
-- `frontend/src/components/dashboard/` - Main dashboard components (TaskList, ScheduleBuilder, TaskCalendar, SettingsManager, LogsConsole, NextTaskTimer, WarningsPanel)
-- `frontend/src/lib/dashboardLayout.ts` - Dashboard layout system with localStorage persistence and versioned migrations
-- Uses Socket.io client for real-time log streaming and task status updates
-- Calendar view powered by `react-big-calendar`
-- Drag-and-drop dashboard layout using `@dnd-kit/core` and `@dnd-kit/sortable`
+### Core Runtime (`src/core/`)
 
-**Task System:**
-- Tasks are JavaScript modules in `tasks/public/` (shared) or `tasks/private/` (git-ignored)
-- Each task exports a `run(page)` async function that receives a Playwright Page object
-- Use `npm run record` to generate task code, then paste into task files using the template in `tasks/public/template.js`
+| File | Purpose |
+|------|---------|
+| `index.ts` | CLI entry point. Parses `--task=`, launches browser, executes task module |
+| `scheduler.ts` | Cron scheduler for recurring/one-time tasks. Spawns `tsx src/core/index.ts` |
+| `record-new-task.ts` | Playwright Codegen launcher with stealth config |
+| `errors.ts` | Structured error types: `TaskError`, `ElementNotFoundError`, `NavigationFailureError`, `TaskTimeoutError` |
+| `pageWrapper.ts` | Monitored Playwright Page wrapper. Intercepts `goto`, `waitForSelector`, etc. to throw structured errors |
+| `taskReporter.ts` | Emits status markers to stdout: `[TASK_STATUS:STARTED|COMPLETED|FAILED|COMPLETED_WITH_DATA]` |
 
-**Configuration Files:**
-- `schedule.json` - Scheduler configuration (managed via Web UI, supports cron and executeAt)
-- `settings.json` - Global settings (geolocation, etc.)
-- `failures.json` - Task failure tracking (auto-created, managed via Web UI)
-- `user_data/` - Persistent browser profile (cookies, localStorage). **DO NOT delete** if maintaining sessions.
+### Server Layer (`src/server/`)
 
-### Key Architectural Patterns
+| Directory/File | Purpose |
+|----------------|---------|
+| `index.ts` | Express + Socket.io server entry point. Serves API and frontend build |
+| `controllers/` | Request handlers for tasks, scheduler, settings, failures, logs, info-gathering |
+| `routes/` | Express route definitions |
+| `services/` | Business logic: `TaskRunner` (child process spawning), `TaskExecutionService` (orchestration), `SchedulerService` |
+| `repositories/` | File-based data persistence: `TaskRepository`, `FailureRepository` |
+| `utils/` | `taskParser` (stdout marker parsing), `taskValidators` (security validation) |
+| `config.ts` | Backend constants including `FAILURES_FILE` |
 
-1. **Persistent Sessions:** Browser uses `launchPersistentContext` with `user_data/` directory. Manual login via `setup-login` script saves authentication state.
+### Frontend (`frontend/src/`)
 
-2. **Stealth Configuration:** Browser launched through `playwright-extra` with stealth plugin applied. Configuration includes geolocation from `settings.json` and permissions granted via `context.grantPermissions()`.
+| Directory | Purpose |
+|-----------|---------|
+| `components/dashboard/` | Dashboard widgets: TaskList, ScheduleBuilder, TaskCalendar, SettingsManager, LogsConsole, WarningsPanel, ThemeSwitcher |
+| `components/ui/` | shadcn/ui primitives (Radix UI) |
+| `hooks/` | Custom React hooks including Socket.io integration |
+| `lib/` | Utilities including `dashboardLayout.ts` (localStorage persistence with versioned migrations) |
+| `themes/` | Theme configuration for dark/light mode |
+| `types.ts` | Centralized TypeScript type definitions |
 
-3. **Scheduler Task Execution:** Scheduler spawns child processes (`tsx src/core/index.ts --task=xxx`) to isolate task execution. Each task runs independently with error handling to prevent cascading failures. Task names are validated for security.
+## Key Architectural Patterns
 
-4. **Real-time Communication:** Web UI uses Socket.io to stream logs and status updates. Server stores `io` instance in `app.set('io', io)` for controller access. Events include: `task-started`, `task-completed`, `task-failed`, `failure-recorded`, `failures-cleared`, `failure-dismissed`.
+### 1. Persistent Sessions
+- Browser uses `launchPersistentContext` with `user_data/` directory
+- Manual login via `setup-login` saves authentication state
+- **Never delete `user_data/`** if maintaining sessions
 
-5. **Task Failure Tracking:**
-   - Page is wrapped with `createMonitoredPage()` which intercepts common failure points
-   - Structured errors (`ElementNotFoundError`, `NavigationFailureError`, `TaskTimeoutError`) are thrown with context
-   - Task status is reported via stdout markers: `[TASK_STATUS:STARTED|COMPLETED|FAILED]`
-   - Failures are persisted to `failures.json` with deduplication (same error within 24h increments count)
-   - Frontend WarningsPanel displays failures with color-coded error types and occurrence counts
+### 2. Stealth Configuration
+- Browser launched through `playwright-extra` with `puppeteer-extra-plugin-stealth`
+- Geolocation configured from `settings.json`
+- Permissions granted via `context.grantPermissions()`
 
-6. **Development Runner:** `dev-runner.ts` spawns the backend server with color-coded console output. The server serves both API endpoints and the built frontend (from `frontend/dist`). Handles graceful shutdown with proper process group management.
+### 3. Scheduler Task Execution
+- Scheduler spawns child processes: `tsx src/core/index.ts --task=xxx`
+- Each task runs in isolation (error handling prevents cascading failures)
+- Task names validated for security (path traversal prevention)
+- One-time tasks auto-removed from `schedule.json` after execution
 
-7. **Type Safety:** The codebase is fully TypeScript with zero `any` types (except 4 unavoidable Playwright internal cases). Error handling uses `unknown` with type guards. Type definitions are centralized in `frontend/src/types.ts` and backend controllers.
+### 4. Real-time Communication
+- Socket.io streams logs and status updates
+- Server stores `io` instance: `app.set('io', io)` for controller access
+- Events: `task-started`, `task-completed`, `task-failed`, `log`, `scheduler-status`, `failure-recorded`, `info-data-updated`
+
+### 5. Task Failure Tracking
+- Page wrapped with `createMonitoredPage()` intercepts common failure points
+- Structured errors thrown with context (element selector, URL, timeout duration)
+- Status reported via stdout markers
+- Failures persisted to `failures.json` with deduplication (same error within 24h increments count)
+- Frontend WarningsPanel displays failures with color-coded error types
+
+### 6. Info-Gathering Tasks
+- Tasks can return data with metadata (category, TTL, data type)
+- `taskReporter` emits `COMPLETED_WITH_DATA` marker with JSON payload
+- Server stores in `info-gathering.json` with TTL-based expiration
+- Frontend InfoGathering component displays cached results
+
+### 7. Dashboard Layout System
+- Stored in localStorage with versioning (current version 3)
+- Migration system handles layout schema changes
+- Drag-and-drop via `@dnd-kit/core` and `@dnd-kit/sortable`
+- Supports minimize/restore per card (MinimizedCardsSidebar)
+
+### 8. Development Runner
+- `dev-runner.ts` spawns backend server with color-coded console output
+- Handles graceful shutdown with proper process group management
+- Frontend dev server proxied through backend for API calls
+
+## Configuration Files
+
+| File | Purpose | Managed By |
+|------|---------|------------|
+| `schedule.json` | Scheduler configuration (cron + executeAt) | Web UI / CLI |
+| `settings.json` | Global settings (geolocation, headless) | Web UI |
+| `failures.json` | Task failure tracking (auto-created) | Server |
+| `info-gathering.json` | Cached info-gathering data | Server |
+| `user_data/` | Persistent browser profile | Playwright |
+
+## API Endpoints
+
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
+| GET | `/api/health` | - | Health check |
+| GET | `/api/tasks` | TaskController | List available tasks |
+| POST | `/api/tasks/run` | TaskController | Execute a task |
+| POST | `/api/record` | RecordController | Start task recording |
+| GET/PUT | `/api/schedule` | ScheduleController | Read/write schedule |
+| POST | `/api/scheduler/start` | SchedulerController | Start scheduler |
+| POST | `/api/scheduler/stop` | SchedulerController | Stop scheduler |
+| GET | `/api/scheduler/status` | SchedulerController | Scheduler status |
+| GET/PUT | `/api/settings` | SettingsController | Read/write settings |
+| GET/DELETE | `/api/failures` | FailureController | List/clear failures |
+| POST | `/api/failures/:id/dismiss` | FailureController | Dismiss failure |
+| GET/DELETE | `/api/info-gathering` | InfoGatheringController | List/clear gathered data |
+| POST | `/api/setup-login` | SetupLoginController | Run login setup |
+
+## Data Structures
+
+### Failure Record
+```typescript
+interface FailureRecord {
+  id: string;
+  taskName: string;
+  errorType: 'ElementNotFoundError' | 'NavigationFailureError' | 'TaskTimeoutError' | 'UnknownError';
+  context: string;
+  timestamp: string;
+  count: number;
+  lastSeen: string;
+  dismissed: boolean;
+}
+```
+
+### Schedule Entry
+```typescript
+interface ScheduleEntry {
+  taskName: string;
+  cron?: string;        // For recurring tasks
+  executeAt?: string;   // ISO timestamp for one-time tasks
+  enabled: boolean;
+}
+```
+
+### Task Metadata (Info-Gathering)
+```typescript
+interface TaskMetadata {
+  category: string;
+  ttl: number;          // Time-to-live in seconds
+  dataType: string;
+}
+```
+
+## Task System
+
+Tasks are JavaScript modules in `tasks/public/` or `tasks/private/`:
+
+```javascript
+// Basic task
+export async function run(page) {
+  await page.goto('https://example.com');
+  await page.waitForSelector('#content');
+}
+
+// Info-gathering task (returns data)
+export async function run(page) {
+  await page.goto('https://example.com');
+  const title = await page.title();
+  return {
+    data: { title },
+    metadata: { category: 'general', ttl: 3600, dataType: 'object' }
+  };
+}
+```
+
+Use `npm run record` to generate task code via Playwright Codegen.
 
 ## Important Implementation Details
 
-- **Module System:** Backend uses TypeScript compiled at runtime with `tsx`, Frontend uses ES modules (`import`/`export`)
-- **Task Loading:** Tasks are loaded dynamically using dynamic `import()` with path construction to support both `tasks/public/` and `tasks/private/` directories
-- **Geolocation:** Browser geolocation defaults to São Paulo coordinates but can be configured via Web UI settings
-- **Sleep Prevention:** On macOS, `caffeinate -i` is started when tasks are scheduled and stopped when no tasks remain
-- **One-Time Task Cleanup:** After execution, one-time tasks are filtered out of `schedule.json` by matching both task name and executeAt timestamp
-- **Error Handling:** Global `uncaughtException` and `unhandledRejection` handlers emit crash notifications via Socket.io. All controllers use `error: unknown` with type guards instead of `any`.
-- **Dashboard Layout:** Stored in localStorage with versioning (current version 3). Migration system handles layout changes. Supports drag-and-drop between left and right columns using `@dnd-kit`.
-- **API Endpoints:**
-  - `GET /api/health` - Health check
-  - `GET /api/failures` - Retrieve all failure records
-  - `DELETE /api/failures` - Clear all failures
-  - `POST /api/failures/:id/dismiss` - Dismiss specific failure
-- **Failure Record Structure:** `{ id, taskName, errorType, context, timestamp, count, lastSeen, dismissed }`
+- **Module System**: Backend uses CommonJS with `tsx` for runtime TypeScript; Frontend uses ES modules
+- **Task Loading**: Dynamic `import()` with path construction for `tasks/public/` and `tasks/private/`
+- **Geolocation**: Defaults to São Paulo coordinates; configurable via Web UI
+- **Sleep Prevention**: On macOS, `caffeinate -i` starts when tasks scheduled, stops when none remain
+- **Error Handling**: Global `uncaughtException`/`unhandledRejection` handlers emit Socket.io crash notifications
+- **Type Safety**: Zero `any` types (except 4 Playwright internal cases). Error handling uses `unknown` with type guards
+
+## File References for Common Tasks
+
+| Task | Key Files |
+|------|-----------|
+| Add new API endpoint | `src/server/routes/*.ts`, `src/server/controllers/*.ts` |
+| Modify task execution | `src/core/index.ts`, `src/server/services/TaskExecutionService.ts` |
+| Add dashboard widget | `frontend/src/components/dashboard/*.tsx`, `frontend/src/App.tsx` |
+| Change scheduler logic | `src/core/scheduler.ts`, `src/server/services/scheduler.ts` |
+| Add new error type | `src/core/errors.ts`, `src/core/pageWrapper.ts`, `src/server/utils/taskParser.ts` |
+| Modify dashboard layout | `frontend/src/lib/dashboardLayout.ts`, `frontend/src/components/dashboard/DashboardGrid.tsx` |

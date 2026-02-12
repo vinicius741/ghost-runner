@@ -3,12 +3,7 @@ import { Request, Response } from 'express';
 import { SCHEDULE_FILE } from '../config';
 import schedulerService from '../services/scheduler';
 import { parseExpression } from 'cron-parser';
-
-export interface ScheduleItem {
-  task: string;
-  cron?: string;
-  executeAt?: string;
-}
+import type { ScheduleItem, NextTask } from '../../../shared/types';
 
 export const getStatus = (req: Request, res: Response): void => {
   res.json({ running: schedulerService.isRunning() });
@@ -47,12 +42,6 @@ export const getSchedule = async (req: Request, res: Response): Promise<void> =>
     }
   }
 };
-
-export interface NextTask {
-  task: string;
-  nextRun: string;
-  delayMs: number;
-}
 
 export const getNextTask = async (req: Request, res: Response): Promise<void> => {
   try {

@@ -1,67 +1,16 @@
-export interface Task {
-  name: string;
-  type: 'public' | 'private' | 'root';
-}
+// Re-export shared types
+export type {
+  Task,
+  LogEntry,
+  ScheduleItem,
+  Settings,
+  GeolocationSettings,
+  FailureRecord,
+  InfoGatheringResult,
+  NextTask,
+} from '@shared/types';
 
-export interface LogEntry {
-  message: string;
-  timestamp: string;
-  type: 'normal' | 'error' | 'system';
-}
-
-export interface ScheduleItem {
-  task: string;
-  cron?: string;
-  executeAt?: string;
-}
-
-export interface GeolocationSettings {
-  latitude: number;
-  longitude: number;
-}
-
-export interface Settings {
-  geolocation: GeolocationSettings;
-  headless?: boolean;
-  profileDir?: string;
-  browserChannel?: string;
-  executablePath?: string;
-}
-
-/**
- * Failure record from the failures API.
- * Represents a task failure with deduplication (count increments for similar errors).
- */
-export interface FailureRecord {
-  id: string;
-  taskName: string;
-  errorType: 'element_not_found' | 'navigation_failure' | 'timeout' | 'unknown';
-  context: Record<string, unknown>;
-  timestamp: string;
-  count: number;
-  lastSeen: string;
-  dismissed?: boolean;
-}
-
-/**
- * Info gathering result from info-gathering tasks.
- * Represents data returned by tasks that gather information.
- */
-export interface InfoGatheringResult {
-  taskName: string;
-  category: string;
-  displayName: string;
-  data: unknown;
-  lastUpdated: string;
-  expiresAt?: string;
-  metadata: {
-    dataType: 'key-value' | 'table' | 'custom';
-    renderedBy?: string;
-  };
-}
-
-// Default location (São Paulo) - used to detect if user hasn't set their location
-export const DEFAULT_LOCATION = { latitude: -23.55052, longitude: -46.633308 } as const;
+export { DEFAULT_LOCATION } from '@shared/types';
 
 // Dashboard card types for draggable layout
 export type DashboardCardId =

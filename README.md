@@ -1,147 +1,206 @@
-# Ghost Runner Bot
+# Ghost Runner
 
-A stealthy Node.js automation tool using Playwright and `puppeteer-extra-plugin-stealth`, featuring a modern React-based Web UI for managing tasks, schedules, and settings.
+A stealthy browser automation tool built with Playwright and anti-detection plugins, featuring a modern React dashboard for managing tasks, schedules, and settings.
 
 ## Features
 
-- **Stealth Mode**: Uses a persistent browser context (Chromium) and stealth plugins to evade detection.
-- **Web UI**: A full-featured React dashboard (built with `shadcn/ui`, Tailwind CSS) to manage the bot.
-- **Task Management**: Record and replay tasks. Support for **Public** (shared) and **Private** (git-ignored) tasks.
-- **Task Failure Tracking**: Automatic detection and tracking of task failures with:
-    - **Structured Error Types**: Element not found, navigation failures, timeouts
-    - **Failure Dashboard**: Visual panel with color-coded error types, occurrence counts, and detailed error context
-    - **Deduplication**: Same error within 24 hours increments count instead of creating duplicates
-    - **Dismissal System**: Mark failures as dismissed to reduce noise
-- **Advanced Scheduler**:
-    - **Cron Jobs**: Recurring tasks (e.g., "Every day at 9 AM").
-    - **One-Time Tasks**: Schedule a specific date/time for execution. The system automatically executes and removes them from the schedule.
-    - **Calendar View**: Visualize your schedule with `react-big-calendar`.
-- **Real-Time Logs**: Watch execution logs live via the Web UI (powered by Socket.io).
-- **Task Status Events**: Real-time task execution status (started, completed, failed) via Socket.io.
-- **Geolocation Control**: Configurable geolocation settings for browser contexts.
-- **Cross-Platform**: Configured to run on macOS and Linux (uses bundled Playwright Chromium).
-- **Drag-and-Drop Dashboard**: Customize your dashboard layout by dragging and rearranging panels.
+### Core Capabilities
+- **Stealth Mode**: Persistent Chromium browser context with `playwright-extra` and `puppeteer-extra-plugin-stealth` to evade bot detection
+- **Session Persistence**: Automatic cookie and session storage in `user_data/` directory
+- **Geolocation Control**: Configurable browser geolocation via Web UI
+
+### Task Management
+- **Record & Replay**: Use Playwright Codegen to record tasks, then replay them headlessly
+- **Public/Private Tasks**: Store shared tasks in `tasks/public/` or private tasks in `tasks/private/` (git-ignored)
+- **Failure Tracking**: Automatic detection of element not found, navigation failures, and timeouts with deduplication
+
+### Scheduling
+- **Cron Jobs**: Schedule recurring tasks with preset or custom cron expressions
+- **One-Time Tasks**: Execute tasks at a specific date/time (auto-removed after execution)
+- **Calendar View**: Visualize all scheduled tasks with `react-big-calendar`
+- **Sleep Prevention**: macOS `caffeinate` integration prevents system sleep during scheduled tasks
+
+### Dashboard
+- **Real-Time Logs**: Live execution log streaming via Socket.io
+- **Drag-and-Drop Layout**: Customize dashboard panel arrangement (persisted in localStorage)
+- **Dark/Light Themes**: Toggle between themes with system preference detection
+- **Warnings Panel**: Track task failures with color-coded error types and occurrence counts
+- **Info Gathering**: Dashboard for viewing data collected by info-gathering tasks
+
+## Tech Stack
+
+| Layer | Technologies |
+|-------|-------------|
+| Backend | Node.js, TypeScript, Express, Socket.io, tsx (runtime TS) |
+| Frontend | React 19, Vite, TypeScript, Tailwind CSS, shadcn/ui, Radix UI |
+| Automation | Playwright, playwright-extra, puppeteer-extra-plugin-stealth |
+| Scheduling | node-cron, cron-parser |
+| State | React Query, localStorage (dashboard layout) |
 
 ## Prerequisites
 
-- **Node.js**: Ensure Node.js is installed (v16+ recommended).
-- **Browser**: The tool uses Playwright's bundled Chromium, so manual Chrome installation is not strictly required, though it mimics a real Chrome environment.
+- **Node.js** v18+ (v20+ recommended)
+- **npm** or compatible package manager
+- **macOS or Linux** (Windows may work but is untested)
 
 ## Installation
 
-1.  Clone the repository.
-2.  Install dependencies:
+```bash
+git clone https://github.com/vinicius741/ghost-runner.git
+cd ghost-runner
+npm install
+```
 
-    ```bash
-    npm install
-    ```
+## Quick Start
 
-    *Note: This will also install the necessary Playwright browsers.*
+### 1. First-Time Login Setup
 
-## 🚀 First-Time Setup (Crucial)
+To maintain persistent sessions (e.g., staying logged into Google):
 
-To enable persistent sessions (like staying logged into Google), you must manually log in once.
+```bash
+npm run setup-login
+```
 
-1.  **Run the Login Setup Script:**
+A browser window opens. Log in to your desired services, then browse briefly to ensure session data is saved to `user_data/`.
 
-    ```bash
-    npm run setup-login
-    ```
+Verify the session:
 
-2.  **Log In Manually:**
-    *   A browser window will open.
-    *   Log in to your desired services (e.g., Google).
-    *   Browse for a minute to ensure cookies/session data are saved to `user_data/`.
+```bash
+npm run verify-login
+```
 
-3.  **Verify Session:**
-    ```bash
-    npm run verify-login
-    ```
-
-## 💻 Web UI & Usage
-
-The primary way to interact with the bot is through the Web UI.
-
-### 1. Start the UI Server
-
-This command builds the frontend (React) and starts the backend server:
+### 2. Start the Web UI
 
 ```bash
 npm run ui
 ```
 
-Navigate to `http://localhost:3333` in your browser. (The server will automatically find an available port if 3333 is in use.)
+This starts:
+- Backend server on `http://localhost:3333`
+- Frontend dev server on `http://localhost:5173` (with API proxy)
 
-### 2. UI Features
+Open `http://localhost:3333` in your browser.
 
-*   **Dashboard**: View and run tasks manually.
-    *   **Public Tasks**: Stored in `tasks/public/`.
-    *   **Private Tasks**: Stored in `tasks/private/`.
-    *   **Drag-and-Drop Layout**: Customize the dashboard by rearranging panels between left and right columns.
-*   **Warnings Panel**: Track task failures with color-coded error types, occurrence counts, and detailed error context. Filter by error type (Element, Navigation, Timeout) and dismiss resolved issues.
-*   **Recorder**: Launch the "Record New Task" tool directly from the browser.
-*   **Schedule Builder**:
-    *   Add **Recurring Tasks** using Cron presets or custom expressions.
-    *   Add **One-Time Tasks** by selecting a specific date and time.
-    *   **Calendar**: View all upcoming scheduled executions.
-*   **Settings**: Configure global settings like **Geolocation** (Latitude/Longitude) for the browser instance.
-*   **Logs**: Real-time console output from the bot and scheduler.
+### 3. Create Your First Task
 
-## 🛠 Command Line Usage
+1. Click **Record New Task** in the dashboard
+2. Enter a task name and select public/private
+3. Perform your browser actions in the Codegen window
+4. Copy the generated code to the created task file
+5. Run the task from the dashboard
 
-While the UI is recommended, you can still use the CLI.
+## Commands Reference
 
-### Run a Task
-```bash
-npm run bot -- --task=task_name
-```
+### Development
 
-### Record a Task
-```bash
-npm run record -- --name=mytask --type=private
-```
+| Command | Description |
+|---------|-------------|
+| `npm run ui` | Start dev environment (backend + frontend with hot reload) |
+| `npm run ui:prod` | Build frontend and start production server |
+| `cd frontend && npm run dev` | Start frontend dev server only |
+| `cd frontend && npm run build` | Build frontend for production |
 
-### Run the Scheduler (Headless)
-```bash
-npm run schedule
-```
+### CLI / Automation
+
+| Command | Description |
+|---------|-------------|
+| `npm run bot -- --task=name` | Run a specific task via CLI |
+| `npm run record -- --name=mytask --type=private` | Launch Playwright Codegen recorder |
+| `npm run schedule` | Run scheduler headless |
+| `npm run setup-login` | Launch browser for manual login setup |
+| `npm run verify-login` | Verify session persistence |
+
+### Testing
+
+| Command | Description |
+|---------|-------------|
+| `npm test` | Run backend tests |
+| `cd frontend && npm run test` | Run frontend unit tests (Vitest) |
+| `cd frontend && npm run test:ui` | Run frontend tests with UI |
+| `cd frontend && npm run test:coverage` | Run tests with coverage |
 
 ## Project Structure
 
-*   `frontend/`: React application (TypeScript, Vite, Tailwind, shadcn/ui).
-    *   `src/components/dashboard/`: Dashboard components including TaskList, ScheduleBuilder, TaskCalendar, SettingsManager, LogsConsole, and WarningsPanel.
-    *   `src/lib/`: Utilities including dashboard layout management with drag-and-drop support.
-*   `src/`: Backend source code.
-    *   `core/`: Core logic (`index.ts`, `scheduler.ts`, `record-new-task.ts`).
-    *   `core/errors.ts`: Structured error types for task failures.
-    *   `core/pageWrapper.ts`: Monitored Playwright Page wrapper that throws structured errors.
-    *   `core/taskReporter.ts`: Task execution status reporting via stdout markers.
-    *   `server/`: Express server and Socket.io handlers.
-    *   `server/controllers/`: API controllers for tasks, scheduler, settings, logs, and failures.
-    *   `server/routes/`: API route definitions.
-    *   `server/config.ts`: Backend configuration constants.
-*   `tasks/`: Directory containing automation scripts.
-    *   `public/`: Shared tasks (tracked in git).
-    *   `private/`: Private tasks (git-ignored).
-*   `user_data/`: Stores persistent browser profile (cookies, sessions). **Do not delete if you want to keep sessions.**
-*   `schedule.json`: JSON configuration for the scheduler (managed via UI).
-*   `settings.json`: JSON configuration for global settings (managed via UI).
-*   `failures.json`: JSON configuration for task failure tracking (auto-created).
+```
+ghost-runner/
+├── src/                          # Backend source
+│   ├── core/                     # Task runner, scheduler, recorder
+│   │   ├── index.ts              # CLI entry point
+│   │   ├── scheduler.ts          # Cron scheduler
+│   │   ├── record-new-task.ts    # Codegen launcher
+│   │   ├── errors.ts             # Structured error types
+│   │   ├── pageWrapper.ts        # Monitored Playwright Page
+│   │   └── taskReporter.ts       # Status reporting
+│   ├── server/                   # Express + Socket.io server
+│   │   ├── index.ts              # Server entry point
+│   │   ├── controllers/          # API controllers
+│   │   ├── routes/               # Route definitions
+│   │   ├── services/             # Business logic
+│   │   └── repositories/         # Data persistence
+│   ├── config/                   # Browser configuration
+│   └── utils/                    # Utility functions
+├── frontend/                     # React frontend
+│   └── src/
+│       ├── components/           # React components
+│       │   ├── dashboard/        # Dashboard widgets
+│       │   └── ui/               # shadcn/ui primitives
+│       ├── hooks/                # Custom React hooks
+│       ├── lib/                  # Utilities
+│       ├── themes/               # Theme configuration
+│       └── types.ts              # TypeScript types
+├── tasks/                        # Automation scripts
+│   ├── public/                   # Shared tasks (tracked)
+│   └── private/                  # Private tasks (git-ignored)
+├── user_data/                    # Browser profile (DO NOT DELETE)
+├── schedule.json                 # Scheduler configuration
+├── settings.json                 # Global settings
+├── failures.json                 # Task failure records
+└── info-gathering.json           # Cached info-gathering data
+```
 
-## Development
+## API Endpoints
 
-If you are developing the frontend:
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/tasks` | List available tasks |
+| POST | `/api/tasks/run` | Execute a task |
+| POST | `/api/record` | Start task recording |
+| GET/PUT | `/api/schedule` | Read/write schedule |
+| GET/PUT | `/api/settings` | Read/write settings |
+| GET/DELETE | `/api/failures` | List/clear failures |
+| POST | `/api/failures/:id/dismiss` | Dismiss a failure |
+| GET/DELETE | `/api/info-gathering` | List/clear gathered data |
 
-1.  Navigate to `frontend/`: `cd frontend`
-2.  Install dependencies: `npm install`
-3.  Run dev server: `npm run dev` (Note: Backend API calls require the backend server running on port 3333).
+## Socket.io Events
+
+| Event | Direction | Description |
+|-------|-----------|-------------|
+| `task-started` | Server → Client | Task execution began |
+| `task-completed` | Server → Client | Task finished successfully |
+| `task-failed` | Server → Client | Task execution failed |
+| `log` | Server → Client | Log line from task/scheduler |
+| `scheduler-status` | Server → Client | Scheduler running status |
+| `failure-recorded` | Server → Client | New failure recorded |
+| `info-data-updated` | Server → Client | Info-gathering data updated |
+
+## Task Template
+
+Tasks are JavaScript modules that export a `run(page)` function:
+
+```javascript
+// tasks/public/my-task.js
+export async function run(page) {
+  await page.goto('https://example.com');
+  await page.waitForSelector('#content');
+  // Your automation logic here
+}
+```
 
 ## Documentation
 
-Additional project documentation is available in the `documentation/` directory:
+- **[Architecture Review](documentation/Architecture%20Review.md)** - Detailed architecture diagrams and component interactions
 
-- **[Maintenance & Architecture Improvement Plan](documentation/Maintenance%20&%20Architecture%20Improvement%20Plan.md)** - Identifies technical debt, architectural issues, and provides actionable recommendations for improving code quality.
+## License
 
-- **[Development Execution Plan](documentation/Development%20Execution%20Plan.md)** - A comprehensive, actionable development plan organized by phases to execute the architectural improvements. Includes task breakdowns, parallelization guidance, and team coordination protocols.
-
-These documents track the ongoing refactoring effort to improve maintainability, scalability, and code quality.
+ISC

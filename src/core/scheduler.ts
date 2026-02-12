@@ -3,15 +3,10 @@ import fs from 'fs';
 import path from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { validateTaskName } from '../server/utils/taskValidators';
+import type { ScheduleItem } from '../../shared/types';
 
 const LOG_FILE = path.resolve(__dirname, '../../scheduler.log');
 const CONFIG_FILE = path.resolve(__dirname, '../../schedule.json');
-
-interface ScheduleItem {
-  task: string;
-  cron?: string;
-  executeAt?: string;
-}
 
 let caffeinateProcess: ChildProcess | null = null;
 

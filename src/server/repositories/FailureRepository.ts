@@ -9,25 +9,10 @@
 
 import { promises as fs } from 'fs';
 import { FAILURES_FILE } from '../config';
+import type { FailureRecord, FailureErrorType } from '../../../shared/types';
 
-/**
- * Valid error type values for failure records.
- */
-export type FailureErrorType = 'element_not_found' | 'navigation_failure' | 'timeout' | 'unknown';
-
-/**
- * Failure record structure (shared with frontend).
- */
-export interface FailureRecord {
-  id: string;
-  taskName: string;
-  errorType: FailureErrorType;
-  context: Record<string, unknown>;
-  timestamp: string;
-  count: number;
-  lastSeen: string;
-  dismissed?: boolean;
-}
+// Re-export for backward compatibility
+export type { FailureRecord, FailureErrorType } from '../../../shared/types';
 
 /**
  * Repository for managing failure record persistence.

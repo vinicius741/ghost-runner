@@ -5,6 +5,8 @@ import path from 'path';
 import fs from 'fs';
 import { Server } from 'socket.io';
 import { PORT, SETTINGS_FILE, SCHEDULE_FILE } from './config';
+import type { ScheduleItem, ServerToClientEvents, ClientToServerEvents } from '../../shared/types';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 import tasksRoutes from './routes/tasks';
 import schedulerRoutes from './routes/scheduler';
@@ -15,14 +17,8 @@ import infoGatheringRoutes from './routes/infoGathering';
 
 const app: Express = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server<ClientToServerEvents, ServerToClientEvents>(server);
 let scheduleWatchDebounce: NodeJS.Timeout | null = null;
-
-interface ScheduleItem {
-    task: string;
-    cron?: string;
-    executeAt?: string;
-}
 
 // Share io instance with controllers
 app.set('io', io);
@@ -126,6 +122,13 @@ app.use('/api', settingsRoutes);
 app.use('/api', logsRoutes);
 app.use('/api', failuresRoutes);
 app.use('/api', infoGatheringRoutes);
+
+// --- Error Handling ---
+// 404 handler for unmatched API routes
+app.use('/api', notFoundHandler);
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 watchScheduleFile();
 

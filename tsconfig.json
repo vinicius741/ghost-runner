@@ -12,8 +12,12 @@
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@shared/types": ["shared/types"]
+    }
   },
-  "include": ["src/**/*", "*.ts"],
+  "include": ["src/**/*", "shared/**/*", "*.ts"],
   "exclude": ["node_modules", "frontend", "dist", "tasks"]
 }
