@@ -4,7 +4,7 @@ import { reportTaskResult, reportTaskStarted, getExitCode, reportTaskResultWithD
 import fs from 'fs';
 import path from 'path';
 import type { Page } from 'playwright';
-import { TASKS_DIR, initializeRuntimeStorage } from '../config/runtimePaths';
+import { getTaskRoots, initializeRuntimeStorage } from '../config/runtimePaths';
 
 /**
  * Task metadata for declaring task type and display settings.
@@ -27,8 +27,54 @@ interface TaskModule {
   metadata?: TaskMetadata;
 }
 
+function listAvailableTasks(taskRoots: string[]): string[] {
+  const tasks = new Set<string>();
+
+  for (const root of taskRoots) {
+    const publicDir = path.join(root, 'public');
+    const privateDir = path.join(root, 'private');
+
+    if (fs.existsSync(publicDir)) {
+      fs.readdirSync(publicDir)
+        .filter((file) => file.endsWith('.js'))
+        .forEach((file) => tasks.add(`public/${file}`));
+    }
+
+    if (fs.existsSync(privateDir)) {
+      fs.readdirSync(privateDir)
+        .filter((file) => file.endsWith('.js'))
+        .forEach((file) => tasks.add(`private/${file}`));
+    }
+  }
+
+  return Array.from(tasks);
+}
+
+function resolveTaskPath(taskName: string, taskRoots: string[]): string | undefined {
+  for (const root of taskRoots) {
+    const publicTaskPath = path.join(root, 'public', `${taskName}.js`);
+    const privateTaskPath = path.join(root, 'private', `${taskName}.js`);
+    const rootTaskPath = path.join(root, `${taskName}.js`);
+
+    if (fs.existsSync(publicTaskPath)) {
+      return publicTaskPath;
+    }
+
+    if (fs.existsSync(privateTaskPath)) {
+      return privateTaskPath;
+    }
+
+    if (fs.existsSync(rootTaskPath)) {
+      return rootTaskPath;
+    }
+  }
+
+  return undefined;
+}
+
 async function main(): Promise<void> {
   initializeRuntimeStorage();
+  const taskRoots = getTaskRoots();
 
   // Parse command line arguments for --task
   const args = process.argv.slice(2);
@@ -37,37 +83,16 @@ async function main(): Promise<void> {
   if (!taskArg) {
     console.error('Error: No task specified.');
     console.error('Usage: node index.js --task=task_name');
-    const publicTasks = fs.existsSync(path.join(TASKS_DIR, 'public'))
-      ? fs.readdirSync(path.join(TASKS_DIR, 'public')).map(f => `public/${f}`)
-      : [];
-    const privateTasks = fs.existsSync(path.join(TASKS_DIR, 'private'))
-      ? fs.readdirSync(path.join(TASKS_DIR, 'private')).map(f => `private/${f}`)
-      : [];
-    console.error('Available tasks:', [...publicTasks, ...privateTasks].join(', '));
+    console.error('Available tasks:', listAvailableTasks(taskRoots).join(', '));
     process.exit(1);
   }
 
   const taskName = taskArg.split('=')[1];
-
-  // Search for the task file in public or private directories
-  const publicTaskPath = path.join(TASKS_DIR, 'public', `${taskName}.js`);
-  const privateTaskPath = path.join(TASKS_DIR, 'private', `${taskName}.js`);
-
-  let taskPath: string | undefined;
-  if (fs.existsSync(publicTaskPath)) {
-    taskPath = publicTaskPath;
-  } else if (fs.existsSync(privateTaskPath)) {
-    taskPath = privateTaskPath;
-  } else {
-    // Legacy support or check root if needed, but primarily check subdirs now
-    const rootTaskPath = path.join(TASKS_DIR, `${taskName}.js`);
-    if (fs.existsSync(rootTaskPath)) {
-      taskPath = rootTaskPath;
-    }
-  }
+  const taskPath = resolveTaskPath(taskName, taskRoots);
 
   if (!taskPath) {
-    console.error(`Error: Task file '${taskName}.js' not found in tasks/public or tasks/private`);
+    console.error(`Error: Task '${taskName}' not found.`);
+    console.error(`Searched in: ${taskRoots.map((root) => `${root}/{public,private}/`).join(', ')}`);
     process.exit(1);
   }
 

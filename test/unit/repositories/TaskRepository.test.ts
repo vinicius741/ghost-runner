@@ -27,6 +27,7 @@ const originalMkdir = fs.mkdir;
 describe('TaskRepository', () => {
   let repository: TaskRepository;
   const testTasksDir = '/test/tasks';
+  const bundledTasksDir = '/test/bundled/tasks';
 
   beforeEach(() => {
     // Reset mocks
@@ -36,7 +37,7 @@ describe('TaskRepository', () => {
     mockMkdir.mock.resetCalls();
 
     // Create repository with test directory
-    repository = new TaskRepository(testTasksDir);
+    repository = new TaskRepository(testTasksDir, bundledTasksDir);
 
     // Replace fs functions
     (fs as unknown as Record<string, unknown>).readdir = mockReaddir;
@@ -122,6 +123,59 @@ describe('TaskRepository', () => {
 
       assert.strictEqual(tasks.length, 1);
       assert.strictEqual(tasks[0].name, 'task');
+    });
+
+    it('should discover tasks from bundled directory when missing in writable directory', async () => {
+      mockReaddir.mock.mockImplementation((dirPath: string) => {
+        if (dirPath === path.join(bundledTasksDir, 'private')) {
+          return Promise.resolve(['bundled-task.js'] as unknown as fs.Dirent[]);
+        }
+        return Promise.resolve([] as unknown as fs.Dirent[]);
+      });
+
+      const tasks = await repository.findAll();
+
+      assert.strictEqual(tasks.length, 1);
+      assert.strictEqual(tasks[0].name, 'bundled-task');
+      assert.strictEqual(tasks[0].path, path.join(bundledTasksDir, 'private', 'bundled-task.js'));
+    });
+
+    it('should prioritize writable directory over bundled directory for same task name', async () => {
+      mockReaddir.mock.mockImplementation((dirPath: string) => {
+        if (dirPath === path.join(bundledTasksDir, 'private')) {
+          return Promise.resolve(['shared-task.js'] as unknown as fs.Dirent[]);
+        }
+        if (dirPath === path.join(testTasksDir, 'private')) {
+          return Promise.resolve(['shared-task.js'] as unknown as fs.Dirent[]);
+        }
+        return Promise.resolve([] as unknown as fs.Dirent[]);
+      });
+
+      const tasks = await repository.findAll();
+
+      assert.strictEqual(tasks.length, 1);
+      assert.strictEqual(tasks[0].name, 'shared-task');
+      assert.strictEqual(tasks[0].path, path.join(testTasksDir, 'private', 'shared-task.js'));
+    });
+
+    it('should handle same directory for writable and bundled roots', async () => {
+      const sameRepo = new TaskRepository(testTasksDir, testTasksDir);
+
+      mockReaddir.mock.mockImplementation((dirPath: string) => {
+        if (dirPath === path.join(testTasksDir, 'public')) {
+          return Promise.resolve(['single-root-task.js'] as unknown as fs.Dirent[]);
+        }
+        return Promise.resolve([] as unknown as fs.Dirent[]);
+      });
+
+      const tasks = await sameRepo.findAll();
+      const publicDirReadCalls = mockReaddir.mock.calls
+        .filter((call) => call.arguments[0] === path.join(testTasksDir, 'public'))
+        .length;
+
+      assert.strictEqual(tasks.length, 1);
+      assert.strictEqual(tasks[0].name, 'single-root-task');
+      assert.strictEqual(publicDirReadCalls, 1);
     });
   });
 

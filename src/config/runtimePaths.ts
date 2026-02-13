@@ -102,6 +102,29 @@ export const BUNDLED_SCHEDULE_FILE = path.join(APP_ROOT, 'schedule.json');
 export const BUNDLED_FAILURES_FILE = path.join(APP_ROOT, 'failures.json');
 export const BUNDLED_INFO_GATHERING_FILE = path.join(APP_ROOT, 'info-gathering.json');
 
+export type TaskRootSearchOrder = 'writable-first' | 'bundled-first';
+
+/**
+ * Returns unique task roots in the requested precedence order.
+ * When both directories resolve to the same path, returns a single entry.
+ */
+export function getTaskRoots(
+  writableTasksDir: string = TASKS_DIR,
+  bundledTasksDir: string = BUNDLED_TASKS_DIR,
+  order: TaskRootSearchOrder = 'writable-first'
+): string[] {
+  const writableResolved = path.resolve(writableTasksDir);
+  const bundledResolved = path.resolve(bundledTasksDir);
+
+  if (writableResolved === bundledResolved) {
+    return [writableTasksDir];
+  }
+
+  return order === 'bundled-first'
+    ? [bundledTasksDir, writableTasksDir]
+    : [writableTasksDir, bundledTasksDir];
+}
+
 let initialized = false;
 
 /**

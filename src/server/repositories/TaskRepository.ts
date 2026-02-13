@@ -9,7 +9,7 @@
 
 import * as fs from 'fs/promises';
 import path from 'path';
-import { TASKS_DIR } from '../config';
+import { TASKS_DIR, BUNDLED_TASKS_DIR, getTaskRoots } from '../config';
 
 /**
  * Task type classification based on directory location.
@@ -41,11 +41,13 @@ export interface TaskWithContent extends Task {
  */
 export class TaskRepository {
   private readonly tasksDir: string;
+  private readonly bundledTasksDir: string;
   private readonly publicDir: string;
   private readonly privateDir: string;
 
-  constructor(tasksDir: string = TASKS_DIR) {
+  constructor(tasksDir: string = TASKS_DIR, bundledTasksDir: string = BUNDLED_TASKS_DIR) {
     this.tasksDir = tasksDir;
+    this.bundledTasksDir = bundledTasksDir;
     this.publicDir = path.join(tasksDir, 'public');
     this.privateDir = path.join(tasksDir, 'private');
   }
@@ -53,24 +55,28 @@ export class TaskRepository {
   /**
    * Discovers all tasks from public and private directories.
    * Tasks are returned with priority: private > public > root.
+   * Example precedence:
+   * - bundled/public/foo.js < bundled/private/foo.js < writable/public/foo.js
    *
    * @returns Promise resolving to array of unique tasks
    */
   async findAll(): Promise<Task[]> {
-    const [publicTasks, privateTasks, rootTasks] = await Promise.all([
-      this.getTasksFromDir('public'),
-      this.getTasksFromDir('private'),
-      this.getTasksFromRoot()
-    ]);
-
     const taskMap = new Map<string, Task>();
+    const searchRoots = getTaskRoots(this.tasksDir, this.bundledTasksDir, 'bundled-first');
 
-    // Root first (lowest priority)
-    rootTasks.forEach(t => taskMap.set(t.name, t));
-    // Private next (medium priority)
-    privateTasks.forEach(t => taskMap.set(t.name, t));
-    // Public last (highest priority)
-    publicTasks.forEach(t => taskMap.set(t.name, t));
+    // Apply root < private < public priority for each root.
+    // Apply bundled < writable root priority overall by processing bundled first.
+    for (const root of searchRoots) {
+      const [publicTasks, privateTasks, rootTasks] = await Promise.all([
+        this.getTasksFromDir('public', root),
+        this.getTasksFromDir('private', root),
+        this.getTasksFromRoot(root)
+      ]);
+
+      rootTasks.forEach(t => taskMap.set(t.name, t));
+      privateTasks.forEach(t => taskMap.set(t.name, t));
+      publicTasks.forEach(t => taskMap.set(t.name, t));
+    }
 
     return Array.from(taskMap.values());
   }
@@ -93,8 +99,8 @@ export class TaskRepository {
    * @param dirName - Subdirectory name ('public' or 'private')
    * @returns Promise resolving to array of tasks from that directory
    */
-  async getTasksFromDir(dirName: 'public' | 'private'): Promise<Task[]> {
-    const dirPath = path.join(this.tasksDir, dirName);
+  async getTasksFromDir(dirName: 'public' | 'private', tasksRoot: string = this.tasksDir): Promise<Task[]> {
+    const dirPath = path.join(tasksRoot, dirName);
     const type = dirName;
 
     try {
@@ -118,15 +124,15 @@ export class TaskRepository {
    *
    * @returns Promise resolving to array of tasks from root directory
    */
-  async getTasksFromRoot(): Promise<Task[]> {
+  async getTasksFromRoot(tasksRoot: string = this.tasksDir): Promise<Task[]> {
     try {
-      const files = await fs.readdir(this.tasksDir);
+      const files = await fs.readdir(tasksRoot);
       return files
         .filter((f): f is string => typeof f === 'string' && f.endsWith('.js'))
         .map((f): Task => ({
           name: f.replace('.js', ''),
           type: 'root',
-          path: path.join(this.tasksDir, f)
+          path: path.join(tasksRoot, f)
         }));
     } catch {
       // Root directory doesn't exist or can't be read
