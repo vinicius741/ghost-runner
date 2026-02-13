@@ -69,6 +69,20 @@ function registerGlobalProcessHandlers(): void {
   processHandlersRegistered = true;
 }
 
+function resolveFrontendAssetsDir(): string | null {
+  const frontendDistIndex = path.join(FRONTEND_DIST_DIR, 'index.html');
+  if (fs.existsSync(frontendDistIndex)) {
+    return FRONTEND_DIST_DIR;
+  }
+
+  const serverPublicIndex = path.join(SERVER_PUBLIC_DIR, 'index.html');
+  if (fs.existsSync(serverPublicIndex)) {
+    return SERVER_PUBLIC_DIR;
+  }
+
+  return null;
+}
+
 export function createGhostServer(options: CreateGhostServerOptions = {}): GhostServer {
   initializeRuntimeStorage();
 
@@ -83,14 +97,10 @@ export function createGhostServer(options: CreateGhostServerOptions = {}): Ghost
   // Share io instance with controllers
   app.set('io', io);
 
-  // Serve static files from public directory
-  if (fs.existsSync(SERVER_PUBLIC_DIR)) {
-    app.use(express.static(SERVER_PUBLIC_DIR));
-  }
-
-  // Serve built frontend (for production/single-server mode)
-  if (fs.existsSync(FRONTEND_DIST_DIR)) {
-    app.use(express.static(FRONTEND_DIST_DIR));
+  // Serve frontend assets from a single source to avoid stale mixed bundles.
+  const frontendAssetsDir = resolveFrontendAssetsDir();
+  if (frontendAssetsDir) {
+    app.use(express.static(frontendAssetsDir));
     // Serve index.html for SPA routing (using middleware instead of app.get for Express 5.x compatibility)
     app.use((req: Request, res: Response, next: NextFunction) => {
       // Don't intercept API routes or socket.io transport requests
@@ -99,7 +109,7 @@ export function createGhostServer(options: CreateGhostServerOptions = {}): Ghost
       }
       // Send index.html for non-API routes that don't match static files
       if (!req.path.includes('.')) {
-        res.sendFile(path.join(FRONTEND_DIST_DIR, 'index.html'));
+        res.sendFile(path.join(frontendAssetsDir, 'index.html'));
       } else {
         next();
       }

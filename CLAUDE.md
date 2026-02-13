@@ -31,6 +31,32 @@ npm run electron:start     # Start Electron app (requires build first)
 npm run electron:dist      # Build distributable Electron app (.dmg/.zip for macOS)
 ```
 
+> **IMPORTANT: Frontend Changes Require Rebuild**
+>
+> The Electron app loads the frontend from `frontend/dist/`, NOT the source files.
+> After modifying any frontend code (`frontend/src/**/*`), you MUST rebuild before
+> running Electron:
+> ```bash
+> npm run build:frontend    # Rebuild frontend
+> npm run electron:dev      # Or use this which rebuilds everything
+> ```
+> Running `npm run electron:start` without rebuilding will load stale UI.
+
+### Electron Build Verification
+
+The Electron build process includes a verification step that ensures the frontend is always fresh:
+
+1. **Clean** - Removes `frontend/dist` before building
+2. **Build** - Compiles the frontend with Vite
+3. **Verify** - Confirms output files exist and aren't empty
+4. **Manifest** - Creates `.build-manifest.json` with build timestamp
+
+The `electron:dev` and `electron:dist` commands automatically use this verified build process. If you need to build the frontend separately for Electron, use:
+
+```bash
+npm run build:frontend:verified  # Clean + build + verify
+```
+
 ### CLI / Automation
 ```bash
 npm run setup-login        # Launch browser for manual login setup (saves to user_data/)
@@ -340,6 +366,7 @@ Use `npm run record` to generate task code via Playwright Codegen.
 - **Error Handling**: Global `uncaughtException`/`unhandledRejection` handlers emit Socket.io crash notifications
 - **Type Safety**: Zero `any` types (except 4 Playwright internal cases). Error handling uses `unknown` with type guards
 - **Electron Security**: `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`
+- **Electron Frontend Bundling**: Electron loads `frontend/dist/` (pre-built), NOT source files. Always run `npm run build:frontend` after frontend changes before testing in Electron.
 
 ## File References for Common Tasks
 

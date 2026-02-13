@@ -8,8 +8,17 @@ export function Header() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
+        className="flex flex-col items-center gap-4"
       >
-        <h1 className="text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-foreground via-foreground/70 to-foreground/40 mb-4 font-display">
+        <motion.img
+          src="/logo.png"
+          alt="Ghost Runner"
+          className="w-16 h-16 rounded-2xl shadow-lg shadow-primary/20"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        />
+        <h1 className="text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-foreground via-foreground/70 to-foreground/40 font-display">
           Ghost Runner <span className="text-primary text-glow">Command Center</span>
         </h1>
         <div className="flex items-center justify-center gap-3">

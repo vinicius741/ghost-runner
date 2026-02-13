@@ -25,6 +25,12 @@
 - `npm run electron:dist` creates a distributable macOS .dmg/.zip in `release/`.
 - Build order: `build:frontend` → `build:server` → `build:electron` → `electron:start`.
 
+> **CRITICAL: Frontend Changes Must Be Rebuilt**
+>
+> Electron loads the pre-built frontend from `frontend/dist/`, NOT the source files in `frontend/src/`.
+> After ANY modification to frontend code, you MUST run `npm run build:frontend` before testing in Electron.
+> Using `npm run electron:start` without rebuilding will silently load outdated UI.
+
 ### Build Outputs
 - `dist/` - Compiled backend TypeScript
 - `dist-electron/` - Compiled Electron main process
