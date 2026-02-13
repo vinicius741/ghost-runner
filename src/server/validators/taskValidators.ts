@@ -9,6 +9,8 @@
 
 import { z } from 'zod';
 
+export const MAX_TASK_CONTENT_SIZE = 500_000;
+
 /**
  * Task type enum schema.
  */
@@ -46,7 +48,22 @@ export const recordTaskSchema = z.object({
 });
 
 /**
+ * Request body schema for POST /api/upload-task
+ */
+export const uploadTaskSchema = z.object({
+  taskName: taskNameSchema,
+  type: z.enum(['public', 'private'], {
+    errorMap: () => ({ message: 'Task type must be "public" or "private"' }),
+  }),
+  content: z
+    .string()
+    .min(1, 'Task content is required')
+    .max(MAX_TASK_CONTENT_SIZE, 'Task content is too large (max 500KB)'),
+});
+
+/**
  * Type exports for inferred types
  */
 export type RunTaskInput = z.infer<typeof runTaskSchema>;
 export type RecordTaskInput = z.infer<typeof recordTaskSchema>;
+export type UploadTaskInput = z.infer<typeof uploadTaskSchema>;

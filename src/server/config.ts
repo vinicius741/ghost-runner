@@ -1,13 +1,20 @@
-import path from 'path';
+import {
+  APP_ROOT,
+  DATA_ROOT,
+  TASKS_DIR,
+  LOG_FILE,
+  SETTINGS_FILE,
+  SCHEDULE_FILE,
+  FAILURES_FILE,
+  INFO_GATHERING_FILE,
+  FRONTEND_DIST_DIR,
+  SERVER_PUBLIC_DIR,
+} from '../config/runtimePaths';
 
 // Default port - will try this first, then find available if in use
 const DEFAULT_PORT = 3333;
 
 export const PORT: number = parseInt(process.env.PORT || DEFAULT_PORT.toString(), 10);
-export const TASKS_DIR: string = path.resolve(__dirname, '../../tasks');
-export const LOG_FILE: string = path.resolve(__dirname, '../../scheduler.log');
-export const SETTINGS_FILE: string = path.resolve(__dirname, '../../settings.json');
-export const SCHEDULE_FILE: string = path.resolve(__dirname, '../../schedule.json');
-export const ROOT_DIR: string = path.resolve(__dirname, '../../');
-export const FAILURES_FILE: string = path.resolve(__dirname, '../../failures.json');
-export const INFO_GATHERING_FILE: string = path.resolve(__dirname, '../../info-gathering.json');
+export { TASKS_DIR, LOG_FILE, SETTINGS_FILE, SCHEDULE_FILE, FAILURES_FILE, INFO_GATHERING_FILE, FRONTEND_DIST_DIR, SERVER_PUBLIC_DIR };
+export const ROOT_DIR: string = APP_ROOT;
+export { APP_ROOT, DATA_ROOT };

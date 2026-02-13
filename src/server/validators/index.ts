@@ -7,10 +7,13 @@
 export {
   taskNameSchema,
   taskTypeSchema,
+  MAX_TASK_CONTENT_SIZE,
   runTaskSchema,
   recordTaskSchema,
+  uploadTaskSchema,
   type RunTaskInput,
   type RecordTaskInput,
+  type UploadTaskInput,
 } from './taskValidators';
 
 export {

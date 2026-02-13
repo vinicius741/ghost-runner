@@ -4,9 +4,11 @@ import path from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { validateTaskName } from '../server/utils/taskValidators';
 import type { ScheduleItem } from '../../shared/types';
+import { APP_ROOT, LOG_FILE, SCHEDULE_FILE, initializeRuntimeStorage, shouldUseCompiledEntry } from '../config/runtimePaths';
 
-const LOG_FILE = path.resolve(__dirname, '../../scheduler.log');
-const CONFIG_FILE = path.resolve(__dirname, '../../schedule.json');
+const CONFIG_FILE = SCHEDULE_FILE;
+
+initializeRuntimeStorage();
 
 let caffeinateProcess: ChildProcess | null = null;
 
@@ -109,12 +111,27 @@ function runTask(taskName: string): Promise<void> {
 
     log(`Starting task: '${taskName}'`);
 
-    const projectRoot = path.resolve(__dirname, '../..');
-    // Use tsx directly from node_modules for better performance than npx
-    const tsxBin = path.join(projectRoot, 'node_modules', '.bin', 'tsx');
-    const child = spawn(tsxBin, ['src/core/index.ts', `--task=${taskName}`], {
-      cwd: projectRoot, // Run from project root
+    const compiledEntry = path.join(APP_ROOT, 'dist', 'src', 'core', 'index.js');
+    const sourceEntry = path.join(APP_ROOT, 'src', 'core', 'index.ts');
+    const tsxBin = path.join(APP_ROOT, 'node_modules', '.bin', 'tsx');
+
+    const command = shouldUseCompiledEntry(compiledEntry)
+      ? process.execPath
+      : (fs.existsSync(sourceEntry) && fs.existsSync(tsxBin) ? tsxBin : 'npx');
+
+    const args = command === process.execPath
+      ? [compiledEntry, `--task=${taskName}`]
+      : (command === tsxBin
+        ? [sourceEntry, `--task=${taskName}`]
+        : ['tsx', 'src/core/index.ts', `--task=${taskName}`]);
+
+    const child = spawn(command, args, {
+      cwd: APP_ROOT, // Run from app root
       stdio: 'inherit', // Pipe output so we see it in the main console
+      shell: command === 'npx',
+      env: command === process.execPath && process.versions.electron
+        ? { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
+        : process.env,
     });
 
     child.on('close', (code: number | null) => {

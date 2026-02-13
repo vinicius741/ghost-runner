@@ -97,8 +97,20 @@ Open `http://localhost:3333` in your browser.
 |---------|-------------|
 | `npm run ui` | Start dev environment (backend + frontend with hot reload) |
 | `npm run ui:prod` | Build frontend and start production server |
+| `npm run build:server` | Compile backend/core TypeScript to `dist/` |
+| `npm run build:electron` | Compile Electron main/preload to `dist-electron/` |
 | `cd frontend && npm run dev` | Start frontend dev server only |
 | `cd frontend && npm run build` | Build frontend for production |
+
+### Desktop (Electron)
+
+| Command | Description |
+|---------|-------------|
+| `npm run electron:dev` | Build frontend/server/electron and launch desktop app |
+| `npm run electron:start` | Launch desktop app from existing build artifacts |
+| `npm run electron:dist` | Build a macOS distributable in `release/` |
+
+When running as a desktop app, mutable runtime data is stored in the Electron app data directory (`~/Library/Application Support/<App>/ghost-runner`) instead of the git repository. On first launch, the app copies `tasks/public` and `tasks/private` (if present) into that runtime directory.
 
 ### CLI / Automation
 

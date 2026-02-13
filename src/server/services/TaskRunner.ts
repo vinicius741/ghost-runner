@@ -8,8 +8,10 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 import { ROOT_DIR } from '../config';
-import type { ParsedTaskStatus } from '../../types/task.types';
+import { shouldUseCompiledEntry } from '../../config/runtimePaths';
 
 /**
  * Event types emitted by the TaskRunner during task execution.
@@ -60,11 +62,18 @@ export class TaskRunner {
    * @returns The spawned child process
    */
   run(taskName: string, options: TaskRunOptions = {}): ChildProcess {
-    const { cwd = this.defaultCwd, shell = true, onEvent } = options;
+    const { cwd = this.defaultCwd, onEvent } = options;
+    const spawnConfig = this.resolveSpawnConfig(cwd, {
+      compiledEntry: path.join('dist', 'src', 'core', 'index.js'),
+      sourceEntry: path.join('src', 'core', 'index.ts'),
+      entryArgs: [`--task=${taskName}`],
+      npmArgs: ['run', 'bot', '--', `--task=${taskName}`],
+    });
 
-    const child: ChildProcess = spawn('npm', ['run', 'bot', '--', `--task=${taskName}`], {
+    const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
       cwd,
-      shell
+      shell: options.shell ?? spawnConfig.shell,
+      env: this.resolveSpawnEnv(spawnConfig.command),
     });
 
     // Set up event handlers if callback is provided
@@ -84,19 +93,31 @@ export class TaskRunner {
    * @returns The spawned child process
    */
   record(taskName: string | undefined, taskType: string | undefined, options: TaskRunOptions = {}): ChildProcess {
-    const { cwd = this.defaultCwd, shell = true, onEvent } = options;
+    const { cwd = this.defaultCwd, onEvent } = options;
 
     const args: string[] = ['run', 'record'];
+    const entryArgs: string[] = [];
 
     if (taskName && taskType) {
       args.push('--');
       args.push(`--name=${taskName}`);
       args.push(`--type=${taskType}`);
+
+      entryArgs.push(`--name=${taskName}`);
+      entryArgs.push(`--type=${taskType}`);
     }
 
-    const child: ChildProcess = spawn('npm', args, {
+    const spawnConfig = this.resolveSpawnConfig(cwd, {
+      compiledEntry: path.join('dist', 'src', 'core', 'record-new-task.js'),
+      sourceEntry: path.join('src', 'core', 'record-new-task.ts'),
+      entryArgs,
+      npmArgs: args,
+    });
+
+    const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
       cwd,
-      shell
+      shell: options.shell ?? spawnConfig.shell,
+      env: this.resolveSpawnEnv(spawnConfig.command),
     });
 
     // Set up event handlers if callback is provided
@@ -114,11 +135,18 @@ export class TaskRunner {
    * @returns The spawned child process
    */
   setupLogin(options: TaskRunOptions = {}): ChildProcess {
-    const { cwd = this.defaultCwd, shell = true, onEvent } = options;
+    const { cwd = this.defaultCwd, onEvent } = options;
+    const spawnConfig = this.resolveSpawnConfig(cwd, {
+      compiledEntry: path.join('dist', 'src', 'utils', 'run-setup-login.js'),
+      sourceEntry: path.join('src', 'utils', 'run-setup-login.ts'),
+      entryArgs: [],
+      npmArgs: ['run', 'setup-login'],
+    });
 
-    const child: ChildProcess = spawn('npm', ['run', 'setup-login'], {
+    const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
       cwd,
-      shell
+      shell: options.shell ?? spawnConfig.shell,
+      env: this.resolveSpawnEnv(spawnConfig.command),
     });
 
     // Set up event handlers if callback is provided
@@ -197,6 +225,49 @@ export class TaskRunner {
    */
   isRunning(child: ChildProcess): boolean {
     return child.exitCode === null && !child.killed;
+  }
+
+  private resolveSpawnConfig(
+    cwd: string,
+    config: {
+      compiledEntry: string;
+      sourceEntry: string;
+      entryArgs: string[];
+      npmArgs: string[];
+    }
+  ): { command: string; args: string[]; shell: boolean } {
+    const compiledPath = path.join(cwd, config.compiledEntry);
+    if (shouldUseCompiledEntry(compiledPath)) {
+      return {
+        command: process.execPath,
+        args: [compiledPath, ...config.entryArgs],
+        shell: false,
+      };
+    }
+
+    const sourcePath = path.join(cwd, config.sourceEntry);
+    const tsxBin = path.join(cwd, 'node_modules', '.bin', 'tsx');
+    if (fs.existsSync(sourcePath) && fs.existsSync(tsxBin)) {
+      return {
+        command: tsxBin,
+        args: [sourcePath, ...config.entryArgs],
+        shell: false,
+      };
+    }
+
+    return {
+      command: 'npm',
+      args: config.npmArgs,
+      shell: true,
+    };
+  }
+
+  private resolveSpawnEnv(command: string): NodeJS.ProcessEnv {
+    if (command === process.execPath && process.versions.electron) {
+      return { ...process.env, ELECTRON_RUN_AS_NODE: '1' };
+    }
+
+    return process.env;
   }
 }
 

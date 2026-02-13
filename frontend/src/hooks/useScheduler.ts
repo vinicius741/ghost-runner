@@ -284,7 +284,8 @@ export function useScheduler(options: UseSchedulerOptions = {}): UseSchedulerRes
   useEffect(() => {
     if (!socket || !connected) return;
 
-    const handleSchedulerStatus = (running: boolean) => {
+    const handleSchedulerStatus = (payload: boolean | { running: boolean }) => {
+      const running = typeof payload === 'boolean' ? payload : payload.running;
       const newStatus = runningToStatus(running);
       setStatus(newStatus);
       onStatusChange?.(newStatus);

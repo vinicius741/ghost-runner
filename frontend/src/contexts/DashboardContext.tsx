@@ -61,6 +61,7 @@ export interface DashboardContextValue {
   // Task operations
   runTask: (taskName: string) => Promise<void>;
   recordTask: (taskName: string, type: 'private' | 'public') => Promise<void>;
+  uploadTask: (taskName: string, type: 'private' | 'public', content: string) => Promise<void>;
 
   // Schedule operations
   addScheduleItem: (task: string, cron?: string, executeAt?: string) => Promise<void>;
@@ -299,6 +300,28 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
       addLog(`Error starting recorder: ${message}`, 'error');
     }
   }, [addLog]);
+
+  const uploadTask = useCallback(async (taskName: string, type: 'private' | 'public', content: string) => {
+    addLog(`Uploading task: ${taskName} (${type})...`, 'system');
+    try {
+      const res = await fetch('/api/upload-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskName, type, content }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || `Upload failed with HTTP ${res.status}`);
+      }
+      if (data.error) throw new Error(data.error);
+      addLog(data.message || `Task ${taskName} uploaded successfully.`, 'system');
+      await fetchTasks();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error uploading task: ${message}`, 'error');
+      throw error instanceof Error ? error : new Error(message);
+    }
+  }, [addLog, fetchTasks]);
 
   // Schedule operations
   const addScheduleItem = useCallback(async (task: string, cron?: string, executeAt?: string) => {
@@ -619,6 +642,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     // Task operations
     runTask,
     recordTask,
+    uploadTask,
 
     // Schedule operations
     addScheduleItem,
