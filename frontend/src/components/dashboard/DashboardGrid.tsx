@@ -36,6 +36,7 @@ interface DashboardGridProps {
   onAddSchedule: (task: string, cron?: string, executeAt?: string) => void;
   onDeleteSchedule: (index: number) => void;
   onRunTask: (taskName: string) => void;
+  onUploadTask: (taskName: string, type: 'private' | 'public', content: string) => Promise<void>;
   logs: LogEntry[];
   onClearLogs: () => void;
   failures: FailureRecord[];
@@ -82,6 +83,7 @@ export function DashboardGrid({
   onAddSchedule,
   onDeleteSchedule,
   onRunTask,
+  onUploadTask,
   logs,
   onClearLogs,
   failures,
@@ -122,6 +124,7 @@ export function DashboardGrid({
     onAddSchedule,
     onDeleteSchedule,
     onRunTask,
+    onUploadTask,
     logs,
     onClearLogs,
     failures,

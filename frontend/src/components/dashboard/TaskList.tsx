@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, ChangeEvent } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Play, Layers, Search, Filter, ArrowUpDown, Globe, Lock, Shield } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Play, Layers, Search, Filter, ArrowUpDown, Globe, Lock, Shield, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from "@/components/ui/input";
 import {
@@ -10,6 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface Task {
   name: string;
@@ -19,13 +29,27 @@ interface Task {
 interface TaskListProps {
   tasks: Task[];
   onRunTask: (taskName: string) => void;
+  onUploadTask: (taskName: string, type: 'private' | 'public', content: string) => Promise<void>;
   onHeaderDoubleClick?: () => void;
 }
 
-export function TaskList({ tasks, onRunTask, onHeaderDoubleClick }: TaskListProps) {
+function normalizeTaskName(fileName: string): string {
+  return fileName
+    .replace(/\.js$/i, '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+export function TaskList({ tasks, onRunTask, onUploadTask, onHeaderDoubleClick }: TaskListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "public" | "private">("all");
   const [sortBy, setSortBy] = useState<"name_asc" | "name_desc" | "type">("name_asc");
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadType, setUploadType] = useState<'public' | 'private'>('private');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const filteredAndSortedTasks = useMemo(() => {
     return tasks
@@ -42,6 +66,39 @@ export function TaskList({ tasks, onRunTask, onHeaderDoubleClick }: TaskListProp
       });
   }, [tasks, searchQuery, typeFilter, sortBy]);
 
+  const onFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null);
+    const file = event.target.files?.[0] ?? null;
+    setSelectedFile(file);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      setUploadError('Select a JavaScript task file first.');
+      return;
+    }
+
+    const normalizedTaskName = normalizeTaskName(selectedFile.name);
+    if (!normalizedTaskName) {
+      setUploadError('File name must produce a valid task name (letters, numbers, hyphens, underscores).');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setUploadError(null);
+      const content = await selectedFile.text();
+      await onUploadTask(normalizedTaskName, uploadType, content);
+      setSelectedFile(null);
+      setIsUploadModalOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setUploadError(message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -55,9 +112,26 @@ export function TaskList({ tasks, onRunTask, onHeaderDoubleClick }: TaskListProp
               <Layers className="w-4 h-4 text-primary" />
               Available Automations
             </CardTitle>
-            <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded font-mono uppercase tracking-wider">
-              {filteredAndSortedTasks.length} / {tasks.length} {tasks.length === 1 ? 'Task' : 'Tasks'}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded font-mono uppercase tracking-wider">
+                {filteredAndSortedTasks.length} / {tasks.length} {tasks.length === 1 ? 'Task' : 'Tasks'}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 px-2.5 text-[10px] uppercase tracking-wider"
+                onClick={() => {
+                  setSelectedFile(null);
+                  setUploadError(null);
+                  setUploadType('private');
+                  setIsUploadModalOpen(true);
+                }}
+              >
+                <Upload className="w-3 h-3" />
+                Upload
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -154,8 +228,73 @@ export function TaskList({ tasks, onRunTask, onHeaderDoubleClick }: TaskListProp
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Task File</DialogTitle>
+            <DialogDescription>
+              Upload a JavaScript task file. The task name will be derived from the file name.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="task-upload-type">Task Type</Label>
+              <Select
+                value={uploadType}
+                onValueChange={(value: 'public' | 'private') => setUploadType(value)}
+              >
+                <SelectTrigger id="task-upload-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="private">Private</SelectItem>
+                  <SelectItem value="public">Public</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="task-upload-file">Task File (.js)</Label>
+              <Input
+                id="task-upload-file"
+                type="file"
+                accept=".js,text/javascript,application/javascript"
+                onChange={onFileChange}
+              />
+              {selectedFile && (
+                <p className="text-xs text-muted-foreground">
+                  Will save as task: <span className="font-mono">{normalizeTaskName(selectedFile.name)}</span>
+                </p>
+              )}
+              {uploadError && (
+                <p className="text-xs text-red-500">{uploadError}</p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsUploadModalOpen(false)}
+              disabled={isUploading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                void handleUpload();
+              }}
+              disabled={isUploading || !selectedFile}
+            >
+              {isUploading ? 'Uploading...' : 'Upload Task'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
-
-

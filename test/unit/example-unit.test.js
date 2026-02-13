@@ -7,8 +7,8 @@
  * Place unit tests for specific files next to them or in this directory.
  */
 
-import { describe, it, mock } from 'node:test';
-import assert from 'node:assert';
+const { describe, it } = require('node:test');
+const assert = require('node:assert');
 
 describe('Example Unit Tests', () => {
   // Example: Testing a utility function

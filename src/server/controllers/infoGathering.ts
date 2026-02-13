@@ -242,7 +242,7 @@ export async function storeInfoGatheringResult(
 
   // Emit Socket.io event
   if (io) {
-    io.emit('info-gathering-result-updated', entry);
+    io.emit('info-data-updated', { result: entry });
   }
 
   return entry;

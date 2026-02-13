@@ -2,7 +2,7 @@
   "name": "ghost-runner",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist-electron/main.js",
   "scripts": {
     "start": "tsx src/core/index.ts",
     "bot": "tsx src/core/index.ts",
@@ -11,9 +11,16 @@
     "setup-login": "tsx src/utils/run-setup-login.ts",
     "verify-login": "tsx src/utils/verify-session.ts",
     "build:frontend": "cd frontend && npm install && npm run build",
+    "clean:frontend": "rm -rf frontend/dist",
+    "build:frontend:verified": "node scripts/verify-frontend-build.js --clean",
+    "build:server": "tsc -p tsconfig.json",
+    "build:electron": "tsc -p tsconfig.electron.json",
     "deploy:frontend": "npm run build:frontend && rm -rf src/server/public/* && mkdir -p src/server/public && cp -r frontend/dist/* src/server/public/",
     "ui:prod": "npm run deploy:frontend && tsx src/server/index.ts",
     "ui": "tsx dev-runner.ts",
+    "electron:start": "electron dist-electron/main.js",
+    "electron:dev": "npm run build:frontend:verified && npm run build:server && npm run build:electron && npm run electron:start",
+    "electron:dist": "npm run build:frontend:verified && npm run build:server && npm run build:electron && electron-builder --mac --publish never",
     "test": "node --test test/**/*.test.js",
     "test:watch": "node --test --watch test/**/*.test.js",
     "test:coverage": "c8 --reporter=text --reporter=html --reporter=lcov node --test test/**/*.test.js"
@@ -46,8 +53,43 @@
     "@types/node": "^25.0.8",
     "@types/supertest": "^6.0.2",
     "c8": "^10.1.3",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
     "supertest": "^7.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
+  },
+  "build": {
+    "appId": "com.ghostrunner.desktop",
+    "productName": "Ghost Runner",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "frontend/dist/**/*",
+      "tasks/public/**/*",
+      "tasks/private/**/*",
+      "src/server/public/**/*",
+      "settings.json",
+      "schedule.json",
+      "failures.json",
+      "info-gathering.json",
+      "package.json"
+    ],
+    "npmRebuild": false,
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.png",
+      "extendInfo": {
+        "NSLocationUsageDescription": "Ghost Runner uses your location to configure browser geolocation for automation tasks.",
+        "NSLocationWhenInUseUsageDescription": "Ghost Runner uses your location to configure browser geolocation for automation tasks."
+      }
+    }
   }
 }

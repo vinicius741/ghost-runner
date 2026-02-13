@@ -10,7 +10,12 @@ src/server/public/assets
 settings.json
 schedule.json
 scheduler.log
+info-gathering.json
 
 # Test coverage
 coverage/
 node_modules/.cache/
+dist/
+dist-electron/
+release/
+.build-manifest.json

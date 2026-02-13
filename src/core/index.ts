@@ -4,6 +4,7 @@ import { reportTaskResult, reportTaskStarted, getExitCode, reportTaskResultWithD
 import fs from 'fs';
 import path from 'path';
 import type { Page } from 'playwright';
+import { TASKS_DIR, initializeRuntimeStorage } from '../config/runtimePaths';
 
 /**
  * Task metadata for declaring task type and display settings.
@@ -27,6 +28,8 @@ interface TaskModule {
 }
 
 async function main(): Promise<void> {
+  initializeRuntimeStorage();
+
   // Parse command line arguments for --task
   const args = process.argv.slice(2);
   const taskArg = args.find(arg => arg.startsWith('--task='));
@@ -34,11 +37,11 @@ async function main(): Promise<void> {
   if (!taskArg) {
     console.error('Error: No task specified.');
     console.error('Usage: node index.js --task=task_name');
-    const publicTasks = fs.existsSync(path.resolve(__dirname, '../../tasks/public'))
-      ? fs.readdirSync(path.resolve(__dirname, '../../tasks/public')).map(f => `public/${f}`)
+    const publicTasks = fs.existsSync(path.join(TASKS_DIR, 'public'))
+      ? fs.readdirSync(path.join(TASKS_DIR, 'public')).map(f => `public/${f}`)
       : [];
-    const privateTasks = fs.existsSync(path.resolve(__dirname, '../../tasks/private'))
-      ? fs.readdirSync(path.resolve(__dirname, '../../tasks/private')).map(f => `private/${f}`)
+    const privateTasks = fs.existsSync(path.join(TASKS_DIR, 'private'))
+      ? fs.readdirSync(path.join(TASKS_DIR, 'private')).map(f => `private/${f}`)
       : [];
     console.error('Available tasks:', [...publicTasks, ...privateTasks].join(', '));
     process.exit(1);
@@ -47,8 +50,8 @@ async function main(): Promise<void> {
   const taskName = taskArg.split('=')[1];
 
   // Search for the task file in public or private directories
-  const publicTaskPath = path.resolve(__dirname, '../../tasks/public', `${taskName}.js`);
-  const privateTaskPath = path.resolve(__dirname, '../../tasks/private', `${taskName}.js`);
+  const publicTaskPath = path.join(TASKS_DIR, 'public', `${taskName}.js`);
+  const privateTaskPath = path.join(TASKS_DIR, 'private', `${taskName}.js`);
 
   let taskPath: string | undefined;
   if (fs.existsSync(publicTaskPath)) {
@@ -57,7 +60,7 @@ async function main(): Promise<void> {
     taskPath = privateTaskPath;
   } else {
     // Legacy support or check root if needed, but primarily check subdirs now
-    const rootTaskPath = path.resolve(__dirname, '../../tasks', `${taskName}.js`);
+    const rootTaskPath = path.join(TASKS_DIR, `${taskName}.js`);
     if (fs.existsSync(rootTaskPath)) {
       taskPath = rootTaskPath;
     }

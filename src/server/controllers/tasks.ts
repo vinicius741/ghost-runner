@@ -13,6 +13,7 @@
  */
 
 import { Request, Response } from 'express';
+import vm from 'vm';
 import type { Server } from 'socket.io';
 import { taskRepository } from '../repositories/TaskRepository';
 import { taskExecutionService } from '../services/TaskExecutionService';
@@ -100,6 +101,42 @@ export const setupLogin = (req: Request, res: Response): void => {
     res.json({ message: result.message });
   } catch (error) {
     console.error('Error in /api/setup-login:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: `Internal Server Error: ${message}` });
+  }
+};
+
+/**
+ * Controller function: POST /api/upload-task
+ *
+ * Saves a task file sent from the UI to tasks/public or tasks/private.
+ */
+export const uploadTask = async (req: Request, res: Response): Promise<void> => {
+  const io = req.app.get('io') as Server;
+  const { taskName, type, content } = req.body as {
+    taskName: string;
+    type: 'public' | 'private';
+    content: string;
+  };
+
+  try {
+    try {
+      // Syntax-only validation to catch malformed uploads early.
+      new vm.Script(content, { filename: `${taskName}.js` });
+    } catch (syntaxError) {
+      const message = syntaxError instanceof Error ? syntaxError.message : 'Invalid JavaScript content.';
+      res.status(400).json({ error: `Invalid JavaScript content: ${message}` });
+      return;
+    }
+
+    const savedTask = await taskRepository.saveTask(taskName, type, content);
+    io.emit('log', `[System] Task '${savedTask.name}' uploaded to ${savedTask.type}.`);
+    res.json({
+      message: `Task '${savedTask.name}' uploaded successfully.`,
+      task: { name: savedTask.name, type: savedTask.type },
+    });
+  } catch (error) {
+    console.error('Error in /api/upload-task:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({ error: `Internal Server Error: ${message}` });
   }

@@ -181,6 +181,28 @@ export class TaskRepository {
     const task = await this.findByName(name);
     return task?.path;
   }
+
+  /**
+   * Creates or updates a task file.
+   *
+   * @param name - Task name (without extension)
+   * @param type - Task directory type (public/private)
+   * @param content - JavaScript module content
+   * @returns Promise resolving to the saved task metadata
+   */
+  async saveTask(name: string, type: 'public' | 'private', content: string): Promise<Task> {
+    const dirPath = type === 'public' ? this.publicDir : this.privateDir;
+    const taskPath = path.join(dirPath, `${name}.js`);
+
+    await fs.mkdir(dirPath, { recursive: true });
+    await fs.writeFile(taskPath, content, 'utf-8');
+
+    return {
+      name,
+      type,
+      path: taskPath,
+    };
+  }
 }
 
 // Export a singleton instance for convenience

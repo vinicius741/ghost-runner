@@ -15,10 +15,14 @@ import path from 'path';
 // Mock fs/promises
 const mockReaddir = mock.fn<() => Promise<string[]>>();
 const mockReadFile = mock.fn<() => Promise<string>>();
+const mockWriteFile = mock.fn<() => Promise<void>>();
+const mockMkdir = mock.fn<() => Promise<void>>();
 
 // Replace fs functions with mocks
 const originalReaddir = fs.readdir;
 const originalReadFile = fs.readFile;
+const originalWriteFile = fs.writeFile;
+const originalMkdir = fs.mkdir;
 
 describe('TaskRepository', () => {
   let repository: TaskRepository;
@@ -28,6 +32,8 @@ describe('TaskRepository', () => {
     // Reset mocks
     mockReaddir.mock.resetCalls();
     mockReadFile.mock.resetCalls();
+    mockWriteFile.mock.resetCalls();
+    mockMkdir.mock.resetCalls();
 
     // Create repository with test directory
     repository = new TaskRepository(testTasksDir);
@@ -35,12 +41,16 @@ describe('TaskRepository', () => {
     // Replace fs functions
     (fs as unknown as Record<string, unknown>).readdir = mockReaddir;
     (fs as unknown as Record<string, unknown>).readFile = mockReadFile;
+    (fs as unknown as Record<string, unknown>).writeFile = mockWriteFile;
+    (fs as unknown as Record<string, unknown>).mkdir = mockMkdir;
   });
 
   afterEach(() => {
     // Restore original functions
     (fs as unknown as Record<string, unknown>).readdir = originalReaddir;
     (fs as unknown as Record<string, unknown>).readFile = originalReadFile;
+    (fs as unknown as Record<string, unknown>).writeFile = originalWriteFile;
+    (fs as unknown as Record<string, unknown>).mkdir = originalMkdir;
   });
 
   describe('findAll', () => {
@@ -185,6 +195,21 @@ describe('TaskRepository', () => {
       assert.ok(task);
       assert.strictEqual(task.name, 'task-with-content');
       assert.strictEqual(task.content, 'export async function run() {}');
+    });
+  });
+
+  describe('saveTask', () => {
+    it('should save task content to the public directory', async () => {
+      mockMkdir.mock.mockImplementation(() => Promise.resolve());
+      mockWriteFile.mock.mockImplementation(() => Promise.resolve());
+
+      const task = await repository.saveTask('new-task', 'public', 'module.exports = { run: async () => {} };');
+
+      assert.strictEqual(task.name, 'new-task');
+      assert.strictEqual(task.type, 'public');
+      assert.strictEqual(task.path, path.join(testTasksDir, 'public', 'new-task.js'));
+      assert.strictEqual(mockMkdir.mock.calls.length, 1);
+      assert.strictEqual(mockWriteFile.mock.calls.length, 1);
     });
   });
 });

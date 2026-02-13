@@ -4,6 +4,7 @@ import { chromium as chromiumStandard } from 'playwright';
 import path from 'path';
 import fs from 'fs';
 import type { BrowserContext } from 'playwright';
+import { SETTINGS_FILE, USER_DATA_DIR, initializeRuntimeStorage } from './runtimePaths';
 
 // Apply the stealth plugin (only used for headless mode)
 chromiumExtra.use(stealth());
@@ -31,7 +32,7 @@ interface Settings {
  * - Handles permission errors gracefully
  */
 function getOrCreateProfileDir(settings: Settings): string {
-  const baseUserDataDir = path.resolve(__dirname, '../../user_data');
+  const baseUserDataDir = USER_DATA_DIR;
   const profilesDir = path.join(baseUserDataDir, 'profiles');
 
   // If profileDir is specified in settings and exists, use it
@@ -117,8 +118,9 @@ async function resolveChromeExecutable(channel?: string, executablePath?: string
  * This handles the persistent user data directory and stealth configurations.
  */
 const launchBrowser = async (): Promise<BrowserContext> => {
-  const settingsFile = path.resolve(__dirname, '../../settings.json');
-  const baseUserDataDir = path.resolve(__dirname, '../../user_data');
+  initializeRuntimeStorage();
+  const settingsFile = SETTINGS_FILE;
+  const baseUserDataDir = USER_DATA_DIR;
 
   let settings: Settings = {
     geolocation: { latitude: -23.55052, longitude: -46.633308 }, // Default (São Paulo)
@@ -322,8 +324,9 @@ const launchBrowser = async (): Promise<BrowserContext> => {
  * Used by other scripts that need to know the profile location.
  */
 export function getProfileDir(): string {
-  const settingsFile = path.resolve(__dirname, '../../settings.json');
-  const baseUserDataDir = path.resolve(__dirname, '../../user_data');
+  initializeRuntimeStorage();
+  const settingsFile = SETTINGS_FILE;
+  const baseUserDataDir = USER_DATA_DIR;
 
   try {
     if (fs.existsSync(settingsFile)) {

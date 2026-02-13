@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TaskList } from './TaskList';
 import type { Task } from '@shared/types';
 
@@ -19,6 +19,7 @@ describe('TaskList', () => {
   const defaultProps = {
     tasks: mockTasks,
     onRunTask: vi.fn(),
+    onUploadTask: vi.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(() => {
@@ -64,5 +65,34 @@ describe('TaskList', () => {
     // Search input should be present
     const searchInput = screen.getByPlaceholderText(/search/i);
     expect(searchInput).toBeInTheDocument();
+  });
+
+  it('should upload a task with normalized task name', async () => {
+    render(<TaskList {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /upload/i }));
+
+    const fileInput = screen.getByLabelText('Task File (.js)') as HTMLInputElement;
+    const file = new File(['placeholder'], 'My Cool Task.js', {
+      type: 'application/javascript',
+    });
+    Object.defineProperty(file, 'text', {
+      value: vi.fn().mockResolvedValue('module.exports = { run: async () => {} };'),
+    });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /upload task/i })).not.toBeDisabled();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /upload task/i }));
+
+    await waitFor(() => {
+      expect(defaultProps.onUploadTask).toHaveBeenCalledWith(
+        'My_Cool_Task',
+        'private',
+        'module.exports = { run: async () => {} };'
+      );
+    });
   });
 });
