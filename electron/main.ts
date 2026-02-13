@@ -56,15 +56,6 @@ function isLocalUiOrigin(origin: string, port: number): boolean {
 function configurePermissions(port: number): void {
   const defaultSession = session.defaultSession;
 
-  defaultSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
-    if (!ALLOWED_PERMISSIONS.has(permission)) {
-      return true;
-    }
-
-    const origin = requestingOrigin || webContents?.getURL() || '';
-    return isLocalUiOrigin(origin, port);
-  });
-
   defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
     if (!ALLOWED_PERMISSIONS.has(permission)) {
       callback(true);
