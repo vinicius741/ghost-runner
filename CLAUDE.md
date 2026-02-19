@@ -153,7 +153,7 @@ The Electron app bundles server and frontend into a native desktop application:
 | `index.ts` | Express + Socket.io server. Exports `createGhostServer()` for Electron integration |
 | `controllers/` | Request handlers for tasks, scheduler, settings, failures, logs, info-gathering |
 | `routes/` | Express route definitions |
-| `services/` | Business logic: `TaskRunner` (child process spawning), `TaskExecutionService` (orchestration), `SchedulerService` |
+| `services/` | Business logic: `TaskRunner` (child process spawning with ASAR path handling), `TaskExecutionService` (orchestration), `SchedulerService` |
 | `repositories/` | File-based data persistence: `TaskRepository`, `FailureRepository` |
 | `utils/` | `taskParser` (stdout marker parsing), `taskValidators` (security validation) |
 | `config.ts` | Backend constants including `FAILURES_FILE` |
@@ -259,6 +259,15 @@ Centralized TypeScript types shared between frontend and backend:
 - `dev-runner.ts` spawns backend server with color-coded console output
 - Handles graceful shutdown with proper process group management
 - Frontend dev server proxied through backend for API calls
+
+### 11. ASAR Archive Handling (Electron Packaged Mode)
+- When running as a packaged Electron app, code files are bundled in ASAR archives
+- ASAR archives are read-only and cannot be used as `cwd` for spawned child processes
+- `TaskRunner` automatically detects ASAR paths and uses parent directory as spawn cwd:
+  ```typescript
+  const spawnCwd = cwd.endsWith('.asar') ? path.dirname(cwd) : cwd;
+  ```
+- This ensures task execution, scheduler, and setup-login processes spawn correctly in packaged builds
 
 ## Configuration Files
 
@@ -374,6 +383,7 @@ Use `npm run record` to generate task code via Playwright Codegen.
 |------|-----------|
 | Add new API endpoint | `src/server/routes/*.ts`, `src/server/controllers/*.ts` |
 | Modify task execution | `src/core/index.ts`, `src/server/services/TaskExecutionService.ts` |
+| Modify ASAR/spawn handling | `src/server/services/TaskRunner.ts` |
 | Add dashboard widget | `frontend/src/components/dashboard/*.tsx`, `frontend/src/App.tsx` |
 | Change scheduler logic | `src/core/scheduler.ts`, `src/server/services/scheduler.ts` |
 | Add new error type | `src/core/errors.ts`, `src/core/pageWrapper.ts`, `src/server/utils/taskParser.ts` |

@@ -112,6 +112,8 @@ Open `http://localhost:3333` in your browser.
 
 When running as a desktop app, mutable runtime data is stored in the Electron app data directory (`~/Library/Application Support/<App>/ghost-runner`) instead of the git repository. On first launch, the app copies `tasks/public` and `tasks/private` (if present) into that runtime directory.
 
+The app automatically handles ASAR archives for packaged builds. Since ASAR archives are read-only and cannot be used as a working directory for spawned processes, the TaskRunner detects ASAR paths and uses the parent directory for child process execution. This ensures tasks, scheduler, and setup-login processes spawn correctly in both development and packaged environments.
+
 If you want the desktop shell to connect to an already-running Ghost Runner server instead of starting the embedded backend, set one of these environment variables before launch:
 
 - `GHOST_RUNNER_SERVER_URL=http://127.0.0.1:3333`
