@@ -19,3 +19,4 @@ dist/
 dist-electron/
 release/
 .build-manifest.json
+*.app

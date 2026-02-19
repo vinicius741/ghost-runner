@@ -70,8 +70,9 @@ export class TaskRunner {
       npmArgs: ['run', 'bot', '--', `--task=${taskName}`],
     });
 
+    const spawnCwd = cwd.endsWith('.asar') ? path.dirname(cwd) : cwd;
     const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
-      cwd,
+      cwd: spawnCwd,
       shell: options.shell ?? spawnConfig.shell,
       env: this.resolveSpawnEnv(spawnConfig.command),
     });
@@ -114,8 +115,9 @@ export class TaskRunner {
       npmArgs: args,
     });
 
+    const spawnCwd = cwd.endsWith('.asar') ? path.dirname(cwd) : cwd;
     const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
-      cwd,
+      cwd: spawnCwd,
       shell: options.shell ?? spawnConfig.shell,
       env: this.resolveSpawnEnv(spawnConfig.command),
     });
@@ -143,8 +145,9 @@ export class TaskRunner {
       npmArgs: ['run', 'setup-login'],
     });
 
+    const spawnCwd = cwd.endsWith('.asar') ? path.dirname(cwd) : cwd;
     const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
-      cwd,
+      cwd: spawnCwd,
       shell: options.shell ?? spawnConfig.shell,
       env: this.resolveSpawnEnv(spawnConfig.command),
     });
