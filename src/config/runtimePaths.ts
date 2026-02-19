@@ -96,6 +96,30 @@ export const LOG_FILE = path.join(DATA_ROOT, 'scheduler.log');
 export const FRONTEND_DIST_DIR = path.join(APP_ROOT, 'frontend', 'dist');
 export const SERVER_PUBLIC_DIR = path.join(APP_ROOT, 'src', 'server', 'public');
 
+/**
+ * Resolves frontend dist directory, accounting for ASAR unpacking.
+ * With asarUnpack, frontend files are in app.asar.unpacked instead of app.asar.
+ * Express.static has issues serving files from the virtual ASAR filesystem,
+ * so we need to point to the unpacked location in production Electron builds.
+ */
+export function getFrontendDistDir(appRoot: string = APP_ROOT): string {
+  // In non-Electron environments, use the standard path
+  if (!process.versions.electron) {
+    return path.join(appRoot, 'frontend', 'dist');
+  }
+
+  // Check unpacked path first (production with asarUnpack)
+  const unpackedRoot = appRoot.replace('app.asar', 'app.asar.unpacked');
+  const unpackedFrontend = path.join(unpackedRoot, 'frontend', 'dist');
+
+  if (fs.existsSync(path.join(unpackedFrontend, 'index.html'))) {
+    return unpackedFrontend;
+  }
+
+  // Fallback to standard path (development or if unpacking didn't occur)
+  return path.join(appRoot, 'frontend', 'dist');
+}
+
 export const BUNDLED_TASKS_DIR = path.join(APP_ROOT, 'tasks');
 export const BUNDLED_SETTINGS_FILE = path.join(APP_ROOT, 'settings.json');
 export const BUNDLED_SCHEDULE_FILE = path.join(APP_ROOT, 'schedule.json');

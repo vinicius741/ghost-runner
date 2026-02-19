@@ -4,7 +4,8 @@ import http from 'http';
 import path from 'path';
 import fs from 'fs';
 import { Server } from 'socket.io';
-import { PORT, SETTINGS_FILE, SCHEDULE_FILE, FRONTEND_DIST_DIR, SERVER_PUBLIC_DIR } from './config';
+import { PORT, SETTINGS_FILE, SCHEDULE_FILE, SERVER_PUBLIC_DIR } from './config';
+import { getFrontendDistDir } from '../config/runtimePaths';
 import { initializeRuntimeStorage } from '../config/runtimePaths';
 import type { ScheduleItem, ServerToClientEvents, ClientToServerEvents } from '../../shared/types';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -70,9 +71,10 @@ function registerGlobalProcessHandlers(): void {
 }
 
 function resolveFrontendAssetsDir(): string | null {
-  const frontendDistIndex = path.join(FRONTEND_DIST_DIR, 'index.html');
+  const frontendDistDir = getFrontendDistDir();
+  const frontendDistIndex = path.join(frontendDistDir, 'index.html');
   if (fs.existsSync(frontendDistIndex)) {
-    return FRONTEND_DIST_DIR;
+    return frontendDistDir;
   }
 
   const serverPublicIndex = path.join(SERVER_PUBLIC_DIR, 'index.html');

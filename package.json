@@ -62,6 +62,10 @@
   "build": {
     "appId": "com.ghostrunner.desktop",
     "productName": "Ghost Runner",
+    "asar": true,
+    "asarUnpack": [
+      "frontend/dist/**/*"
+    ],
     "directories": {
       "output": "release"
     },
