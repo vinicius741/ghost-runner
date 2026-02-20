@@ -125,8 +125,10 @@ function runTask(taskName: string): Promise<void> {
         ? [sourceEntry, `--task=${taskName}`]
         : ['tsx', 'src/core/index.ts', `--task=${taskName}`]);
 
+    const spawnCwd = APP_ROOT.endsWith('.asar') ? path.dirname(APP_ROOT) : APP_ROOT;
+
     const child = spawn(command, args, {
-      cwd: APP_ROOT, // Run from app root
+      cwd: spawnCwd, // Run from app directory, not inside asar
       stdio: 'inherit', // Pipe output so we see it in the main console
       shell: command === 'npx',
       env: command === process.execPath && process.versions.electron

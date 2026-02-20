@@ -62,8 +62,10 @@ const playwrightCli = path.join(APP_ROOT, 'node_modules', 'playwright', 'cli.js'
 const command = fs.existsSync(playwrightCli) ? process.execPath : 'npx';
 const argsForCommand = command === process.execPath ? [playwrightCli, ...playwrightArgs] : ['playwright', ...playwrightArgs];
 
+const spawnCwd = APP_ROOT.endsWith('.asar') ? path.dirname(APP_ROOT) : APP_ROOT;
+
 const child: ChildProcess = spawn(command, argsForCommand, {
-  cwd: APP_ROOT,
+  cwd: spawnCwd,
   stdio: 'inherit', // Pipe output to parent console
   shell: command === 'npx', // execute through shell only for npx fallback
   env: command === process.execPath && process.versions.electron

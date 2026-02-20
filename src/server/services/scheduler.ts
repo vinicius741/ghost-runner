@@ -27,8 +27,10 @@ class SchedulerService {
       ? [compiledScheduler]
       : (command === tsxBin ? [sourceScheduler] : ['run', 'schedule']);
 
+    const spawnCwd = ROOT_DIR.endsWith('.asar') ? path.dirname(ROOT_DIR) : ROOT_DIR;
+
     this.schedulerProcess = spawn(command, args, {
-      cwd: ROOT_DIR,
+      cwd: spawnCwd,
       shell: command === 'npm',
       env: command === process.execPath && process.versions.electron
         ? { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
