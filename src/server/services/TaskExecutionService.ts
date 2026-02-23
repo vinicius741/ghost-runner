@@ -338,28 +338,7 @@ export class TaskExecutionService {
    * @param io - Optional Socket.io instance
    */
   private handleRecorderEvent(event: TaskEventData, onLog?: TaskLogCallback, io?: Server): void {
-    const { type, data, code, error } = event;
-
-    switch (type) {
-      case 'stdout':
-        if (data) {
-          this.emitLog(`[Recorder] ${data}`, 'info', onLog, io);
-        }
-        break;
-      case 'stderr':
-        if (data) {
-          this.emitLog(`[Recorder ERROR] ${data}`, 'error', onLog, io);
-        }
-        break;
-      case 'error':
-        this.emitLog(`[Recorder SYSTEM ERROR] Failed to spawn process: ${error?.message}`, 'error', onLog, io);
-        break;
-      case 'close':
-        if (code !== 0) {
-          this.emitLog(`[Recorder] Process exited with code ${code}`, 'info', onLog, io);
-        }
-        break;
-    }
+    this.handleProcessEvent(event, 'Recorder', { logCloseOnNonZero: true, onLog, io });
   }
 
   /**
@@ -370,24 +349,49 @@ export class TaskExecutionService {
    * @param io - Optional Socket.io instance
    */
   private handleSetupLoginEvent(event: TaskEventData, onLog?: TaskLogCallback, io?: Server): void {
-    const { type, data, error } = event;
+    this.handleProcessEvent(event, 'Setup Login', { logCloseAlways: true, onLog, io });
+  }
+
+  /**
+   * Unified handler for child process events.
+   *
+   * @param event - The task event
+   * @param processLabel - Label for log messages (e.g., 'Recorder', 'Setup Login')
+   * @param options - Configuration options for event handling
+   */
+  private handleProcessEvent(
+    event: TaskEventData,
+    processLabel: string,
+    options: {
+      logCloseOnNonZero?: boolean;
+      logCloseAlways?: boolean;
+      onLog?: TaskLogCallback;
+      io?: Server;
+    }
+  ): void {
+    const { type, data, code, error } = event;
+    const { logCloseOnNonZero, logCloseAlways, onLog, io } = options;
 
     switch (type) {
       case 'stdout':
         if (data) {
-          this.emitLog(`[Setup Login] ${data}`, 'info', onLog, io);
+          this.emitLog(`[${processLabel}] ${data}`, 'info', onLog, io);
         }
         break;
       case 'stderr':
         if (data) {
-          this.emitLog(`[Setup Login ERROR] ${data}`, 'error', onLog, io);
+          this.emitLog(`[${processLabel} ERROR] ${data}`, 'error', onLog, io);
         }
         break;
       case 'error':
-        this.emitLog(`[Setup Login SYSTEM ERROR] Failed to spawn process: ${error?.message}`, 'error', onLog, io);
+        this.emitLog(`[${processLabel} SYSTEM ERROR] Failed to spawn process: ${error?.message}`, 'error', onLog, io);
         break;
       case 'close':
-        this.emitLog(`[Setup Login] Process finished`, 'info', onLog, io);
+        if (logCloseAlways) {
+          this.emitLog(`[${processLabel}] Process finished`, 'info', onLog, io);
+        } else if (logCloseOnNonZero && code !== 0) {
+          this.emitLog(`[${processLabel}] Process exited with code ${code}`, 'info', onLog, io);
+        }
         break;
     }
   }

@@ -17,6 +17,7 @@ import vm from 'vm';
 import type { Server } from 'socket.io';
 import { taskRepository } from '../repositories/TaskRepository';
 import { taskExecutionService } from '../services/TaskExecutionService';
+import { handleControllerError, getErrorMessage } from '../utils/errorHandler';
 
 /**
  * Controller function: GET /api/tasks
@@ -63,9 +64,7 @@ export const runTask = async (req: Request, res: Response): Promise<void> => {
 
     res.json({ message: result.message });
   } catch (error) {
-    console.error('Error in /api/tasks/run:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ error: `Internal Server Error: ${message}` });
+    handleControllerError(error, res, 'Error in /api/tasks/run');
   }
 };
 
@@ -82,9 +81,7 @@ export const recordTask = (req: Request, res: Response): void => {
     const result = taskExecutionService.record(taskName, type, { io });
     res.json({ message: result.message });
   } catch (error) {
-    console.error('Error in /api/record:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ error: `Internal Server Error: ${message}` });
+    handleControllerError(error, res, 'Error in /api/record');
   }
 };
 
@@ -100,9 +97,7 @@ export const setupLogin = (req: Request, res: Response): void => {
     const result = taskExecutionService.setupLogin({ io });
     res.json({ message: result.message });
   } catch (error) {
-    console.error('Error in /api/setup-login:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ error: `Internal Server Error: ${message}` });
+    handleControllerError(error, res, 'Error in /api/setup-login');
   }
 };
 
@@ -136,8 +131,6 @@ export const uploadTask = async (req: Request, res: Response): Promise<void> => 
       task: { name: savedTask.name, type: savedTask.type },
     });
   } catch (error) {
-    console.error('Error in /api/upload-task:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ error: `Internal Server Error: ${message}` });
+    handleControllerError(error, res, 'Error in /api/upload-task');
   }
 };

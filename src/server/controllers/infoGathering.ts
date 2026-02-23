@@ -7,6 +7,7 @@ import { promises as fs } from 'fs';
 import type { Request, Response } from 'express';
 import type { Server } from 'socket.io';
 import { INFO_GATHERING_FILE } from '../config';
+import { handleControllerError, getErrorMessage } from '../utils/errorHandler';
 
 // Constants
 const DEFAULT_TTL_MS = 604800000; // 7 days in milliseconds
@@ -264,8 +265,7 @@ export const getInfoGatheringData = async (req: Request, res: Response): Promise
 
     res.json({ results: activeResults });
   } catch (error) {
-    console.error('Error getting info-gathering data:', error);
-    res.status(500).json({ error: 'Failed to read info-gathering data.' });
+    handleControllerError(error, res, 'Error getting info-gathering data');
   }
 };
 
@@ -295,8 +295,7 @@ export const clearTaskResult = async (req: Request, res: Response): Promise<void
     }
   } catch (error) {
     console.error('Error clearing task result:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(400).json({ error: `Failed to clear task result: ${message}` });
+    res.status(400).json({ error: `Failed to clear task result: ${getErrorMessage(error)}` });
   }
 };
 
@@ -313,7 +312,6 @@ export const clearAllResults = async (req: Request, res: Response): Promise<void
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Error clearing all results:', error);
-    res.status(500).json({ error: 'Failed to clear all results.' });
+    handleControllerError(error, res, 'Error clearing all results');
   }
 };

@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import { ROOT_DIR } from '../config';
 import { shouldUseCompiledEntry } from '../../config/runtimePaths';
+import { resolveSpawnCwd } from '../utils/spawnUtils';
 
 /**
  * Event types emitted by the TaskRunner during task execution.
@@ -70,9 +71,8 @@ export class TaskRunner {
       npmArgs: ['run', 'bot', '--', `--task=${taskName}`],
     });
 
-    const spawnCwd = cwd.endsWith('.asar') ? path.dirname(cwd) : cwd;
     const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
-      cwd: spawnCwd,
+      cwd: resolveSpawnCwd(cwd),
       shell: options.shell ?? spawnConfig.shell,
       env: this.resolveSpawnEnv(spawnConfig.command),
     });
@@ -114,10 +114,8 @@ export class TaskRunner {
       entryArgs,
       npmArgs: args,
     });
-
-    const spawnCwd = cwd.endsWith('.asar') ? path.dirname(cwd) : cwd;
     const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
-      cwd: spawnCwd,
+      cwd: resolveSpawnCwd(cwd),
       shell: options.shell ?? spawnConfig.shell,
       env: this.resolveSpawnEnv(spawnConfig.command),
     });
@@ -145,9 +143,8 @@ export class TaskRunner {
       npmArgs: ['run', 'setup-login'],
     });
 
-    const spawnCwd = cwd.endsWith('.asar') ? path.dirname(cwd) : cwd;
     const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
-      cwd: spawnCwd,
+      cwd: resolveSpawnCwd(cwd),
       shell: options.shell ?? spawnConfig.shell,
       env: this.resolveSpawnEnv(spawnConfig.command),
     });
