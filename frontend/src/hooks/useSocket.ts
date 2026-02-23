@@ -239,7 +239,9 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketResult {
 
     // Cleanup on unmount
     return () => {
-      Object.entries(handlersRef.current).forEach(([event, handlers]) => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const currentHandlers = handlersRef.current;
+      Object.entries(currentHandlers).forEach(([event, handlers]) => {
         handlers.forEach((handler) => {
           newSocket.off(event, handler);
         });

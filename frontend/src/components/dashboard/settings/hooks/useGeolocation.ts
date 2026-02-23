@@ -243,7 +243,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}): UseGeolocat
         maximumAge: 0,
       }
     );
-  }, [onSave, onSaved, onLog]);
+  }, [onSave, onSaved, onLog, setGeolocation]);
 
   return {
     geolocation,

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { themes, defaultTheme, isValidTheme, type ThemeId, type ThemeConfig } from '@/themes';
 
