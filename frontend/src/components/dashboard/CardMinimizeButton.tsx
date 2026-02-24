@@ -1,4 +1,4 @@
-import { Minus } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 interface CardMinimizeButtonProps {
   onMinimize: () => void;
@@ -13,7 +13,7 @@ export function CardMinimizeButton({ onMinimize, ariaLabel = 'Minimize card' }: 
       aria-label={ariaLabel}
       type="button"
     >
-      <Minus className="w-4 h-4" />
+      <ChevronRight className="w-4 h-4" />
     </button>
   );
 }

@@ -89,9 +89,9 @@ export function MinimizedCardsSidebar({ isOpen, minimizedCards, onRestoreCard, o
         type="button"
       >
         {isOpen ? (
-          <ChevronLeft className="w-5 h-5" />
-        ) : (
           <ChevronRight className="w-5 h-5" />
+        ) : (
+          <ChevronLeft className="w-5 h-5" />
         )}
       </motion.button>
     </>
