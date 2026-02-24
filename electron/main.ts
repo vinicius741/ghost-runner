@@ -150,6 +150,8 @@ function createMainWindow(targetUrl: string): void {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
+      // Use a persistent partition so localStorage survives dynamic port changes
+      partition: 'persist:ghost-runner-ui',
     },
   });
 
@@ -288,9 +290,42 @@ async function startBackendAndUi(): Promise<void> {
   configureRuntimeEnvironment(appRoot);
   const serverModule = loadServerModule(serverEntry);
 
-  ghostServer = serverModule.createGhostServer({ port: 0 });
-  backendPort = await ghostServer.start(0);
+  const dataRoot = process.env.GHOST_RUNNER_DATA_DIR;
+  let savedPort = 0;
+  let portFilePath = '';
+
+  if (dataRoot) {
+    portFilePath = path.join(dataRoot, 'backend-port.json');
+    try {
+      if (fs.existsSync(portFilePath)) {
+        const data = fs.readFileSync(portFilePath, 'utf8');
+        const parsed = JSON.parse(data);
+        if (typeof parsed.port === 'number' && parsed.port > 0) {
+          savedPort = parsed.port;
+          console.log(`Loaded saved backend port: ${savedPort}`);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to read saved backend port:', error);
+    }
+  }
+
+  ghostServer = serverModule.createGhostServer({ port: savedPort });
+  backendPort = await ghostServer.start(savedPort);
   uiUrl = `http://127.0.0.1:${backendPort}`;
+
+  if (dataRoot && backendPort !== savedPort) {
+    try {
+      if (!fs.existsSync(dataRoot)) {
+        fs.mkdirSync(dataRoot, { recursive: true });
+      }
+      fs.writeFileSync(portFilePath, JSON.stringify({ port: backendPort }));
+      console.log(`Saved new backend port: ${backendPort}`);
+    } catch (error) {
+      console.error('Failed to save backend port:', error);
+    }
+  }
+
   await waitForServerHealth(uiUrl);
 
   createMainWindow(uiUrl);
