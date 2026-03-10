@@ -70,12 +70,12 @@ export function LocationMap({
 }: LocationMapProps) {
   return (
     <div
-      className="rounded-lg overflow-hidden border border-slate-800 bg-slate-900 group relative"
+      className="rounded-lg overflow-hidden border border-border bg-muted group relative"
       style={{ height }}
     >
       {/* Background icon effect */}
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-10 pointer-events-none transition-opacity duration-300">
-        <Globe className="w-12 h-12 text-blue-500" />
+        <Globe className="w-12 h-12 text-primary" />
       </div>
 
       {/* Leaflet map */}

@@ -36,13 +36,13 @@ export function AuthenticationSection({
   onSetupLogin,
 }: AuthenticationSectionProps) {
   return (
-    <div className="flex flex-col gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">
+    <div className="flex flex-col gap-4 p-4 rounded-xl bg-card/50 border border-border/50">
       <div className="flex items-center gap-2 mb-2">
         <LockIcon className="w-4 h-4 text-amber-500" />
-        <h3 className="text-slate-100 font-medium tracking-tight">Authentication</h3>
+        <h3 className="text-foreground font-medium tracking-tight">Authentication</h3>
       </div>
 
-      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-2">
         Session Management
       </p>
 

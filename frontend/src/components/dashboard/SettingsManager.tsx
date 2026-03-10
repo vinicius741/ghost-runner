@@ -135,7 +135,7 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
     >
       <Card className="card-premium h-full">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <CardTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-2">
+          <CardTitle className="text-foreground font-medium tracking-tight flex items-center gap-2">
             <MapPin className="w-4 h-4 text-blue-500" />
             Geolocation Settings
           </CardTitle>
@@ -144,7 +144,7 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
             size="icon"
             onClick={fetchSettings}
             disabled={loading}
-            className="text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -184,21 +184,21 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
           {/* Save button */}
           <div className="space-y-4">
             <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-sky-400 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
               <Button
                 onClick={handleSave}
                 disabled={saving || loading}
-                className="relative w-full h-11 bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-100 transition-all duration-300"
+                className="relative w-full h-11 bg-card border border-border hover:bg-muted text-foreground transition-all duration-300"
               >
                 {saving ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin text-blue-500" />
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin text-primary" />
                 ) : (
-                  <Save className="w-4 h-4 mr-2 text-blue-500" />
+                  <Save className="w-4 h-4 mr-2 text-primary" />
                 )}
                 <span className="font-semibold tracking-wide">Save Configuration</span>
               </Button>
             </div>
-            <p className="text-[10px] text-slate-500 text-center leading-relaxed px-4">
+            <p className="text-[10px] text-muted-foreground text-center leading-relaxed px-4">
               Changes apply to new browser instances.
               <br />
               Profiles update on next launch.

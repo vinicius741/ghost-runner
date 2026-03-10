@@ -70,7 +70,7 @@ export function GeolocationSection({
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">
+    <div className="flex flex-col gap-4 p-4 rounded-xl bg-card/50 border border-border/50">
       <CoordinateInputs
         geolocation={geolocation}
         onUpdate={handleUpdateGeo}
@@ -84,7 +84,7 @@ export function GeolocationSection({
           size="sm"
           onClick={detectLocation}
           disabled={isDetecting || isSaving}
-          className="h-9 px-4 bg-blue-500/5 text-blue-400 border-blue-500/20 hover:bg-blue-500/10 hover:border-blue-500/40 hover:text-blue-300 transition-all duration-300 gap-2"
+          className="h-9 px-4 bg-primary/5 text-primary border-primary/20 hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-all duration-300 gap-2"
         >
           <Navigation className={`w-3.5 h-3.5 ${isDetecting || isSaving ? 'animate-pulse' : ''}`} />
           <span className="text-[10px] font-bold uppercase tracking-widest">

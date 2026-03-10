@@ -45,34 +45,34 @@ export function BrowserConfigSection({
   onExecutablePathChange,
 }: BrowserConfigSectionProps) {
   return (
-    <div className="flex flex-col gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">
+    <div className="flex flex-col gap-4 p-4 rounded-xl bg-card/50 border border-border/50">
       <div className="flex items-center gap-2 mb-2">
         <Chrome className="w-4 h-4 text-green-500" />
-        <h3 className="text-slate-100 font-medium tracking-tight">Browser Configuration</h3>
+        <h3 className="text-foreground font-medium tracking-tight">Browser Configuration</h3>
       </div>
 
       {/* Browser channel selection */}
-      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3">
         Browser Channel
       </p>
       <div className="space-y-2">
         <select
           value={browserChannel}
           onChange={(e) => onBrowserChannelChange(e.target.value as BrowserChannel)}
-          className="w-full h-10 bg-slate-900 border border-slate-800 text-slate-200 focus:border-green-500/50 focus:ring-green-500/20 rounded-lg px-3 text-sm"
+          className="w-full h-10 bg-muted border border-border text-foreground focus:border-primary/50 focus:ring-primary/20 rounded-lg px-3 text-sm"
           aria-label="Select browser channel"
         >
           <option value="chrome">System Chrome (Recommended)</option>
           <option value="chromium">Chromium</option>
           <option value="msedge">Microsoft Edge</option>
         </select>
-        <p className="text-[10px] text-slate-500 leading-relaxed">
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
           Select which browser to use. System Chrome is recommended for best compatibility.
         </p>
       </div>
 
       {/* Custom executable path */}
-      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3 mt-4">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3 mt-4">
         Custom Executable Path (Advanced)
       </p>
       <div className="space-y-2">
@@ -81,21 +81,21 @@ export function BrowserConfigSection({
           value={executablePath || ''}
           onChange={(e) => onExecutablePathChange(e.target.value || undefined)}
           placeholder="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-          className="h-10 bg-slate-900 border-slate-800 text-slate-200 focus:border-green-500/50 focus:ring-green-500/20 transition-all font-mono text-sm"
+          className="h-10 bg-muted border border-border text-foreground focus:border-primary/50 focus:ring-primary/20 transition-all font-mono text-sm"
           aria-label="Custom executable path"
         />
-        <p className="text-[10px] text-slate-500 leading-relaxed">
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
           Optional: Specify a custom Chrome executable path. Leave empty to use system Chrome.
         </p>
       </div>
 
       {/* Current profile display */}
       {profileDir && (
-        <div className="mt-4 p-3 rounded-lg bg-slate-900/50 border border-slate-800">
-          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">
+        <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-1">
             Current Profile
           </p>
-          <p className="text-xs text-slate-400 font-mono break-all">{profileDir}</p>
+          <p className="text-xs text-muted-foreground font-mono break-all">{profileDir}</p>
         </div>
       )}
     </div>

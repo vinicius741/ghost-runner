@@ -30,17 +30,17 @@ export function BrowserModeSection({
   onHeadlessChange,
 }: BrowserModeSectionProps) {
   return (
-    <div className="flex flex-col gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800/50">
+    <div className="flex flex-col gap-4 p-4 rounded-xl bg-card/50 border border-border/50">
       <div className="flex items-center gap-2 mb-2">
         <Monitor className="w-4 h-4 text-purple-500" />
-        <h3 className="text-slate-100 font-medium tracking-tight">Browser Mode</h3>
+        <h3 className="text-foreground font-medium tracking-tight">Browser Mode</h3>
       </div>
 
-      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3">
         Headless Mode
       </p>
 
-      <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900 border border-slate-800">
+      <div className="flex items-center justify-between p-3 rounded-lg bg-muted border border-border">
         <div className="flex items-center gap-3">
           {headless ? (
             <EyeOff className="w-4 h-4 text-purple-500" />
@@ -48,10 +48,10 @@ export function BrowserModeSection({
             <Eye className="w-4 h-4 text-purple-500" />
           )}
           <div className="flex flex-col">
-            <span className="text-sm text-slate-200">
+            <span className="text-sm text-foreground">
               {headless ? 'Headless (Hidden)' : 'Headful (Visible)'}
             </span>
-            <span className="text-[10px] text-slate-500">
+            <span className="text-[10px] text-muted-foreground">
               {headless
                 ? 'Browser runs without visible window'
                 : 'Browser window will be visible'}
@@ -62,7 +62,7 @@ export function BrowserModeSection({
           type="button"
           onClick={() => onHeadlessChange(!headless)}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-            headless ? 'bg-purple-600' : 'bg-slate-700'
+            headless ? 'bg-primary' : 'bg-muted'
           }`}
           aria-pressed={headless}
           aria-label="Toggle headless mode"
@@ -75,7 +75,7 @@ export function BrowserModeSection({
         </button>
       </div>
 
-      <p className="text-[10px] text-slate-500 leading-relaxed">
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
         Headless mode is recommended on macOS to avoid browser crashes.
         Set to false to see the browser window during automation.
       </p>
