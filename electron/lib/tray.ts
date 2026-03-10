@@ -1,6 +1,6 @@
 import { app, Tray, Menu, nativeImage } from 'electron';
 import type { MenuItemConstructorOptions } from 'electron';
-import { TRAY_ICON_HEIGHT_PX, TRAY_POLL_INTERVAL_MS, TRAY_COUNTDOWN_INTERVAL_MS, ONE_TIME_TRAY_DELAY_MS } from './constants';
+import { TRAY_ICON_HEIGHT_PX, TRAY_POLL_INTERVAL_MS, TRAY_COUNTDOWN_INTERVAL_MS, TRAY_SCHEDULE_PRESETS_MS, TRAY_CUSTOM_DELAYS_MS, TRAY_DEFAULT_DELAY_MS } from './constants';
 import { GlobalState, TaskSummary, SchedulerStatusResponse, NextTaskResponse, TasksResponse, ApiMessageResponse, ScheduleResponse, NextTaskSummary } from './types';
 import { resolveTrayIconPath } from './paths';
 import { requestBackend } from './network';
@@ -52,6 +52,21 @@ export function buildNextTaskLabel(state: GlobalState): string {
     return `${state.trayState.nextTask.task} in ${formatDuration(delayMs)}`;
 }
 
+// Helper to build task submenu for a given delay
+function buildTaskSubmenu(
+    state: GlobalState,
+    tasks: TaskSummary[],
+    delayMs: number
+): MenuItemConstructorOptions[] {
+    if (tasks.length === 0) {
+        return [{ label: 'No tasks available', enabled: false }];
+    }
+    return tasks.map((task) => ({
+        label: formatTaskLabel(task),
+        click: () => void queueTaskOnceFromTray(state, task.name, delayMs)
+    }));
+}
+
 export function updateTrayPresentation(state: GlobalState, rebuildMenu = true): void {
     if (!state.tray) return;
 
@@ -71,7 +86,23 @@ export function updateTrayPresentation(state: GlobalState, rebuildMenu = true): 
         : [{ label: 'No tasks available', enabled: false }];
 
     const queueOnceMenu: MenuItemConstructorOptions[] = sortedTasks.length > 0
-        ? sortedTasks.map((task) => ({ label: formatTaskLabel(task), click: () => void queueTaskOnceFromTray(state, task.name) }))
+        ? [
+            // Standard presets
+            ...TRAY_SCHEDULE_PRESETS_MS.map((preset) => ({
+                label: preset.label,
+                submenu: buildTaskSubmenu(state, sortedTasks, preset.delay)
+            })),
+            // Separator before custom
+            { type: 'separator' },
+            // Custom delays submenu
+            {
+                label: 'Custom delay...',
+                submenu: TRAY_CUSTOM_DELAYS_MS.map((custom) => ({
+                    label: custom.label,
+                    submenu: buildTaskSubmenu(state, sortedTasks, custom.delay)
+                }))
+            }
+        ]
         : [{ label: 'No tasks available', enabled: false }];
 
     const template: MenuItemConstructorOptions[] = [
@@ -147,10 +178,14 @@ async function runTaskFromTray(state: GlobalState, taskName: string): Promise<vo
     }
 }
 
-async function queueTaskOnceFromTray(state: GlobalState, taskName: string): Promise<void> {
+async function queueTaskOnceFromTray(
+    state: GlobalState,
+    taskName: string,
+    delayMs: number = TRAY_DEFAULT_DELAY_MS
+): Promise<void> {
     try {
         const currentSchedule = await requestBackend<ScheduleResponse>(state.uiUrl, '/api/schedule');
-        const executeAt = new Date(Date.now() + ONE_TIME_TRAY_DELAY_MS).toISOString();
+        const executeAt = new Date(Date.now() + delayMs).toISOString();
         const nextSchedule = [...(currentSchedule.schedule || []), { task: taskName, executeAt }];
         const response = await requestBackend<ApiMessageResponse>(state.uiUrl, '/api/schedule', {
             method: 'POST',
