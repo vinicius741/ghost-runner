@@ -1,9 +1,10 @@
 import { useState, useMemo, ChangeEvent } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Layers, Search, Filter, ArrowUpDown, Globe, Lock, Shield, Upload } from 'lucide-react';
+import { Play, Layers, Search, Filter, ArrowUpDown, Globe, Lock, Shield, Upload, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from "@/components/ui/input";
+import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ interface Task {
 
 interface TaskListProps {
   tasks: Task[];
+  runningTasks: Set<string>;
   onRunTask: (taskName: string) => void;
   onUploadTask: (taskName: string, type: 'private' | 'public', content: string) => Promise<void>;
   onHeaderDoubleClick?: () => void;
@@ -41,7 +43,7 @@ function normalizeTaskName(fileName: string): string {
     .replace(/[^a-zA-Z0-9_-]/g, '');
 }
 
-export function TaskList({ tasks, onRunTask, onUploadTask, onHeaderDoubleClick }: TaskListProps) {
+export function TaskList({ tasks, runningTasks, onRunTask, onUploadTask, onHeaderDoubleClick }: TaskListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "public" | "private">("all");
   const [sortBy, setSortBy] = useState<"name_asc" | "name_desc" | "type">("name_asc");
@@ -192,37 +194,74 @@ export function TaskList({ tasks, onRunTask, onUploadTask, onHeaderDoubleClick }
                   <p className="text-xs text-muted-foreground/60 mt-1">Try adjusting your search or filters.</p>
                 </motion.div>
               ) : (
-                filteredAndSortedTasks.map((task, index) => (
-                  <motion.div
-                    key={`${task.name}-${task.type}`}
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    onClick={() => onRunTask(task.name)}
-                    className="group relative flex items-center justify-between p-4 bg-card/50 border border-border/50 rounded-2xl cursor-pointer hover:bg-primary/5 hover:border-primary/30 transition-all duration-300"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-foreground/90 group-hover:text-primary transition-colors uppercase tracking-tight">{task.name}</span>
-                        {task.type === 'public' ? (
-                          <Globe className="w-3 h-3 text-emerald-500/70" />
-                        ) : task.type === 'private' ? (
-                          <Lock className="w-3 h-3 text-amber-500/70" />
+                filteredAndSortedTasks.map((task, index) => {
+                  const isRunning = runningTasks.has(task.name);
+                  return (
+                    <motion.div
+                      key={`${task.name}-${task.type}`}
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      role="button"
+                      tabIndex={isRunning ? -1 : 0}
+                      aria-disabled={isRunning}
+                      aria-label={isRunning ? `${task.name} (running)` : `Run ${task.name}`}
+                      onKeyDown={(e) => {
+                        if (!isRunning && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          onRunTask(task.name);
+                        }
+                      }}
+                      onClick={() => {
+                        if (!isRunning) {
+                          onRunTask(task.name);
+                        }
+                      }}
+                      className={cn(
+                        "group relative flex items-center justify-between p-4 border rounded-2xl transition-all duration-300",
+                        isRunning
+                          ? "opacity-70 cursor-not-allowed bg-card/30 border-border/30"
+                          : "cursor-pointer bg-card/50 border-border/50 hover:bg-primary/5 hover:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background"
+                      )}
+                    >
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "text-sm font-bold uppercase tracking-tight transition-colors",
+                            isRunning ? "text-foreground/50" : "text-foreground/90 group-hover:text-primary"
+                          )}>{task.name}</span>
+                          {task.type === 'public' ? (
+                            <Globe className="w-3 h-3 text-emerald-500/70" />
+                          ) : task.type === 'private' ? (
+                            <Lock className="w-3 h-3 text-amber-500/70" />
+                          ) : (
+                            <Shield className="w-3 h-3 text-muted-foreground/70" />
+                          )}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest flex items-center gap-1.5">
+                          <div className={cn(
+                            "w-1 h-1 rounded-full",
+                            task.type === 'public' ? 'bg-emerald-500' : (task.type === 'private' ? 'bg-amber-500' : 'bg-foreground')
+                          )} />
+                          {task.type} Automation
+                        </span>
+                      </div>
+                      <div className={cn(
+                        "w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-300",
+                        isRunning
+                          ? "bg-primary/10 border-primary/30"
+                          : "bg-muted border-border group-hover:bg-primary group-hover:border-primary"
+                      )}>
+                        {isRunning ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
                         ) : (
-                          <Shield className="w-3 h-3 text-muted-foreground/70" />
+                          <Play className="w-3.5 h-3.5 fill-current ml-0.5 text-muted-foreground group-hover:text-primary-foreground" />
                         )}
                       </div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest flex items-center gap-1.5">
-                        <div className={`w-1 h-1 rounded-full ${task.type === 'public' ? 'bg-emerald-500' : (task.type === 'private' ? 'bg-amber-500' : 'bg-foreground')}`} />
-                        {task.type} Automation
-                      </span>
-                    </div>
-                    <div className="w-9 h-9 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-300">
-                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                    </div>
-                  </motion.div>
-                ))
+                    </motion.div>
+                  );
+                })
               )}
             </AnimatePresence>
           </div>

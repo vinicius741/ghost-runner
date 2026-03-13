@@ -19,6 +19,9 @@ import type {
   Settings,
   FailureRecord,
   InfoGatheringResult,
+  TaskStartedPayload,
+  TaskCompletedPayload,
+  TaskFailedPayload,
 } from '@shared/types';
 import { DEFAULT_LOCATION } from '@shared/types';
 import type {
@@ -50,6 +53,7 @@ export interface DashboardContextValue {
   layout: DashboardLayoutExtended;
   sidebarOpen: boolean;
   showLocationWarning: boolean;
+  runningTasks: Set<string>;
 
   // Log operations
   addLog: (message: string, type?: LogType) => void;
@@ -144,6 +148,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const [layout, setLayout] = useState<DashboardLayoutExtended>(() => initialLayoutResult.layout);
   const [sidebarOpen, setSidebarOpen] = useState(() => getSidebarState());
   const [locationWarningDismissed, setLocationWarningDismissed] = useState(false);
+  const [runningTasks, setRunningTasks] = useState<Set<string>>(new Set());
 
   // Migration message ref
   const migrationMessageShownRef = useRef(false);
@@ -275,6 +280,10 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
 
   // Task operations
   const runTask = useCallback(async (taskName: string) => {
+    // Optimistically mark task as running for instant UI feedback.
+    // Note: Socket 'task-started' event will also add this, which is idempotent for Set.
+    // This dual approach ensures immediate feedback even if socket has latency.
+    setRunningTasks((prev) => new Set(prev).add(taskName));
     addLog(`Requesting to run task: ${taskName}...`, 'system');
     try {
       await fetch('/api/run-task', {
@@ -282,7 +291,14 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskName }),
       });
+      // Note: We don't remove from runningTasks here - socket events handle completion/failure
     } catch (error) {
+      // Remove from running tasks on fetch error (socket events won't fire)
+      setRunningTasks((prev) => {
+        const next = new Set(prev);
+        next.delete(taskName);
+        return next;
+      });
       const message = error instanceof Error ? error.message : String(error);
       addLog(`Error starting task: ${message}`, 'error');
     }
@@ -596,6 +612,27 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
       addLog('All information cleared', 'system');
     });
 
+    // Task execution state tracking
+    socket.on('task-started', (payload: TaskStartedPayload) => {
+      setRunningTasks((prev) => new Set(prev).add(payload.taskName));
+    });
+
+    socket.on('task-completed', (payload: TaskCompletedPayload) => {
+      setRunningTasks((prev) => {
+        const next = new Set(prev);
+        next.delete(payload.taskName);
+        return next;
+      });
+    });
+
+    socket.on('task-failed', (payload: TaskFailedPayload) => {
+      setRunningTasks((prev) => {
+        const next = new Set(prev);
+        next.delete(payload.taskName);
+        return next;
+      });
+    });
+
     return () => {
       socket.off('log');
       socket.off('scheduler-status');
@@ -606,6 +643,9 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
       socket.off('info-data-updated');
       socket.off('info-gathering-result-cleared');
       socket.off('info-gathering-all-cleared');
+      socket.off('task-started');
+      socket.off('task-completed');
+      socket.off('task-failed');
     };
   }, [addLog, fetchTasks, fetchSchedule, fetchSchedulerStatus, fetchSettings, fetchFailures, fetchInfoGathering, initialLayoutResult.migrationMessage]);
 
@@ -631,6 +671,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     layout,
     sidebarOpen,
     showLocationWarning,
+    runningTasks,
 
     // Log operations
     addLog,

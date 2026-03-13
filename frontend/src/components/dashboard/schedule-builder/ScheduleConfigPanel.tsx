@@ -77,7 +77,7 @@ function OnceTabContent({
           min={0}
           value={delayHours}
           onChange={(e) => onDelayHoursChange(parseInt(e.target.value) || 0)}
-          className="w-16 h-9 bg-muted border-border text-center font-bold text-primary focus:ring-primary/20"
+          className="w-16 h-9 bg-input border-border text-center font-bold text-foreground focus:border-primary focus:ring-primary/20"
           placeholder="HH"
         />
         <span className="text-muted-foreground text-xs">h</span>
@@ -89,7 +89,7 @@ function OnceTabContent({
           max={59}
           value={delayMinutes}
           onChange={(e) => onDelayMinutesChange(parseInt(e.target.value) || 0)}
-          className="w-16 h-9 bg-muted border-border text-center font-bold text-primary focus:ring-primary/20"
+          className="w-16 h-9 bg-input border-border text-center font-bold text-foreground focus:border-primary focus:ring-primary/20"
           placeholder="MM"
         />
         <span className="text-muted-foreground text-xs">m</span>
@@ -114,7 +114,7 @@ function MinutesTabContent({
         max={59}
         value={minutes}
         onChange={(e) => onMinutesChange(parseInt(e.target.value))}
-        className="w-20 h-9 bg-muted border-border text-center font-bold text-primary focus:ring-primary/20"
+        className="w-20 h-9 bg-input border-border text-center font-bold text-foreground focus:border-primary focus:ring-primary/20"
       />
       <span>minutes</span>
     </div>
@@ -137,7 +137,7 @@ function HourlyTabContent({
         max={59}
         value={hourlyMinute}
         onChange={(e) => onHourlyMinuteChange(parseInt(e.target.value))}
-        className="w-20 h-9 bg-muted border-border text-center font-bold text-primary focus:ring-primary/20"
+        className="w-20 h-9 bg-input border-border text-center font-bold text-foreground focus:border-primary focus:ring-primary/20"
       />
       <span>past the hour</span>
     </div>
@@ -158,7 +158,7 @@ function DailyTabContent({
         type="time"
         value={dailyTime}
         onChange={(e) => onDailyTimeChange(e.target.value)}
-        className="w-32 h-9 bg-muted border-border text-center font-bold text-primary focus:ring-primary/20"
+        className="w-32 h-9 bg-input border-border text-center font-bold text-foreground focus:border-primary focus:ring-primary/20"
       />
     </div>
   );

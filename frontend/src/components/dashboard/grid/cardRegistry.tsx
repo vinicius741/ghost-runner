@@ -27,6 +27,7 @@ export interface CardRegistryProps {
   // TaskList props
   onRunTask: (taskName: string) => void;
   onUploadTask: (taskName: string, type: 'private' | 'public', content: string) => Promise<void>;
+  runningTasks: Set<string>;
   // LogsConsole props
   logs: LogEntry[];
   onClearLogs: () => void;
@@ -75,6 +76,7 @@ export const CARD_RENDERERS: Record<DashboardCardId, CardRenderer> = {
   taskList: (props) => (
     <TaskList
       tasks={props.tasks}
+      runningTasks={props.runningTasks}
       onRunTask={props.onRunTask}
       onUploadTask={props.onUploadTask}
       onHeaderDoubleClick={props.onHeaderDoubleClick}

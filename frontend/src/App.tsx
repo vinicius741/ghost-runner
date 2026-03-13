@@ -60,6 +60,7 @@ function DashboardContent() {
     fetchSettings,
     showLocationWarning: contextLocationWarning,
     dismissLocationWarning,
+    runningTasks,
   } = useDashboard();
 
   return (
@@ -145,6 +146,7 @@ function DashboardContent() {
                   }}
                   onRunTask={runTask}
                   onUploadTask={uploadTask}
+                  runningTasks={runningTasks}
                   logs={logs}
                   onClearLogs={clearLogs}
                   failures={failures}

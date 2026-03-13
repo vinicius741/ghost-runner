@@ -18,6 +18,7 @@ describe('TaskList', () => {
 
   const defaultProps = {
     tasks: mockTasks,
+    runningTasks: new Set<string>(),
     onRunTask: vi.fn(),
     onUploadTask: vi.fn().mockResolvedValue(undefined),
   };
@@ -93,6 +94,68 @@ describe('TaskList', () => {
         'private',
         'module.exports = { run: async () => {} };'
       );
+    });
+  });
+
+  describe('running tasks state', () => {
+    it('should show spinner when task is running', () => {
+      render(<TaskList {...defaultProps} runningTasks={new Set(['test-task-1'])} />);
+
+      // Check for the spinner icon (Loader2 with animate-spin)
+      const taskCard = screen.getByRole('button', { name: /test-task-1.*running/i });
+      expect(taskCard).toBeInTheDocument();
+      expect(taskCard).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    it('should prevent running a task that is already running', () => {
+      const onRunTask = vi.fn();
+      render(<TaskList {...defaultProps} runningTasks={new Set(['test-task-1'])} onRunTask={onRunTask} />);
+
+      const taskCard = screen.getByRole('button', { name: /test-task-1.*running/i });
+      fireEvent.click(taskCard);
+
+      expect(onRunTask).not.toHaveBeenCalled();
+    });
+
+    it('should allow running a task that is not currently running', () => {
+      const onRunTask = vi.fn();
+      render(<TaskList {...defaultProps} runningTasks={new Set(['other-task'])} onRunTask={onRunTask} />);
+
+      // test-task-1 is not in runningTasks, so it should be clickable
+      const taskCard = screen.getByRole('button', { name: /run test-task-1/i });
+      fireEvent.click(taskCard);
+
+      expect(onRunTask).toHaveBeenCalledWith('test-task-1');
+    });
+
+    it('should support keyboard navigation for running tasks', () => {
+      const onRunTask = vi.fn();
+      render(<TaskList {...defaultProps} runningTasks={new Set<string>()} onRunTask={onRunTask} />);
+
+      const taskCard = screen.getByRole('button', { name: /run test-task-1/i });
+      expect(taskCard).toHaveAttribute('tabIndex', '0');
+
+      // Test Enter key
+      fireEvent.keyDown(taskCard, { key: 'Enter' });
+      expect(onRunTask).toHaveBeenCalledWith('test-task-1');
+
+      vi.clearAllMocks();
+
+      // Test Space key
+      fireEvent.keyDown(taskCard, { key: ' ' });
+      expect(onRunTask).toHaveBeenCalledWith('test-task-1');
+    });
+
+    it('should not respond to keyboard events when task is running', () => {
+      const onRunTask = vi.fn();
+      render(<TaskList {...defaultProps} runningTasks={new Set(['test-task-1'])} onRunTask={onRunTask} />);
+
+      const taskCard = screen.getByRole('button', { name: /test-task-1.*running/i });
+      expect(taskCard).toHaveAttribute('tabIndex', '-1');
+
+      // Keyboard events should not trigger onRunTask
+      fireEvent.keyDown(taskCard, { key: 'Enter' });
+      expect(onRunTask).not.toHaveBeenCalled();
     });
   });
 });
