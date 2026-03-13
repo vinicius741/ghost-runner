@@ -51,7 +51,7 @@ export function AuthenticationSection({
         <Button
           onClick={onSetupLogin}
           disabled={isSettingUpLogin || isLoading}
-          className="relative w-full h-11 bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-100 transition-all duration-300"
+          className="relative w-full h-11 bg-[hsl(var(--secondary))] border-[hsl(var(--border))] hover:bg-[hsl(var(--secondary))]/80 text-[hsl(var(--secondary-foreground))] transition-all duration-300"
         >
           {isSettingUpLogin ? (
             <RefreshCw className="w-4 h-4 mr-2 animate-spin text-amber-500" />
@@ -62,7 +62,7 @@ export function AuthenticationSection({
         </Button>
       </div>
 
-      <p className="text-[10px] text-slate-500 leading-relaxed">
+      <p className="text-[10px] text-[hsl(var(--muted-foreground))] leading-relaxed">
         This will launch a browser for manual login.
         The session will be saved for all automation tasks.
       </p>

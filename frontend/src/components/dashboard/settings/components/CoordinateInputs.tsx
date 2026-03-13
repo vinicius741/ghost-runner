@@ -51,7 +51,7 @@ export function CoordinateInputs({
           step="any"
           value={geolocation.latitude}
           onChange={(e) => onUpdate('latitude', e.target.value)}
-          className="h-10 bg-slate-900 border-slate-800 text-slate-200 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all font-mono text-sm"
+          className="h-10 bg-[hsl(var(--input))] border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:border-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]/20 transition-all font-mono text-sm"
           placeholder="-23.55052"
           aria-label="Latitude coordinate"
         />
@@ -71,7 +71,7 @@ export function CoordinateInputs({
           step="any"
           value={geolocation.longitude}
           onChange={(e) => onUpdate('longitude', e.target.value)}
-          className="h-10 bg-slate-900 border-slate-800 text-slate-200 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all font-mono text-sm"
+          className="h-10 bg-[hsl(var(--input))] border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:border-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]/20 transition-all font-mono text-sm"
           placeholder="-46.633308"
           aria-label="Longitude coordinate"
         />
