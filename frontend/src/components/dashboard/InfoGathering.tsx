@@ -144,7 +144,7 @@ function TableDisplay({ data }: { data: { headers: string[]; rows: unknown[][] }
       }
       onError={() => setHasError(true)}
     >
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border">
@@ -205,7 +205,7 @@ function CustomDisplay({ data }: { data: unknown }) {
       }
       onError={() => setHasError(true)}
     >
-      <pre className="p-4 bg-card/50 rounded-lg border border-border/50 text-xs text-foreground overflow-x-auto">
+      <pre className="p-4 bg-card/50 rounded-lg border border-border/50 text-xs text-foreground overflow-x-auto custom-scrollbar">
         {json}
       </pre>
     </RenderErrorBoundary>

@@ -42,7 +42,7 @@ export function MinimizedCardsSidebar({ isOpen, minimizedCards, onRestoreCard, o
             </div>
 
             {/* Minimized Cards List */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
               {minimizedCards.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground text-sm">
                   No minimized cards

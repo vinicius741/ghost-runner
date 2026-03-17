@@ -307,6 +307,83 @@
     z-index: 0;
     filter: brightness(0.5) contrast(1.5);
   }
+
+  /* Custom theme-aware scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted) / 0.3);
+  }
+
+  .custom-scrollbar:hover {
+    scrollbar-color: hsl(var(--primary) / 0.6) hsl(var(--muted) / 0.4);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.3);
+    border-radius: var(--radius);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.4);
+    border-radius: var(--radius);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.6);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* Global scrollbar styling for all scrollable elements */
+@layer utilities {
+  /* Apply to the whole page */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted) / 0.3);
+  }
+
+  html:hover {
+    scrollbar-color: hsl(var(--primary) / 0.6) hsl(var(--muted) / 0.4);
+  }
+
+  html::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  html::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.3);
+    border-radius: var(--radius);
+  }
+
+  html::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.4);
+    border-radius: var(--radius);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+
+  html::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.6);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+
+  html::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 

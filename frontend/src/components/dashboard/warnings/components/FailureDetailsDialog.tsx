@@ -125,7 +125,7 @@ export function FailureDetailsDialog({
               </div>
 
               {/* Details content */}
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar">
                 {/* Error message */}
                 {typeof failure.context?.errorMessage === 'string' && (
                   <ContextValue
