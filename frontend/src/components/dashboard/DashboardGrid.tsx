@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import type { DashboardCardId, DashboardColumn, Task, LogEntry, ScheduleItem, FailureRecord, MinimizedCard, InfoGatheringResult } from '@/types';
+import type { DashboardCardId, DashboardColumn, Task, TaskSource, TaskSourceSaveType, LogEntry, ScheduleItem, FailureRecord, MinimizedCard, InfoGatheringResult } from '@/types';
 import { DashboardCardRenderer } from './grid/DashboardCardRenderer';
 import { DragOverlayRenderer } from './grid/DragOverlayRenderer';
 
@@ -37,6 +37,8 @@ interface DashboardGridProps {
   onDeleteSchedule: (index: number) => void;
   onRunTask: (taskName: string) => void;
   onUploadTask: (taskName: string, type: 'private' | 'public', content: string) => Promise<void>;
+  onLoadTaskSource: (taskName: string) => Promise<TaskSource>;
+  onSaveTaskSource: (taskName: string, type: TaskSourceSaveType, content: string) => Promise<void>;
   runningTasks: Set<string>;
   logs: LogEntry[];
   onClearLogs: () => void;
@@ -85,6 +87,8 @@ export function DashboardGrid({
   onDeleteSchedule,
   onRunTask,
   onUploadTask,
+  onLoadTaskSource,
+  onSaveTaskSource,
   runningTasks,
   logs,
   onClearLogs,
@@ -127,6 +131,8 @@ export function DashboardGrid({
     onDeleteSchedule,
     onRunTask,
     onUploadTask,
+    onLoadTaskSource,
+    onSaveTaskSource,
     runningTasks,
     logs,
     onClearLogs,

@@ -1,6 +1,9 @@
 // Re-export shared types
 export type {
   Task,
+  TaskSource,
+  TaskSourceOrigin,
+  TaskSourceSaveType,
   LogEntry,
   ScheduleItem,
   Settings,

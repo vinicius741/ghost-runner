@@ -46,6 +46,8 @@ function DashboardContent() {
     runTask,
     recordTask,
     uploadTask,
+    loadTaskSource,
+    saveTaskSource,
     addScheduleItem,
     deleteScheduleItem,
     clearFailures,
@@ -146,6 +148,8 @@ function DashboardContent() {
                   }}
                   onRunTask={runTask}
                   onUploadTask={uploadTask}
+                  onLoadTaskSource={loadTaskSource}
+                  onSaveTaskSource={saveTaskSource}
                   runningTasks={runningTasks}
                   logs={logs}
                   onClearLogs={clearLogs}

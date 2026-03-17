@@ -23,6 +23,34 @@ export interface Task {
 }
 
 /**
+ * Indicates whether the current task source comes from writable runtime storage
+ * or from bundled application files.
+ */
+export type TaskSourceOrigin = 'writable' | 'bundled';
+
+/**
+ * Directory type used when persisting edited task source.
+ * Root tasks are saved as public overrides.
+ */
+export type TaskSourceSaveType = Exclude<TaskType, 'root'>;
+
+/**
+ * Full source payload for editing an existing task.
+ */
+export interface TaskSource {
+  /** Task name (filename without extension) */
+  name: string;
+  /** Current resolved task type */
+  type: TaskType;
+  /** Raw JavaScript source */
+  content: string;
+  /** Whether the resolved file came from writable or bundled storage */
+  sourceOrigin: TaskSourceOrigin;
+  /** Where edited content should be saved */
+  saveType: TaskSourceSaveType;
+}
+
+/**
  * Log entry for real-time logging via Socket.io.
  */
 export interface LogEntry {

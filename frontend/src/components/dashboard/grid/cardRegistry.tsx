@@ -7,7 +7,7 @@ import { TaskList } from '../TaskList';
 import { LogsConsole } from '../LogsConsole';
 import { WarningsPanel } from '../WarningsPanel';
 import { InfoGathering } from '../InfoGathering';
-import type { Task, LogEntry, ScheduleItem, FailureRecord, InfoGatheringResult } from '@/types';
+import type { Task, TaskSource, TaskSourceSaveType, LogEntry, ScheduleItem, FailureRecord, InfoGatheringResult } from '@/types';
 
 export interface CardProps {
   onHeaderDoubleClick?: () => void;
@@ -27,6 +27,8 @@ export interface CardRegistryProps {
   // TaskList props
   onRunTask: (taskName: string) => void;
   onUploadTask: (taskName: string, type: 'private' | 'public', content: string) => Promise<void>;
+  onLoadTaskSource: (taskName: string) => Promise<TaskSource>;
+  onSaveTaskSource: (taskName: string, type: TaskSourceSaveType, content: string) => Promise<void>;
   runningTasks: Set<string>;
   // LogsConsole props
   logs: LogEntry[];
@@ -79,6 +81,8 @@ export const CARD_RENDERERS: Record<DashboardCardId, CardRenderer> = {
       runningTasks={props.runningTasks}
       onRunTask={props.onRunTask}
       onUploadTask={props.onUploadTask}
+      onLoadTaskSource={props.onLoadTaskSource}
+      onSaveTaskSource={props.onSaveTaskSource}
       onHeaderDoubleClick={props.onHeaderDoubleClick}
     />
   ),

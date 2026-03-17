@@ -14,6 +14,8 @@ import { arrayMove } from '@dnd-kit/sortable';
 import type { DragEndEvent } from '@dnd-kit/core';
 import type {
   Task,
+  TaskSource,
+  TaskSourceSaveType,
   LogEntry,
   ScheduleItem,
   Settings,
@@ -67,6 +69,8 @@ export interface DashboardContextValue {
   runTask: (taskName: string) => Promise<void>;
   recordTask: (taskName: string, type: 'private' | 'public') => Promise<void>;
   uploadTask: (taskName: string, type: 'private' | 'public', content: string) => Promise<void>;
+  loadTaskSource: (taskName: string) => Promise<TaskSource>;
+  saveTaskSource: (taskName: string, type: TaskSourceSaveType, content: string) => Promise<void>;
 
   // Schedule operations
   addScheduleItem: (task: string, cron?: string, executeAt?: string) => Promise<void>;
@@ -336,6 +340,46 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       addLog(`Error uploading task: ${message}`, 'error');
+      throw error instanceof Error ? error : new Error(message);
+    }
+  }, [addLog, fetchTasks]);
+
+  const loadTaskSource = useCallback(async (taskName: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${encodeURIComponent(taskName)}/source`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || `Failed to load task source with HTTP ${res.status}`);
+      }
+
+      return data as TaskSource;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error loading task source: ${message}`, 'error');
+      throw error instanceof Error ? error : new Error(message);
+    }
+  }, [addLog]);
+
+  const saveTaskSource = useCallback(async (taskName: string, type: TaskSourceSaveType, content: string) => {
+    addLog(`Saving task script: ${taskName} (${type})...`, 'system');
+    try {
+      const res = await fetch('/api/upload-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskName, type, content }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || `Save failed with HTTP ${res.status}`);
+      }
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      addLog(data.message || `Task ${taskName} saved successfully.`, 'system');
+      await fetchTasks();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog(`Error saving task script: ${message}`, 'error');
       throw error instanceof Error ? error : new Error(message);
     }
   }, [addLog, fetchTasks]);
@@ -685,6 +729,8 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     runTask,
     recordTask,
     uploadTask,
+    loadTaskSource,
+    saveTaskSource,
 
     // Schedule operations
     addScheduleItem,

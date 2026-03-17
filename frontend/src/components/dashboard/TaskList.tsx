@@ -1,7 +1,8 @@
 import { useState, useMemo, ChangeEvent } from 'react';
+import type { Task, TaskSource, TaskSourceSaveType } from '@shared/types';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Layers, Search, Filter, ArrowUpDown, Globe, Lock, Shield, Upload, Loader2 } from 'lucide-react';
+import { Play, Layers, Search, Filter, ArrowUpDown, Globe, Lock, Shield, Upload, Loader2, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from "@/components/ui/input";
 import { cn } from '@/lib/utils';
@@ -21,17 +22,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-
-interface Task {
-  name: string;
-  type: 'public' | 'private' | 'root';
-}
+import { TaskEditorDialog } from './TaskEditorDialog';
 
 interface TaskListProps {
   tasks: Task[];
   runningTasks: Set<string>;
   onRunTask: (taskName: string) => void;
   onUploadTask: (taskName: string, type: 'private' | 'public', content: string) => Promise<void>;
+  onLoadTaskSource: (taskName: string) => Promise<TaskSource>;
+  onSaveTaskSource: (taskName: string, type: TaskSourceSaveType, content: string) => Promise<void>;
   onHeaderDoubleClick?: () => void;
 }
 
@@ -43,11 +42,20 @@ function normalizeTaskName(fileName: string): string {
     .replace(/[^a-zA-Z0-9_-]/g, '');
 }
 
-export function TaskList({ tasks, runningTasks, onRunTask, onUploadTask, onHeaderDoubleClick }: TaskListProps) {
+export function TaskList({
+  tasks,
+  runningTasks,
+  onRunTask,
+  onUploadTask,
+  onLoadTaskSource,
+  onSaveTaskSource,
+  onHeaderDoubleClick,
+}: TaskListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "public" | "private">("all");
   const [sortBy, setSortBy] = useState<"name_asc" | "name_desc" | "type">("name_asc");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [uploadType, setUploadType] = useState<'public' | 'private'>('private');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -247,17 +255,35 @@ export function TaskList({ tasks, runningTasks, onRunTask, onUploadTask, onHeade
                           {task.type} Automation
                         </span>
                       </div>
-                      <div className={cn(
-                        "w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-300",
-                        isRunning
-                          ? "bg-primary/10 border-primary/30"
-                          : "bg-muted border-border group-hover:bg-primary group-hover:border-primary"
-                      )}>
-                        {isRunning ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                        ) : (
-                          <Play className="w-3.5 h-3.5 fill-current ml-0.5 text-muted-foreground group-hover:text-primary-foreground" />
-                        )}
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          aria-label={`Edit ${task.name}`}
+                          className="h-9 w-9 rounded-xl border-border/60 bg-background/70 hover:bg-background"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setEditingTask(task);
+                          }}
+                          onKeyDown={(event) => {
+                            event.stopPropagation();
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <div className={cn(
+                          "w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-300",
+                          isRunning
+                            ? "bg-primary/10 border-primary/30"
+                            : "bg-muted border-border group-hover:bg-primary group-hover:border-primary"
+                        )}>
+                          {isRunning ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                          ) : (
+                            <Play className="w-3.5 h-3.5 fill-current ml-0.5 text-muted-foreground group-hover:text-primary-foreground" />
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   );
@@ -334,6 +360,18 @@ export function TaskList({ tasks, runningTasks, onRunTask, onUploadTask, onHeade
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TaskEditorDialog
+        task={editingTask}
+        open={editingTask !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingTask(null);
+          }
+        }}
+        onLoadTaskSource={onLoadTaskSource}
+        onSaveTaskSource={onSaveTaskSource}
+      />
     </motion.div>
   );
 }

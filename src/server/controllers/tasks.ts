@@ -14,10 +14,32 @@
 
 import { Request, Response } from 'express';
 import vm from 'vm';
+import path from 'path';
 import type { Server } from 'socket.io';
+import type { TaskSource, TaskSourceOrigin, TaskSourceSaveType, TaskType } from '../../../shared/types';
+import { TASKS_DIR, BUNDLED_TASKS_DIR } from '../config';
 import { taskRepository } from '../repositories/TaskRepository';
 import { taskExecutionService } from '../services/TaskExecutionService';
 import { handleControllerError, getErrorMessage } from '../utils/errorHandler';
+import { validateTaskName } from '../utils/taskValidators';
+
+function isWithinDir(filePath: string, dirPath: string): boolean {
+  const resolvedFilePath = path.resolve(filePath);
+  const resolvedDirPath = path.resolve(dirPath);
+  return resolvedFilePath === resolvedDirPath || resolvedFilePath.startsWith(`${resolvedDirPath}${path.sep}`);
+}
+
+function getTaskSourceOrigin(taskPath: string): TaskSourceOrigin {
+  return isWithinDir(taskPath, TASKS_DIR) ? 'writable' : 'bundled';
+}
+
+function getTaskSaveType(taskType: TaskType): TaskSourceSaveType {
+  if (taskType === 'private') {
+    return 'private';
+  }
+
+  return 'public';
+}
 
 /**
  * Controller function: GET /api/tasks
@@ -36,6 +58,43 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
   } catch (err) {
     console.error('Error reading tasks:', err);
     res.status(500).json({ error: 'Failed to read tasks directory.' });
+  }
+};
+
+/**
+ * Controller function: GET /api/tasks/:taskName/source
+ *
+ * Returns source content and save metadata for a specific task.
+ */
+export const getTaskSource = async (req: Request, res: Response): Promise<void> => {
+  const taskNameParam = req.params.taskName;
+  const taskName = Array.isArray(taskNameParam) ? taskNameParam[0] : taskNameParam;
+  const validationResult = validateTaskName(taskName);
+
+  if (!validationResult.valid) {
+    res.status(400).json({ error: validationResult.error });
+    return;
+  }
+
+  try {
+    const task = await taskRepository.readTask(taskName);
+
+    if (!task) {
+      res.status(404).json({ error: `Task '${taskName}' not found.` });
+      return;
+    }
+
+    const taskSource: TaskSource = {
+      name: task.name,
+      type: task.type,
+      content: task.content,
+      sourceOrigin: getTaskSourceOrigin(task.path),
+      saveType: getTaskSaveType(task.type),
+    };
+
+    res.json(taskSource);
+  } catch (error) {
+    handleControllerError(error, res, 'Error in /api/tasks/:taskName/source');
   }
 };
 

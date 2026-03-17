@@ -23,6 +23,9 @@ export type { ScheduleItem, NextTask, ScheduleUpdatePayload } from './schedule';
 export type {
   Task,
   TaskType,
+  TaskSource,
+  TaskSourceOrigin,
+  TaskSourceSaveType,
   LogEntry,
   TaskStatus,
   TaskStatusData,
