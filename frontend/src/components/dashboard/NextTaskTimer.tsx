@@ -116,7 +116,7 @@ export function NextTaskTimer({ schedulerRunning, onHeaderDoubleClick }: NextTas
                                 </div>
 
                                 <div className="flex flex-col items-center justify-center py-4 border-y border-border/30">
-                                    <span className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-foreground via-foreground/70 to-foreground/40 tabular-nums">
+                                    <span className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-primary via-primary/70 to-primary/40 tabular-nums">
                                         {timeLeft}
                                     </span>
                                     <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mt-1">Countdown</span>
