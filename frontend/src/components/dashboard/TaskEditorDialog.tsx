@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { Task, TaskSource, TaskSourceSaveType } from '@shared/types';
+import Editor from 'react-simple-code-editor';
+import { highlight, languages } from 'prismjs';
+import 'prismjs/components/prism-javascript';
+import './prism-theme.css';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -188,17 +192,24 @@ export function TaskEditorDialog({
               >
                 Script Source
               </label>
-              <textarea
-                id="task-source-editor"
-                aria-label="Automation source editor"
-                value={content}
-                onChange={(event) => {
-                  setContent(event.target.value);
-                  setSaveNotice(null);
-                }}
-                spellCheck={false}
-                className="h-[420px] w-full resize-none rounded-2xl border border-border/60 bg-slate-950 px-4 py-4 font-mono text-sm leading-6 text-slate-100 shadow-inner outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-              />
+              <div className="relative h-[420px] w-full overflow-hidden rounded-2xl border border-border/60 shadow-inner transition focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 bg-slate-950">
+                <Editor
+                  value={content}
+                  onValueChange={code => {
+                      setContent(code);
+                      setSaveNotice(null);
+                  }}
+                  highlight={code => highlight(code, languages.javascript, 'javascript')}
+                  padding={16}
+                  style={{
+                    fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+                    fontSize: 14,
+                    minHeight: "100%",
+                  }}
+                  textareaClassName="focus:outline-none"
+                  className="h-full w-full overflow-auto font-mono text-sm leading-6 text-slate-100"
+                />
+              </div>
             </div>
           ) : (
             <div className="flex h-[420px] items-center justify-center rounded-2xl border border-dashed border-border/50 bg-background/40 text-sm text-muted-foreground">
