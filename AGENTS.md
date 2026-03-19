@@ -4,7 +4,15 @@
 - `src/core/` runs headless tasks (`index.ts`, scheduler, recorder) while `src/utils/` and `src/config/` centralize reusable Playwright helpers; add new automation primitives here rather than inside tasks.
 - `src/config/runtimePaths.ts` handles path resolution for both development and Electron packaged modes. It exports `APP_ROOT`, `DATA_ROOT`, `TASKS_DIR`, `USER_DATA_DIR`, and file paths used throughout the codebase.
 - `src/server/` hosts the Express + Socket.io backend (`controllers/`, `routes/`, `public/` assets) that powers live logs and scheduler APIs; keep HTTP handlers thin and push work into services under `src/core/`.
-- `electron/` contains the Electron main process (`main.ts`) and preload script (`preload.ts`) for desktop app packaging.
+  - Task source editing: `GET /api/tasks/:taskName/source` returns source with metadata (origin, save type); edits saved via `POST /api/upload-task`
+  - Syntax validation uses Node.js `vm.Script` before persisting
+- `electron/` contains the Electron main process (`main.ts`), preload script (`preload.ts`), and modularized lib modules:
+  - `lib/window.ts` - BrowserWindow creation/management
+  - `lib/tray.ts` - System tray with scheduler controls and flexible time presets (5m-48h)
+  - `lib/network.ts` - Backend API helpers
+  - `lib/paths.ts` - ASAR-aware resource path resolution
+  - `lib/constants.ts` - Timing constants for tray polls and presets
+  - `lib/types.ts` - Tray state and API response types
 - `shared/types/` contains centralized TypeScript types shared between frontend and backend to prevent type drift.
 - `frontend/` contains the Vite/React UI with shadcn/Tailwind components; app-level utilities live under `frontend/src/lib/` and dashboard widgets under `frontend/src/components/`.
 - Automation scripts sit in `tasks/public/` (shared) and `tasks/private/` (local, gitignored); related fixtures go in the same folder for discoverability. Persistent browser data is under `user_data/`; JSON state (`schedule.json`, `settings.json`, `failures.json`) belongs at repo root.

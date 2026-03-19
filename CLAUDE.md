@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |-------|-------------|
 | Backend | Node.js, TypeScript (tsx runtime), Express 5, Socket.io |
 | Frontend | React 19, Vite, TypeScript, Tailwind CSS, shadcn/ui (Radix UI) |
-| Desktop | Electron 33, electron-builder |
+| Desktop | Electron 35, electron-builder |
 | Automation | Playwright 1.57, playwright-extra, puppeteer-extra-plugin-stealth |
 | Scheduling | node-cron, cron-parser |
 | State | Socket.io (real-time), localStorage (dashboard layout) |
@@ -160,10 +160,22 @@ The Electron app bundles server and frontend into a native desktop application:
 
 ### Electron Layer (`electron/`)
 
+The Electron app is modularized into dedicated modules:
+
 | File | Purpose |
 |------|---------|
-| `main.ts` | Electron main process. Configures runtime env, starts backend server, creates BrowserWindow |
+| `main.ts` | Electron entry point. Orchestrates window, server, and tray lifecycle |
 | `preload.ts` | Context bridge exposing `window.ghostRunnerDesktop.isElectron` to renderer |
+| `lib/window.ts` | BrowserWindow creation and management |
+| `lib/tray.ts` | System tray menu with scheduler controls and flexible time presets |
+| `lib/network.ts` | Backend API request helpers |
+| `lib/paths.ts` | ASAR-aware path resolution for icons and resources |
+| `lib/constants.ts` | Tray timing constants (poll interval, countdown, presets) |
+| `lib/types.ts` | TypeScript types for tray state and API responses |
+
+**Tray Time Presets** (defined in `lib/constants.ts`):
+- Standard presets: 5m, 10m, 15m, 30m, 1h (default), 2h, 4h, 8h, 24h
+- Custom delays submenu: 45m, 3h, 6h, 12h, 48h
 
 ### Configuration Layer (`src/config/`)
 
@@ -179,7 +191,7 @@ Centralized TypeScript types shared between frontend and backend:
 | File | Types |
 |------|-------|
 | `schedule.ts` | `ScheduleItem`, `NextTask`, `ScheduleUpdatePayload` |
-| `task.ts` | `Task`, `TaskType`, `LogEntry`, `TaskStatus`, `TaskStartedPayload`, `TaskCompletedPayload`, `TaskFailedPayload` |
+| `task.ts` | `Task`, `TaskType`, `TaskSource`, `TaskSourceOrigin`, `TaskSourceSaveType`, `LogEntry`, `TaskStatus`, `TaskStartedPayload`, `TaskCompletedPayload`, `TaskFailedPayload`, `InfoGatheringMetadata` |
 | `failure.ts` | `FailureRecord`, `FailureErrorType`, `FailureRecordedPayload` |
 | `settings.ts` | `Settings`, `GeolocationSettings`, `DEFAULT_LOCATION` |
 | `infoGathering.ts` | `InfoGatheringResult`, `InfoDataUpdatedPayload` |
@@ -236,31 +248,41 @@ Centralized TypeScript types shared between frontend and backend:
 - Server stores `io` instance: `app.set('io', io)` for controller access
 - Events: `task-started`, `task-completed`, `task-failed`, `log`, `scheduler-status`, `failure-recorded`, `info-data-updated`
 
-### 7. Task Failure Tracking
+### 7. Task Source Editing
+- Tasks can be viewed and edited inline from the UI via TaskEditorDialog
+- `GET /api/tasks/:taskName/source` returns source content with metadata:
+  - `sourceOrigin`: `'writable'` (runtime storage) or `'bundled'` (app package)
+  - `saveType`: `'public'` or `'private'` (where edits are saved)
+- Root/bundled tasks are saved as public overrides in writable storage
+- Syntax validation via Node.js `vm.Script` before saving
+- Prism.js syntax highlighting with custom slate-themed colors (`prism-theme.css`)
+
+### 8. Task Failure Tracking
 - Page wrapped with `createMonitoredPage()` intercepts common failure points
 - Structured errors thrown with context (element selector, URL, timeout duration)
 - Status reported via stdout markers
 - Failures persisted to `failures.json` with deduplication (same error within 24h increments count)
 - Frontend WarningsPanel displays failures with color-coded error types
 
-### 8. Info-Gathering Tasks
+### 9. Info-Gathering Tasks
 - Tasks can return data with metadata (category, TTL, data type)
 - `taskReporter` emits `COMPLETED_WITH_DATA` marker with JSON payload
 - Server stores in `info-gathering.json` with TTL-based expiration
 - Frontend InfoGathering component displays cached results
 
-### 9. Dashboard Layout System
+### 10. Dashboard Layout System
 - Stored in localStorage with versioning (current version 3)
 - Migration system handles layout schema changes
 - Drag-and-drop via `@dnd-kit/core` and `@dnd-kit/sortable`
 - Supports minimize/restore per card (MinimizedCardsSidebar)
+- Minimized count badge displayed on sidebar toggle button
 
-### 10. Development Runner
+### 11. Development Runner
 - `dev-runner.ts` spawns backend server with color-coded console output
 - Handles graceful shutdown with proper process group management
 - Frontend dev server proxied through backend for API calls
 
-### 11. ASAR Archive Handling (Electron Packaged Mode)
+### 12. ASAR Archive Handling (Electron Packaged Mode)
 - When running as a packaged Electron app, code files are bundled in ASAR archives
 - ASAR archives are read-only and cannot be used as `cwd` for spawned child processes
 - `TaskRunner` automatically detects ASAR paths and uses parent directory as spawn cwd:
@@ -295,6 +317,7 @@ Centralized TypeScript types shared between frontend and backend:
 |--------|------|---------|-------------|
 | GET | `/api/health` | - | Health check |
 | GET | `/api/tasks` | TaskController | List available tasks |
+| GET | `/api/tasks/:taskName/source` | TaskController | Get task source with edit metadata |
 | POST | `/api/tasks/run` | TaskController | Execute a task |
 | POST | `/api/record` | RecordController | Start task recording |
 | GET/PUT | `/api/schedule` | ScheduleController | Read/write schedule |
@@ -308,6 +331,17 @@ Centralized TypeScript types shared between frontend and backend:
 | POST | `/api/setup-login` | SetupLoginController | Run login setup |
 
 ## Data Structures
+
+### Task Source (for editing)
+```typescript
+interface TaskSource {
+  name: string;                    // Task name (filename without extension)
+  type: TaskType;                  // 'public' | 'private' | 'root'
+  content: string;                 // Raw JavaScript source
+  sourceOrigin: TaskSourceOrigin;  // 'writable' | 'bundled'
+  saveType: TaskSourceSaveType;    // 'public' | 'private'
+}
+```
 
 ### Failure Record
 ```typescript
@@ -376,6 +410,8 @@ Use `npm run record` to generate task code via Playwright Codegen.
 - **Type Safety**: Zero `any` types (except 4 Playwright internal cases). Error handling uses `unknown` with type guards
 - **Electron Security**: `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`
 - **Electron Frontend Bundling**: Electron loads `frontend/dist/` (pre-built), NOT source files. Always run `npm run build:frontend` after frontend changes before testing in Electron.
+- **Theme System**: Dark/light theme with CSS variables. Components use theme-aware classes (`bg-background`, `text-foreground`, etc.). Custom scrollbars, countdown timers, and code editor all respect active theme.
+- **Running Task Feedback**: Active tasks show loading spinners in TaskList and dashboard cards via `DashboardContext.runningTasks` state.
 
 ## File References for Common Tasks
 
@@ -384,10 +420,12 @@ Use `npm run record` to generate task code via Playwright Codegen.
 | Add new API endpoint | `src/server/routes/*.ts`, `src/server/controllers/*.ts` |
 | Modify task execution | `src/core/index.ts`, `src/server/services/TaskExecutionService.ts` |
 | Modify ASAR/spawn handling | `src/server/services/TaskRunner.ts` |
+| Task source editing | `src/server/controllers/tasks.ts`, `frontend/src/components/dashboard/TaskEditorDialog.tsx`, `shared/types/task.ts` |
 | Add dashboard widget | `frontend/src/components/dashboard/*.tsx`, `frontend/src/App.tsx` |
 | Change scheduler logic | `src/core/scheduler.ts`, `src/server/services/scheduler.ts` |
 | Add new error type | `src/core/errors.ts`, `src/core/pageWrapper.ts`, `src/server/utils/taskParser.ts` |
 | Modify dashboard layout | `frontend/src/lib/dashboardLayout.ts`, `frontend/src/components/dashboard/DashboardGrid.tsx` |
-| Modify Electron shell | `electron/main.ts`, `electron/preload.ts` |
+| Modify Electron shell | `electron/main.ts`, `electron/preload.ts`, `electron/lib/*.ts` |
 | Change runtime paths | `src/config/runtimePaths.ts` |
 | Add shared type | `shared/types/*.ts`, `shared/types/index.ts` |
+| Theme-aware styling | `frontend/src/index.css`, `frontend/src/components/dashboard/prism-theme.css` |
