@@ -6,13 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | Layer | Technologies |
 |-------|-------------|
-| Backend | Node.js, TypeScript (tsx runtime), Express 5, Socket.io |
-| Frontend | React 19, Vite, TypeScript, Tailwind CSS, shadcn/ui (Radix UI) |
-| Desktop | Electron 35, electron-builder |
-| Automation | Playwright 1.57, playwright-extra, puppeteer-extra-plugin-stealth |
+| Backend | Node.js, TypeScript 6 (tsx runtime), Express 5, Socket.io |
+| Frontend | React 19, Vite 8, TypeScript 6, Tailwind CSS 3, shadcn/ui (Radix UI) |
+| Desktop | Electron 41, electron-builder |
+| Automation | Playwright 1.59, playwright-extra, puppeteer-extra-plugin-stealth |
 | Scheduling | node-cron, cron-parser |
 | State | Socket.io (real-time), localStorage (dashboard layout) |
-| Testing | Node.js built-in test runner (backend), Vitest + Testing Library (frontend) |
+| Testing | Node.js built-in test runner + c8 (backend), Vitest 4 + Testing Library (frontend) |
+| Validation | Zod 4 |
 
 ## Common Commands
 
@@ -300,7 +301,8 @@ Centralized TypeScript types shared between frontend and backend:
 | `failures.json` | Task failure tracking (auto-created) | Server |
 | `info-gathering.json` | Cached info-gathering data | Server |
 | `user_data/` | Persistent browser profile | Playwright |
-| `tsconfig.electron.json` | TypeScript config for Electron main process | Build |
+| `tsconfig.electron.json` | TypeScript config for Electron main process (NodeNext modules) | Build |
+| `frontend/src/vite-env.d.ts` | Vite client type declarations (CSS modules) | Build |
 
 ## Build Outputs
 
@@ -402,7 +404,7 @@ Use `npm run record` to generate task code via Playwright Codegen.
 
 ## Important Implementation Details
 
-- **Module System**: Backend uses CommonJS with `tsx` for runtime TypeScript; Frontend uses ES modules
+- **Module System**: Backend uses NodeNext modules with `tsx` for runtime TypeScript; Frontend uses ES modules
 - **Task Loading**: Dynamic `import()` with path construction for `tasks/public/` and `tasks/private/`
 - **Geolocation**: Defaults to São Paulo coordinates; configurable via Web UI
 - **Sleep Prevention**: On macOS, `caffeinate -i` starts when tasks scheduled, stops when none remain
