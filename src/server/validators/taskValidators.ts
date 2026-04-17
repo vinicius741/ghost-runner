@@ -15,7 +15,7 @@ export const MAX_TASK_CONTENT_SIZE = 500_000;
  * Task type enum schema.
  */
 export const taskTypeSchema = z.enum(['public', 'private', 'root'], {
-  errorMap: () => ({ message: 'Task type must be "public", "private", or "root"' }),
+  message: 'Task type must be "public", "private", or "root"',
 });
 
 /**
@@ -53,7 +53,7 @@ export const recordTaskSchema = z.object({
 export const uploadTaskSchema = z.object({
   taskName: taskNameSchema,
   type: z.enum(['public', 'private'], {
-    errorMap: () => ({ message: 'Task type must be "public" or "private"' }),
+    message: 'Task type must be "public" or "private"',
   }),
   content: z
     .string()

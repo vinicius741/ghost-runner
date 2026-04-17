@@ -33,7 +33,7 @@ function formatZodError(error: ZodError): ErrorResponse {
   return {
     error: 'Validation failed',
     code: ErrorCode.VALIDATION_ERROR,
-    details: error.errors.map((err) => ({
+    details: error.issues.map((err) => ({
       path: err.path.join('.'),
       message: err.message,
     })),
@@ -53,7 +53,7 @@ function normalizeError(error: unknown): AppError {
       'Validation failed',
       ErrorCode.VALIDATION_ERROR,
       400,
-      { zodErrors: error.errors }
+      { zodErrors: error.issues }
     );
   }
 

@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "target": "ES2020",
-    "module": "commonjs",
+    "module": "nodenext",
     "rootDir": "./electron",
     "outDir": "./dist-electron",
     "types": ["node", "electron"]

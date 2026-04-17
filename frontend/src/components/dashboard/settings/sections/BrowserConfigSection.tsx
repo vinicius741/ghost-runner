@@ -8,7 +8,7 @@
  */
 
 import { Input } from '@/components/ui/input';
-import { Chrome } from 'lucide-react';
+import { Globe } from 'lucide-react';
 
 export type BrowserChannel = 'chrome' | 'chromium' | 'msedge';
 
@@ -47,7 +47,7 @@ export function BrowserConfigSection({
   return (
     <div className="flex flex-col gap-4 p-4 rounded-xl bg-card/50 border border-border/50">
       <div className="flex items-center gap-2 mb-2">
-        <Chrome className="w-4 h-4 text-green-500" />
+        <Globe className="w-4 h-4 text-green-500" />
         <h3 className="text-foreground font-medium tracking-tight">Browser Configuration</h3>
       </div>
 

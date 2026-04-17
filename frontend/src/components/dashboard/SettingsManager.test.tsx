@@ -10,7 +10,7 @@ import { SettingsManager } from './SettingsManager';
 
 // Mock fetch
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 describe('SettingsManager', () => {
   const defaultProps = {
