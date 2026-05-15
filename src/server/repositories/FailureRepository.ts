@@ -144,9 +144,16 @@ export class FailureRepository {
     );
 
     if (existingFailure) {
-      // Update existing failure
+      // Update existing failure with latest diagnostic context/artifacts.
+      const previousLastSeen = existingFailure.lastSeen;
       existingFailure.count += 1;
       existingFailure.lastSeen = now.toISOString();
+      existingFailure.context = {
+        ...existingFailure.context,
+        ...errorContext,
+        errorMessage,
+        previousLastSeen,
+      };
       await this.save(failures);
       return existingFailure;
     }

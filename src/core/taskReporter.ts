@@ -90,12 +90,14 @@ export function reportTaskFailed(taskName: string, error: unknown): void {
     });
   } else if (error instanceof Error) {
     // Standard Error - basic info
+    const failureContext = (error as Error & { ghostRunnerFailureContext?: Record<string, unknown> }).ghostRunnerFailureContext || {};
     emitStatus('FAILED', taskName, {
       errorType: 'unknown',
       errorMessage: error.message,
       errorContext: {
         name: error.name,
         stack: error.stack,
+        ...failureContext,
       },
       timestamp,
     });
@@ -153,6 +155,7 @@ export function reportTaskResult(taskName: string, error?: unknown): TaskResult 
         name: error.name,
         message: error.message,
         stack: error.stack,
+        ...((error as Error & { ghostRunnerFailureContext?: Record<string, unknown> }).ghostRunnerFailureContext || {}),
       },
       errorMessage: error.message,
     };

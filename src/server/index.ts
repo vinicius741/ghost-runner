@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { Server } from 'socket.io';
 import { PORT, SETTINGS_FILE, SCHEDULE_FILE, SERVER_PUBLIC_DIR } from './config';
-import { getFrontendDistDir } from '../config/runtimePaths';
+import { FAILURE_ARTIFACTS_DIR, getFrontendDistDir } from '../config/runtimePaths';
 import { initializeRuntimeStorage } from '../config/runtimePaths';
 import type { ScheduleItem, ServerToClientEvents, ClientToServerEvents } from '../../shared/types';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -119,6 +119,10 @@ export function createGhostServer(options: CreateGhostServerOptions = {}): Ghost
   }
 
   app.use(express.json({ limit: '2mb' }));
+  app.use('/api/failure-artifacts', express.static(FAILURE_ARTIFACTS_DIR, {
+    fallthrough: false,
+    index: false,
+  }));
 
   // Health check endpoint for dev runner and monitoring
   app.get('/health', (_req: Request, res: Response) => {

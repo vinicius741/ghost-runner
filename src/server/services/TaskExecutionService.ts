@@ -62,6 +62,7 @@ export class TaskExecutionService {
   private readonly runner: TaskRunner;
   private readonly tasks: typeof taskRepository;
   private readonly failures: typeof failureRepository;
+  private readonly recentLogsByTask = new Map<string, string[]>();
 
   constructor(
     runner: TaskRunner = taskRunner,
@@ -305,11 +306,15 @@ export class TaskExecutionService {
     onStatus?: TaskStatusCallback,
     onLog?: TaskLogCallback
   ): Promise<void> {
+    const recentLogs = this.recentLogsByTask.get(taskName) || [];
     const failure = await this.failures.record(
       taskName,
       data.errorType || 'unknown',
       data.errorMessage || 'Unknown error',
-      data.errorContext || {}
+      {
+        ...(data.errorContext || {}),
+        recentLogs,
+      }
     );
 
     // Emit failure recorded event
@@ -414,7 +419,20 @@ export class TaskExecutionService {
   /**
    * Helper method to emit log messages to both callback and Socket.io.
    */
+  private rememberTaskLog(message: string): void {
+    const match = message.match(/^\[Task: ([^\]]+)/);
+    if (!match) {
+      return;
+    }
+
+    const taskName = match[1].replace(/ (?:SYSTEM ERROR|ERROR)$/, '');
+    const logs = this.recentLogsByTask.get(taskName) || [];
+    logs.push(message);
+    this.recentLogsByTask.set(taskName, logs.slice(-80));
+  }
+
   private emitLog(message: string, level: 'info' | 'error', onLog?: TaskLogCallback, io?: Server): void {
+    this.rememberTaskLog(message);
     if (onLog) {
       onLog(message, level);
     }

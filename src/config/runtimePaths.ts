@@ -92,6 +92,7 @@ export const SCHEDULE_FILE = path.join(DATA_ROOT, 'schedule.json');
 export const FAILURES_FILE = path.join(DATA_ROOT, 'failures.json');
 export const INFO_GATHERING_FILE = path.join(DATA_ROOT, 'info-gathering.json');
 export const LOG_FILE = path.join(DATA_ROOT, 'scheduler.log');
+export const FAILURE_ARTIFACTS_DIR = path.join(DATA_ROOT, 'failure-artifacts');
 
 export const FRONTEND_DIST_DIR = path.join(APP_ROOT, 'frontend', 'dist');
 export const SERVER_PUBLIC_DIR = path.join(APP_ROOT, 'src', 'server', 'public');
@@ -179,6 +180,7 @@ export function initializeRuntimeStorage(): void {
   fs.mkdirSync(path.join(TASKS_DIR, 'public'), { recursive: true });
   fs.mkdirSync(path.join(TASKS_DIR, 'private'), { recursive: true });
   fs.mkdirSync(USER_DATA_DIR, { recursive: true });
+  fs.mkdirSync(FAILURE_ARTIFACTS_DIR, { recursive: true });
 
   copyMissingFiles(path.join(BUNDLED_TASKS_DIR, 'public'), path.join(TASKS_DIR, 'public'));
   copyMissingFiles(path.join(BUNDLED_TASKS_DIR, 'private'), path.join(TASKS_DIR, 'private'));

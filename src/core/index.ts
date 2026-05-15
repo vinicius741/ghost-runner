@@ -3,8 +3,9 @@ import { createMonitoredPage, MonitoredPage } from './pageWrapper';
 import { reportTaskResult, reportTaskStarted, getExitCode, reportTaskResultWithData } from './taskReporter';
 import fs from 'fs';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import type { Page } from 'playwright';
-import { getTaskRoots, initializeRuntimeStorage } from '../config/runtimePaths';
+import { FAILURE_ARTIFACTS_DIR, getTaskRoots, initializeRuntimeStorage } from '../config/runtimePaths';
 
 /**
  * Task metadata for declaring task type and display settings.
@@ -25,6 +26,65 @@ export interface TaskMetadata {
 interface TaskModule {
   run: (page: Page) => Promise<void | unknown>;
   metadata?: TaskMetadata;
+}
+
+async function captureFailureArtifacts(
+  page: MonitoredPage | undefined,
+  taskName: string,
+  error: unknown
+): Promise<Record<string, unknown>> {
+  if (!page) {
+    return {};
+  }
+
+  const originalPage = page.getOriginalPage();
+  const safeTaskName = taskName.replace(/[^a-z0-9_-]/gi, '_');
+  const artifactId = `${safeTaskName}-${Date.now()}-${randomUUID().slice(0, 8)}`;
+  const artifactDir = path.join(FAILURE_ARTIFACTS_DIR, artifactId);
+  const context: Record<string, unknown> = {
+    artifactId,
+    screenshotUrl: `/api/failure-artifacts/${artifactId}/screenshot.png`,
+    htmlUrl: `/api/failure-artifacts/${artifactId}/page.html`,
+  };
+
+  try {
+    fs.mkdirSync(artifactDir, { recursive: true });
+    context.pageUrl = originalPage.url();
+
+    try {
+      context.pageTitle = await originalPage.title();
+    } catch {
+      context.pageTitle = 'Unable to read page title';
+    }
+
+    try {
+      await originalPage.screenshot({ path: path.join(artifactDir, 'screenshot.png'), fullPage: true });
+    } catch (screenshotError) {
+      context.screenshotError = screenshotError instanceof Error ? screenshotError.message : String(screenshotError);
+      delete context.screenshotUrl;
+    }
+
+    try {
+      fs.writeFileSync(path.join(artifactDir, 'page.html'), await originalPage.content(), 'utf8');
+    } catch (htmlError) {
+      context.htmlCaptureError = htmlError instanceof Error ? htmlError.message : String(htmlError);
+      delete context.htmlUrl;
+    }
+
+    const diagnostics = {
+      taskName,
+      capturedAt: new Date().toISOString(),
+      url: context.pageUrl,
+      title: context.pageTitle,
+      error: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : String(error),
+    };
+    fs.writeFileSync(path.join(artifactDir, 'diagnostics.json'), JSON.stringify(diagnostics, null, 2), 'utf8');
+    context.diagnosticsUrl = `/api/failure-artifacts/${artifactId}/diagnostics.json`;
+  } catch (artifactError) {
+    context.artifactCaptureError = artifactError instanceof Error ? artifactError.message : String(artifactError);
+  }
+
+  return context;
 }
 
 function listAvailableTasks(taskRoots: string[]): string[] {
@@ -99,7 +159,7 @@ async function main(): Promise<void> {
   console.log(`Loading task: ${taskName}`);
 
   let browserContext;
-  let page: MonitoredPage;
+  let page: MonitoredPage | undefined;
   let taskError: unknown = undefined;
 
   try {
@@ -136,6 +196,19 @@ async function main(): Promise<void> {
 
     console.log(`Task '${taskName}' completed successfully.`);
   } catch (error) {
+    const artifactContext = await captureFailureArtifacts(page, taskName, error);
+
+    if (error instanceof Error) {
+      (error as any).ghostRunnerFailureContext = artifactContext;
+      const existingContext = typeof (error as any).getContext === 'function'
+        ? (error as any).getContext.bind(error)
+        : undefined;
+      (error as any).getContext = () => ({
+        ...(existingContext ? existingContext() : {}),
+        ...artifactContext,
+      });
+    }
+
     taskError = error;
     console.error(`Task execution failed:`, error);
   } finally {
