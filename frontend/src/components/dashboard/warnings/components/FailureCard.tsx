@@ -7,7 +7,7 @@
  * Related: Development Execution Plan Task 2.2.2
  */
 
-import { type LucideIcon, MapPin, AlertCircle, Timer, Bug, ChevronRight, Clock } from 'lucide-react';
+import { type LucideIcon, MapPin, AlertCircle, Timer, Bug, ChevronRight, Clock, Camera, FileCode2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { FailureRecord } from '@/types';
 import { formatTimestamp, toTitleCase } from '@/utils/formatters';
@@ -54,8 +54,11 @@ interface FailureItemProps {
 }
 
 function FailureItem({ failure, onViewDetails }: FailureItemProps) {
+  const hasScreenshot = typeof failure.context?.screenshotUrl === 'string';
+  const hasHtml = typeof failure.context?.htmlUrl === 'string';
+
   return (
-    <div className="p-3 bg-slate-950/30 rounded-lg border border-slate-800/50">
+    <div className="p-3 bg-red-950/10 rounded-lg border border-red-900/30 shadow-inner shadow-red-950/10">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium text-slate-400 mb-1">
@@ -71,15 +74,24 @@ function FailureItem({ failure, onViewDetails }: FailureItemProps) {
               URL: {failure.context.url}
             </p>
           )}
+          {typeof failure.context?.errorMessage === 'string' && (
+            <p className="text-xs text-red-300/80 truncate mt-1">
+              {failure.context.errorMessage}
+            </p>
+          )}
+          <div className="flex gap-1.5 mt-2">
+            {hasScreenshot && <span className="inline-flex items-center gap-1 text-[10px] text-sky-300/80 bg-sky-500/10 border border-sky-500/20 rounded px-1.5 py-0.5"><Camera className="w-3 h-3" /> screenshot</span>}
+            {hasHtml && <span className="inline-flex items-center gap-1 text-[10px] text-emerald-300/80 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5"><FileCode2 className="w-3 h-3" /> html</span>}
+          </div>
         </div>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onViewDetails(failure);
           }}
-          className="flex-shrink-0 px-2 py-1 rounded bg-slate-800/50 text-slate-400 text-xs hover:bg-slate-700/50 hover:text-slate-300 transition-colors"
+          className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-200 text-xs font-medium hover:bg-red-500/25 hover:text-white transition-colors"
         >
-          Details
+          Fix details
         </button>
       </div>
     </div>
@@ -126,9 +138,9 @@ export function FailureCard({
       {/* Task header - clickable to expand */}
       <div
         onClick={onToggle}
-        className="relative flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800/50 rounded-xl cursor-pointer hover:bg-slate-900/50 hover:border-slate-700/50 transition-all duration-300"
+        className="relative flex items-center justify-between p-3 bg-red-950/10 border border-red-900/40 rounded-xl cursor-pointer hover:bg-red-950/20 hover:border-red-500/50 transition-all duration-300 shadow-lg shadow-red-950/10"
       >
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-600/20 to-orange-500/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600/30 to-amber-500/20 rounded-xl blur opacity-60 group-hover:opacity-100 transition duration-500" />
         <div className="relative flex items-center gap-3 flex-1 min-w-0">
           <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center border ${failureStyles.borderClass}`}>
             <div className={failureStyles.iconClass}>
@@ -140,8 +152,8 @@ export function FailureCard({
               <h3 className="text-slate-200 font-semibold text-sm truncate">
                 {taskName}
               </h3>
-              <span className={`px-1.5 py-0.5 rounded ${failureStyles.badgeBgClass} ${failureStyles.badgeTextClass} text-[10px] font-medium border ${failureStyles.borderClass.replace('/30', '/20')}`}>
-                {totalCount}
+              <span className={`px-1.5 py-0.5 rounded ${failureStyles.badgeBgClass} ${failureStyles.badgeTextClass} text-[10px] font-medium border ${failureStyles.borderClass.replace('/30', '/20')} animate-pulse`}>
+                {totalCount} failing
               </span>
             </div>
             <p className="text-slate-500 text-xs mt-0.5 flex items-center gap-1">

@@ -82,15 +82,15 @@ export function WarningsPanel({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
     >
-      <Card className="card-premium flex flex-col overflow-hidden">
+      <Card className={`card-premium flex flex-col overflow-hidden ${filteredCount > 0 ? 'border-red-500/40 shadow-red-950/30' : ''}`}>
         {/* Header */}
-        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border/50 bg-muted/20" onDoubleClick={onHeaderDoubleClick}>
+        <CardHeader className={`flex flex-row items-center justify-between pb-3 border-b border-border/50 ${filteredCount > 0 ? 'bg-red-950/25' : 'bg-muted/20'}`} onDoubleClick={onHeaderDoubleClick}>
           <CardTitle className="text-foreground font-medium tracking-tight flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <AlertTriangle className={`w-4 h-4 ${filteredCount > 0 ? 'text-red-400 animate-pulse' : 'text-amber-500'}`} />
             Task Failures
             {filteredCount > 0 && (
-              <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
-                {filteredCount}
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold border border-red-500/30 animate-pulse">
+                {filteredCount} active
               </span>
             )}
           </CardTitle>
