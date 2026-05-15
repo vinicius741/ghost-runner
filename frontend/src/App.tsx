@@ -66,7 +66,7 @@ function DashboardContent() {
   } = useDashboard();
 
   return (
-    <div className={`min-h-screen bg-background text-foreground font-sans transition-all duration-500 ${sidebarOpen ? 'pr-52' : 'pr-8'}`}>
+    <div className={`min-h-screen min-w-0 overflow-x-hidden bg-background text-foreground font-sans transition-all duration-500 ${sidebarOpen ? 'pr-0 xl:pr-52' : 'pr-0 xl:pr-8'}`}>
       {/* Theme-aware background overlay */}
       <div className="fixed inset-0 pointer-events-none theme-bg-overlay" />
       <div className="fixed inset-0 pointer-events-none theme-bg-texture" />
@@ -79,7 +79,7 @@ function DashboardContent() {
         onToggle={toggleSidebar}
       />
 
-      <div className="max-w-7xl mx-auto space-y-10 relative py-8 px-8">
+      <div className="relative mx-auto max-w-7xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
         <Header />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">

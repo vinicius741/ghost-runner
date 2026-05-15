@@ -81,11 +81,12 @@ export function WarningsPanel({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
+      className="min-w-0 max-w-full"
     >
       <Card className={`card-premium flex flex-col overflow-hidden ${filteredCount > 0 ? 'border-red-500/40 shadow-red-950/30' : ''}`}>
         {/* Header */}
-        <CardHeader className={`flex flex-row items-center justify-between pb-3 border-b border-border/50 ${filteredCount > 0 ? 'bg-red-950/25' : 'bg-muted/20'}`} onDoubleClick={onHeaderDoubleClick}>
-          <CardTitle className="text-foreground font-medium tracking-tight flex items-center gap-2">
+        <CardHeader className={`flex flex-col gap-3 border-b border-border/50 pb-3 sm:flex-row sm:items-center sm:justify-between ${filteredCount > 0 ? 'bg-red-950/25' : 'bg-muted/20'}`} onDoubleClick={onHeaderDoubleClick}>
+          <CardTitle className="text-foreground flex min-w-0 flex-wrap items-center gap-2 font-medium tracking-tight">
             <AlertTriangle className={`w-4 h-4 ${filteredCount > 0 ? 'text-red-400 animate-pulse' : 'text-amber-500'}`} />
             Task Failures
             {filteredCount > 0 && (
@@ -94,7 +95,7 @@ export function WarningsPanel({
               </span>
             )}
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2 self-start sm:self-auto">
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/50 border border-border/50">
               <Clock className="w-3 h-3 text-muted-foreground" />
               <span className="text-[10px] font-mono text-muted-foreground">
@@ -125,7 +126,7 @@ export function WarningsPanel({
           />
 
           {/* Failures list */}
-          <ScrollArea className="h-[280px] w-full">
+          <ScrollArea className="h-[280px] w-full min-w-0">
             <div className="p-4 space-y-3">
               {filteredFailuresArray.length === 0 ? (
                 <EmptyState />

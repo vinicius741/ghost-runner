@@ -58,8 +58,8 @@ function FailureItem({ failure, onViewDetails }: FailureItemProps) {
   const hasHtml = typeof failure.context?.htmlUrl === 'string';
 
   return (
-    <div className="p-3 bg-red-950/10 rounded-lg border border-red-900/30 shadow-inner shadow-red-950/10">
-      <div className="flex items-start justify-between gap-2">
+    <div className="min-w-0 overflow-hidden p-3 bg-red-950/10 rounded-lg border border-red-900/30 shadow-inner shadow-red-950/10">
+      <div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:justify-between">
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium text-slate-400 mb-1">
             {toTitleCase(failure.errorType)}
@@ -89,7 +89,7 @@ function FailureItem({ failure, onViewDetails }: FailureItemProps) {
             e.stopPropagation();
             onViewDetails(failure);
           }}
-          className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-200 text-xs font-medium hover:bg-red-500/25 hover:text-white transition-colors"
+          className="shrink-0 self-end px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-200 text-xs font-medium hover:bg-red-500/25 hover:text-white transition-colors sm:self-start"
         >
           Fix details
         </button>
@@ -133,12 +133,12 @@ export function FailureCard({
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 10 }}
-      className="group"
+      className="group min-w-0"
     >
       {/* Task header - clickable to expand */}
       <div
         onClick={onToggle}
-        className="relative flex items-center justify-between p-3 bg-red-950/10 border border-red-900/40 rounded-xl cursor-pointer hover:bg-red-950/20 hover:border-red-500/50 transition-all duration-300 shadow-lg shadow-red-950/10"
+        className="relative flex min-w-0 items-center justify-between overflow-hidden p-3 bg-red-950/10 border border-red-900/40 rounded-xl cursor-pointer hover:bg-red-950/20 hover:border-red-500/50 transition-all duration-300 shadow-lg shadow-red-950/10"
       >
         <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600/30 to-amber-500/20 rounded-xl blur opacity-60 group-hover:opacity-100 transition duration-500" />
         <div className="relative flex items-center gap-3 flex-1 min-w-0">
@@ -148,7 +148,7 @@ export function FailureCard({
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <h3 className="text-slate-200 font-semibold text-sm truncate">
                 {taskName}
               </h3>
@@ -177,7 +177,7 @@ export function FailureCard({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="mt-2 ml-4 space-y-2 pl-4 border-l-2 border-slate-800">
+            <div className="mt-2 min-w-0 space-y-2 border-l-2 border-slate-800 pl-3 sm:ml-4 sm:pl-4">
               {failures.map((failure) => (
                 <FailureItem
                   key={failure.id}

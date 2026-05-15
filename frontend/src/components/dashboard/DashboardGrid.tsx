@@ -65,7 +65,7 @@ function DroppableColumn({ column, items, renderCard }: DroppableColumnProps) {
       items={items}
       strategy={verticalListSortingStrategy}
     >
-      <div className="flex flex-col gap-8">
+      <div className="flex min-w-0 flex-col gap-8">
         {items.map((id) => renderCard(id))}
       </div>
     </SortableContext>
@@ -172,8 +172,8 @@ export function DashboardGrid({
         items={allItems}
         strategy={verticalListSortingStrategy}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-4">
+        <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-12">
+          <div className="min-w-0 lg:col-span-4">
             <DroppableColumn
               column="left"
               items={visibleLeft}
@@ -181,7 +181,7 @@ export function DashboardGrid({
             />
           </div>
 
-          <div className="lg:col-span-8">
+          <div className="min-w-0 lg:col-span-8">
             <DroppableColumn
               column="right"
               items={visibleRight}

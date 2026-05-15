@@ -32,7 +32,7 @@ export function SortableCard({ id, children, disabled = false, onMinimize, title
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative ${isDragging ? 'shadow-2xl scale-[1.02] z-50' : ''}`}
+      className={`group relative min-w-0 max-w-full ${isDragging ? 'shadow-2xl scale-[1.02] z-50' : ''}`}
     >
       {/* Minimize button - visible on hover */}
       {onMinimize && (
