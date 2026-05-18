@@ -20,6 +20,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   AlertTriangle,
   Clock,
   Trash2,
@@ -63,6 +71,7 @@ export function WarningsPanel({
 }: WarningsPanelProps) {
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
   const [selectedFailure, setSelectedFailure] = useState<FailureRecord | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Use the failure filters hook
   const {
@@ -106,7 +115,7 @@ export function WarningsPanel({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onClearFailures}
+                onClick={() => setShowClearConfirm(true)}
                 className="h-8 text-muted-foreground hover:text-red-400 hover:bg-red-500/5 transition-colors gap-2"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -148,6 +157,43 @@ export function WarningsPanel({
           </ScrollArea>
         </CardContent>
       </Card>
+
+      {/* Clear all confirmation dialog */}
+      <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <DialogContent className="bg-slate-950/95 border-slate-800/50 text-slate-100 sm:max-w-[400px] rounded-2xl backdrop-blur-xl shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-950/40 flex items-center justify-center border border-red-500/30">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
+              Clear All Failures
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 text-sm pt-2">
+              This will permanently remove all {failures.length} failure{failures.length !== 1 ? 's' : ''} across {new Set(failures.map(f => f.taskName)).size} task{new Set(failures.map(f => f.taskName)).size !== 1 ? 's' : ''}. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setShowClearConfirm(false)}
+              className="text-slate-400 hover:text-slate-200 hover:bg-slate-800/70"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onClearFailures();
+                setShowClearConfirm(false);
+              }}
+              className="bg-red-600 hover:bg-red-500 text-white gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Details dialog */}
       <FailureDetailsDialog
