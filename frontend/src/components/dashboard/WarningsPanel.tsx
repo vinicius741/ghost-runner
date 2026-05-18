@@ -117,7 +117,7 @@ export function WarningsPanel({
         </CardHeader>
 
         {/* Content */}
-        <CardContent className="p-0 bg-black/20">
+        <CardContent className="p-0 bg-black/20 min-w-0">
           {/* Filter tabs */}
           <FilterTabs
             activeFilter={filters.errorType}
@@ -127,7 +127,7 @@ export function WarningsPanel({
 
           {/* Failures list */}
           <ScrollArea className="h-[280px] w-full min-w-0">
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-3 min-w-0">
               {filteredFailuresArray.length === 0 ? (
                 <EmptyState />
               ) : (

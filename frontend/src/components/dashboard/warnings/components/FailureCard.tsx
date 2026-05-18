@@ -59,8 +59,8 @@ function FailureItem({ failure, onViewDetails }: FailureItemProps) {
 
   return (
     <div className="min-w-0 overflow-hidden p-3 bg-red-950/10 rounded-lg border border-red-900/30 shadow-inner shadow-red-950/10">
-      <div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:justify-between">
-        <div className="flex-1 min-w-0">
+      <div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:justify-between">
+        <div className="flex-1 min-w-0 overflow-hidden">
           <p className="text-xs font-medium text-slate-400 mb-1">
             {toTitleCase(failure.errorType)}
           </p>
@@ -79,7 +79,7 @@ function FailureItem({ failure, onViewDetails }: FailureItemProps) {
               {failure.context.errorMessage}
             </p>
           )}
-          <div className="flex gap-1.5 mt-2">
+          <div className="flex flex-wrap gap-1.5 mt-2 min-w-0">
             {hasScreenshot && <span className="inline-flex items-center gap-1 text-[10px] text-sky-300/80 bg-sky-500/10 border border-sky-500/20 rounded px-1.5 py-0.5"><Camera className="w-3 h-3" /> screenshot</span>}
             {hasHtml && <span className="inline-flex items-center gap-1 text-[10px] text-emerald-300/80 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5"><FileCode2 className="w-3 h-3" /> html</span>}
           </div>

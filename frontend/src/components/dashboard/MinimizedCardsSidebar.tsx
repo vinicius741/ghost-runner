@@ -81,7 +81,7 @@ export function MinimizedCardsSidebar({ isOpen, minimizedCards, onRestoreCard, o
 
       {/* Toggle Button */}
       <motion.button
-        animate={{ right: isOpen ? `${SIDEBAR_WIDTH_REM}rem` : 0 }}
+        animate={{ right: isOpen ? `${SIDEBAR_WIDTH_REM}rem` : '0.75rem' }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
         onClick={onToggle}
         className="fixed top-4 z-50 h-10 w-10 flex items-center justify-center rounded-l-lg bg-muted/90 backdrop-blur-sm border border-l border-t border-b border-border text-muted-foreground hover:text-foreground hover:bg-secondary/90 transition-colors"
@@ -95,7 +95,7 @@ export function MinimizedCardsSidebar({ isOpen, minimizedCards, onRestoreCard, o
         )}
         {/* Badge showing minimized count - visible when sidebar is closed and there are minimized cards */}
         {!isOpen && minimizedCards.length > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold bg-primary text-primary-foreground rounded-full">
+          <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold bg-primary text-primary-foreground rounded-full">
             {minimizedCards.length}
           </span>
         )}
