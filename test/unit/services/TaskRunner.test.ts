@@ -25,7 +25,7 @@ describe('TaskRunner', () => {
   });
 
   describe('run', () => {
-    it('should spawn process with correct npm command', () => {
+    it('should spawn process with correct pnpm command', () => {
       const mockChild = createMockChildProcess();
       mockSpawn.mock.mockImplementation(() => mockChild);
 
@@ -33,7 +33,7 @@ describe('TaskRunner', () => {
 
       assert.strictEqual(mockSpawn.mock.callCount(), 1);
       const [command, args, options] = mockSpawn.mock.calls[0].arguments;
-      assert.strictEqual(command, 'npm');
+      assert.strictEqual(command, 'pnpm');
       assert.ok(args.includes('run'));
       assert.ok(args.includes('bot'));
       assert.ok(args.some((arg: string) => arg.includes('--task=test-task')));
@@ -80,7 +80,7 @@ describe('TaskRunner', () => {
       runner.record('new-task', 'private');
 
       const [command, args] = mockSpawn.mock.calls[0].arguments;
-      assert.strictEqual(command, 'npm');
+      assert.strictEqual(command, 'pnpm');
       assert.ok(args.includes('run'));
       assert.ok(args.includes('record'));
       assert.ok(args.some((arg: string) => arg.includes('--name=new-task')));
@@ -107,7 +107,7 @@ describe('TaskRunner', () => {
       runner.setupLogin();
 
       const [command, args] = mockSpawn.mock.calls[0].arguments;
-      assert.strictEqual(command, 'npm');
+      assert.strictEqual(command, 'pnpm');
       assert.ok(args.includes('run'));
       assert.ok(args.includes('setup-login'));
     });

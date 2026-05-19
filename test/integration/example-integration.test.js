@@ -1,7 +1,7 @@
 /**
  * Example integration test placeholder.
  *
- * Keep this file CommonJS so `npm test` works with the current Node test runner config.
+ * Keep this file CommonJS so `pnpm test` works with the current Node test runner config.
  */
 
 const { describe, it } = require('node:test');

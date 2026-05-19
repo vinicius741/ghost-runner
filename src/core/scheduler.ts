@@ -117,7 +117,7 @@ function runTask(taskName: string): Promise<void> {
 
     const command = shouldUseCompiledEntry(compiledEntry)
       ? process.execPath
-      : (fs.existsSync(sourceEntry) && fs.existsSync(tsxBin) ? tsxBin : 'npx');
+      : (fs.existsSync(sourceEntry) && fs.existsSync(tsxBin) ? tsxBin : 'pnpx');
 
     const args = command === process.execPath
       ? [compiledEntry, `--task=${taskName}`]
@@ -130,7 +130,7 @@ function runTask(taskName: string): Promise<void> {
     const child = spawn(command, args, {
       cwd: spawnCwd, // Run from app directory, not inside asar
       stdio: 'inherit', // Pipe output so we see it in the main console
-      shell: command === 'npx',
+      shell: command === 'pnpx',
       env: command === process.execPath && process.versions.electron
         ? { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
         : process.env,

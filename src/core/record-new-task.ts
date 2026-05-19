@@ -59,7 +59,7 @@ const playwrightArgs: string[] = [
 ];
 
 const playwrightCli = path.join(APP_ROOT, 'node_modules', 'playwright', 'cli.js');
-const command = fs.existsSync(playwrightCli) ? process.execPath : 'npx';
+const command = fs.existsSync(playwrightCli) ? process.execPath : 'pnpx';
 const argsForCommand = command === process.execPath ? [playwrightCli, ...playwrightArgs] : ['playwright', ...playwrightArgs];
 
 const spawnCwd = APP_ROOT.endsWith('.asar') ? path.dirname(APP_ROOT) : APP_ROOT;
@@ -67,7 +67,7 @@ const spawnCwd = APP_ROOT.endsWith('.asar') ? path.dirname(APP_ROOT) : APP_ROOT;
 const child: ChildProcess = spawn(command, argsForCommand, {
   cwd: spawnCwd,
   stdio: 'inherit', // Pipe output to parent console
-  shell: command === 'npx', // execute through shell only for npx fallback
+  shell: command === 'pnpx', // execute through shell only for pnpx fallback
   env: command === process.execPath && process.versions.electron
     ? { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
     : process.env,

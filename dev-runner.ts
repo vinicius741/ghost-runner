@@ -55,12 +55,12 @@ console.log(`Backend API will run on http://localhost:${apiPort}`);
 console.log(`Frontend dev server will run on http://localhost:${frontendPort}`);
 
 // Start Backend only (serves both API and built frontend)
-const server = startProcess('Server', 'npx', ['tsx', 'src/server/index.ts'], process.cwd(), colors.server);
+const server = startProcess('Server', 'pnpx', ['tsx', 'src/server/index.ts'], process.cwd(), colors.server);
 
 // Start Frontend dev server after backend is ready (checked via health endpoint)
 let frontend: ChildProcess | undefined;
 const startFrontend = (): void => {
-    frontend = startProcess('Frontend', 'npm', ['run', 'dev'], path.join(process.cwd(), 'frontend'), colors.frontend);
+    frontend = startProcess('Frontend', 'pnpm', ['run', 'dev'], path.join(process.cwd(), 'frontend'), colors.frontend);
     // Attach exit handler after frontend starts
     frontend.on('close', (code: number | null) => handleChildExit('Frontend', code));
 };

@@ -1,7 +1,7 @@
 /**
  * Integration tests for the task source API endpoint.
  *
- * Keep this file CommonJS so `npm test` runs it with the current Node test runner.
+ * Keep this file CommonJS so `pnpm test` runs it with the current Node test runner.
  */
 
 const { describe, it, beforeEach, after } = require('node:test');

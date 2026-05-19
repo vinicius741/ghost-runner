@@ -2,7 +2,7 @@
  * TaskRunner - Service for managing task process execution.
  *
  * This service handles spawning, monitoring, and cleanup of child processes
- * that run Ghost Runner tasks via npm scripts.
+ * that run Ghost Runner tasks via pnpm scripts.
  *
  * @module server/services/TaskRunner
  */
@@ -68,7 +68,7 @@ export class TaskRunner {
       compiledEntry: path.join('dist', 'src', 'core', 'index.js'),
       sourceEntry: path.join('src', 'core', 'index.ts'),
       entryArgs: [`--task=${taskName}`],
-      npmArgs: ['run', 'bot', '--', `--task=${taskName}`],
+      pnpmArgs: ['run', 'bot', '--', `--task=${taskName}`],
     });
 
     const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
@@ -112,7 +112,7 @@ export class TaskRunner {
       compiledEntry: path.join('dist', 'src', 'core', 'record-new-task.js'),
       sourceEntry: path.join('src', 'core', 'record-new-task.ts'),
       entryArgs,
-      npmArgs: args,
+      pnpmArgs: args,
     });
     const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
       cwd: resolveSpawnCwd(cwd),
@@ -140,7 +140,7 @@ export class TaskRunner {
       compiledEntry: path.join('dist', 'src', 'utils', 'run-setup-login.js'),
       sourceEntry: path.join('src', 'utils', 'run-setup-login.ts'),
       entryArgs: [],
-      npmArgs: ['run', 'setup-login'],
+      pnpmArgs: ['run', 'setup-login'],
     });
 
     const child: ChildProcess = spawn(spawnConfig.command, spawnConfig.args, {
@@ -233,7 +233,7 @@ export class TaskRunner {
       compiledEntry: string;
       sourceEntry: string;
       entryArgs: string[];
-      npmArgs: string[];
+      pnpmArgs: string[];
     }
   ): { command: string; args: string[]; shell: boolean } {
     const compiledPath = path.join(cwd, config.compiledEntry);
@@ -256,8 +256,8 @@ export class TaskRunner {
     }
 
     return {
-      command: 'npm',
-      args: config.npmArgs,
+      command: 'pnpm',
+      args: config.pnpmArgs,
       shell: true,
     };
   }

@@ -15,7 +15,7 @@ if (process.argv.includes('--clean')) {
 
 // Step 2: Build frontend
 console.log('Building frontend...');
-execSync('cd frontend && npm run build', { stdio: 'inherit', cwd: ROOT_DIR });
+execSync('cd frontend && pnpm run build', { stdio: 'inherit', cwd: ROOT_DIR });
 
 // Step 3: Verify output exists
 if (!existsSync(FRONTEND_DIST)) {

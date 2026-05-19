@@ -22,7 +22,7 @@ class SchedulerService {
 
     const command = shouldUseCompiledEntry(compiledScheduler)
       ? process.execPath
-      : (fs.existsSync(sourceScheduler) && fs.existsSync(tsxBin) ? tsxBin : 'npm');
+      : (fs.existsSync(sourceScheduler) && fs.existsSync(tsxBin) ? tsxBin : 'pnpm');
 
     const args = command === process.execPath
       ? [compiledScheduler]
@@ -30,7 +30,7 @@ class SchedulerService {
 
     this.schedulerProcess = spawn(command, args, {
       cwd: resolveSpawnCwd(ROOT_DIR),
-      shell: command === 'npm',
+      shell: command === 'pnpm',
       env: command === process.execPath && process.versions.electron
         ? { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
         : process.env,

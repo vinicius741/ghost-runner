@@ -1,3 +1,3 @@
 #!/bin/bash
 cd "."
-npm run schedule
+pnpm run schedule
