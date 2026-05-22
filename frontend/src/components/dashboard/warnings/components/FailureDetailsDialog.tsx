@@ -44,9 +44,9 @@ function getContextString(context: Record<string, unknown>, key: string): string
 
 function ContextValue({ label, value }: ContextValueProps) {
   return (
-    <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800/70">
-      <p className="text-xs text-slate-500 mb-1">{label}</p>
-      <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap break-words">
+    <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800/70 print:bg-gray-50 print:border-gray-300">
+      <p className="text-xs text-slate-500 mb-1 print:text-gray-500">{label}</p>
+      <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap break-words print:text-black">
         {stringifyValue(value)}
       </pre>
     </div>
@@ -56,7 +56,7 @@ function ContextValue({ label, value }: ContextValueProps) {
 function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 print:text-gray-600">
         {icon}
         {title}
       </div>
@@ -134,7 +134,7 @@ export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDet
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:static print:block print:p-0 print:bg-white print:backdrop-blur-none"
         onClick={onClose}
       >
         <motion.div
@@ -142,30 +142,30 @@ export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDet
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 12 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative max-w-4xl w-full bg-slate-950 border border-red-900/40 rounded-2xl shadow-2xl overflow-hidden"
+          className="relative max-w-4xl w-full bg-slate-950 border border-red-900/40 rounded-2xl shadow-2xl overflow-hidden print:max-w-none print:rounded-none print:border print:border-gray-300 print:shadow-none print:bg-white print:overflow-visible"
         >
-          <div className={`absolute -inset-0.5 bg-gradient-to-r ${styles.getGradient(failure.errorType)} rounded-2xl blur opacity-40`} />
+          <div className={`absolute -inset-0.5 bg-gradient-to-r ${styles.getGradient(failure.errorType)} rounded-2xl blur opacity-40 print:hidden`} />
           <div className="relative">
-            <div className="p-6 border-b border-slate-800 bg-gradient-to-r from-red-950/45 via-slate-950 to-slate-950">
+            <div className="p-6 border-b border-slate-800 bg-gradient-to-r from-red-950/45 via-slate-950 to-slate-950 print:bg-white print:border-gray-300">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className={`w-14 h-14 rounded-2xl bg-red-950/40 flex items-center justify-center border ${styles.getBorder(failure.errorType)} shadow-lg shadow-red-950/30`}>
+                  <div className={`w-14 h-14 rounded-2xl bg-red-950/40 flex items-center justify-center border ${styles.getBorder(failure.errorType)} shadow-lg shadow-red-950/30 print:hidden`}>
                     <Icon className={`w-7 h-7 ${styles.getColor(failure.errorType)}`} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-[0.28em] text-red-300/70 font-semibold">Failure requires attention</p>
-                    <h3 className="text-xl font-semibold text-slate-100 truncate">{failure.taskName}</h3>
-                    <p className="text-sm text-slate-400">{toTitleCase(failure.errorType)} · {failure.count} occurrence{failure.count !== 1 ? 's' : ''}</p>
+                    <p className="text-xs uppercase tracking-[0.28em] text-red-300/70 font-semibold print:text-gray-500">Failure requires attention</p>
+                    <h3 className="text-xl font-semibold text-slate-100 truncate print:text-black">{failure.taskName}</h3>
+                    <p className="text-sm text-slate-400 print:text-gray-600">{toTitleCase(failure.errorType)} · {failure.count} occurrence{failure.count !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
-                <button onClick={onClose} className="p-2 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-slate-800/70 transition-colors" aria-label="Close dialog">
+                <button onClick={onClose} className="p-2 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-slate-800/70 transition-colors print:hidden" aria-label="Close dialog">
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-0 max-h-[72vh] overflow-y-auto custom-scrollbar">
-              <div className="p-6 space-y-5 border-r border-slate-800/80">
+            <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-0 max-h-[72vh] overflow-y-auto custom-scrollbar print:block print:max-h-none print:overflow-visible">
+              <div className="p-6 space-y-5 border-r border-slate-800/80 print:border-r-0">
                 <Section icon={<AlertCircle className="w-4 h-4" />} title="What went wrong">
                   <ContextValue label="Error Message" value={context.errorMessage || 'Unknown error'} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -190,18 +190,18 @@ export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDet
                 )}
 
                 <Section icon={<TerminalSquare className="w-4 h-4" />} title="Recent logs">
-                  <pre className="p-3 bg-black/70 rounded-lg border border-slate-800 text-xs text-slate-300 whitespace-pre-wrap max-h-52 overflow-auto custom-scrollbar">{recentLogs.length ? recentLogs.join('\n') : 'No recent task logs captured.'}</pre>
+                  <pre className="p-3 bg-black/70 rounded-lg border border-slate-800 text-xs text-slate-300 whitespace-pre-wrap max-h-52 overflow-auto custom-scrollbar print:bg-transparent print:border-gray-300 print:text-black print:max-h-none print:overflow-visible">{recentLogs.length ? recentLogs.join('\n') : 'No recent task logs captured.'}</pre>
                 </Section>
               </div>
 
-              <div className="p-6 space-y-5 bg-slate-950/70">
+              <div className="p-6 space-y-5 bg-slate-950/70 print:bg-transparent">
                 <Section icon={<Sparkles className="w-4 h-4 text-amber-300" />} title="Copy/paste agent prompt">
-                  <p className="text-sm text-slate-400">Send this to Claude Code or another coding agent. It includes the failure, artifacts, logs, and requested fix.</p>
-                  <button onClick={copyPrompt} className="w-full px-4 py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm hover:bg-amber-400 transition-colors inline-flex items-center justify-center gap-2">
+                  <p className="text-sm text-slate-400 print:text-gray-700">Send this to Claude Code or another coding agent. It includes the failure, artifacts, logs, and requested fix.</p>
+                  <button onClick={copyPrompt} className="w-full px-4 py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm hover:bg-amber-400 transition-colors inline-flex items-center justify-center gap-2 print:hidden">
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? 'Copied prompt' : 'Copy repair prompt'}
                   </button>
-                  <pre className="p-3 bg-black/60 rounded-lg border border-slate-800 text-xs text-slate-300 whitespace-pre-wrap max-h-72 overflow-auto custom-scrollbar">{agentPrompt}</pre>
+                  <pre className="p-3 bg-black/60 rounded-lg border border-slate-800 text-xs text-slate-300 whitespace-pre-wrap max-h-72 overflow-auto custom-scrollbar print:bg-transparent print:border-gray-300 print:text-black print:max-h-none print:overflow-visible">{agentPrompt}</pre>
                 </Section>
 
                 <Section icon={<Bug className="w-4 h-4" />} title="Full structured context">
@@ -214,8 +214,8 @@ export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDet
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-800 bg-slate-950 flex justify-end gap-2">
-              <button onClick={() => { onDismiss(failure.id); onClose(); }} className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition-colors">
+            <div className="p-4 border-t border-slate-800 bg-slate-950 flex justify-end gap-2 print:bg-white print:border-gray-300">
+              <button onClick={() => { onDismiss(failure.id); onClose(); }} className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition-colors print:hidden">
                 Dismiss
               </button>
             </div>
