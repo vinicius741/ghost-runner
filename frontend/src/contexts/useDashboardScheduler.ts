@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { ScheduleItem } from '@shared/types';
 import { getSocket } from './dashboardSocket';
 import type { LogType } from './useDashboardLogs';
+import { apiClient } from '@/lib/apiClient';
 
 /**
  * Hook to manage cron schedule configurations and scheduler system state.
@@ -12,62 +13,49 @@ export function useDashboardScheduler(addLog: (message: string, type?: LogType) 
 
   const fetchSchedule = useCallback(async () => {
     try {
-      const res = await fetch('/api/schedule');
-      const data = await res.json();
-      setSchedule(data.schedule || []);
+      const res = await apiClient.get('/api/schedule');
+      setSchedule(res.data.schedule || []);
     } catch {
-      addLog('Error fetching schedule', 'error');
+      // apiClient response interceptor already handles UI and console logging
     }
-  }, [addLog]);
+  }, []);
 
   const fetchSchedulerStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/scheduler/status');
-      const data = await res.json();
-      setSchedulerStatus(data.running);
+      const res = await apiClient.get('/api/scheduler/status');
+      setSchedulerStatus(res.data.running);
     } catch {
-      // Quiet fail to mirror the previous behavior
+      // apiClient response interceptor already handles UI and console logging
     }
   }, []);
 
   const saveScheduleToServer = useCallback(async (newSchedule: ScheduleItem[]) => {
     try {
-      const res = await fetch('/api/schedule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ schedule: newSchedule }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const res = await apiClient.post('/api/schedule', { schedule: newSchedule });
+      if (res.data.error) throw new Error(res.data.error);
       addLog('Schedule updated successfully.', 'system');
     } catch (error) {
       console.error('Error saving schedule:', error);
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error saving schedule: ${message}`, 'error');
     }
   }, [addLog]);
 
   const startScheduler = useCallback(async () => {
     addLog('Starting Scheduler...', 'system');
     try {
-      const res = await fetch('/api/scheduler/start', { method: 'POST' });
-      const data = await res.json();
-      addLog(data.message, 'system');
+      const res = await apiClient.post('/api/scheduler/start');
+      addLog(res.data.message, 'system');
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error starting scheduler: ${message}`, 'error');
+      // apiClient response interceptor already handles UI and console logging
     }
   }, [addLog]);
 
   const stopScheduler = useCallback(async () => {
     addLog('Stopping Scheduler...', 'system');
     try {
-      const res = await fetch('/api/scheduler/stop', { method: 'POST' });
-      const data = await res.json();
-      addLog(data.message, 'system');
+      const res = await apiClient.post('/api/scheduler/stop');
+      addLog(res.data.message, 'system');
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error stopping scheduler: ${message}`, 'error');
+      // apiClient response interceptor already handles UI and console logging
     }
   }, [addLog]);
 

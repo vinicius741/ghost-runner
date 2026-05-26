@@ -9,6 +9,7 @@ import type {
 } from '@shared/types';
 import { getSocket } from './dashboardSocket';
 import type { LogType } from './useDashboardLogs';
+import { apiClient } from '@/lib/apiClient';
 
 /**
  * Hook to manage task metadata, running tasks status, and automation execution operations.
@@ -19,24 +20,19 @@ export function useDashboardTasks(addLog: (message: string, type?: LogType) => v
 
   const fetchTasks = useCallback(async () => {
     try {
-      const res = await fetch('/api/tasks');
-      const data = await res.json();
-      setTasks(data.tasks || []);
+      const res = await apiClient.get('/api/tasks');
+      setTasks(res.data.tasks || []);
     } catch {
-      addLog('Error fetching tasks', 'error');
+      // apiClient response interceptor already handles UI and console logging
     }
-  }, [addLog]);
+  }, []);
 
   const runTask = useCallback(async (taskName: string) => {
     // Optimistically mark task as running for instant UI feedback
     setRunningTasks((prev) => new Set(prev).add(taskName));
     addLog(`Requesting to run task: ${taskName}...`, 'system');
     try {
-      await fetch('/api/run-task', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskName }),
-      });
+      await apiClient.post('/api/run-task', { taskName });
     } catch (error) {
       // Revert running state if start request failed
       setRunningTasks((prev) => {
@@ -44,83 +40,50 @@ export function useDashboardTasks(addLog: (message: string, type?: LogType) => v
         next.delete(taskName);
         return next;
       });
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error starting task: ${message}`, 'error');
     }
   }, [addLog]);
 
   const recordTask = useCallback(async (taskName: string, type: 'private' | 'public') => {
     addLog(`Starting Recorder for task: ${taskName} (${type})...`, 'system');
     try {
-      await fetch('/api/record', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskName, type }),
-      });
+      await apiClient.post('/api/record', { taskName, type });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error starting recorder: ${message}`, 'error');
+      // apiClient response interceptor already handles UI and console logging
     }
   }, [addLog]);
 
   const uploadTask = useCallback(async (taskName: string, type: 'private' | 'public', content: string) => {
     addLog(`Uploading task: ${taskName} (${type})...`, 'system');
     try {
-      const res = await fetch('/api/upload-task', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskName, type, content }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || `Upload failed with HTTP ${res.status}`);
-      }
-      if (data.error) throw new Error(data.error);
-      addLog(data.message || `Task ${taskName} uploaded successfully.`, 'system');
+      const res = await apiClient.post('/api/upload-task', { taskName, type, content });
+      if (res.data.error) throw new Error(res.data.error);
+      addLog(res.data.message || `Task ${taskName} uploaded successfully.`, 'system');
       await fetchTasks();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error uploading task: ${message}`, 'error');
-      throw error instanceof Error ? error : new Error(message);
+      throw error;
     }
   }, [addLog, fetchTasks]);
 
   const loadTaskSource = useCallback(async (taskName: string) => {
     try {
-      const res = await fetch(`/api/tasks/${encodeURIComponent(taskName)}/source`);
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || `Failed to load task source with HTTP ${res.status}`);
-      }
-      return data as TaskSource;
+      const res = await apiClient.get(`/api/tasks/${encodeURIComponent(taskName)}/source`);
+      return res.data as TaskSource;
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error loading task source: ${message}`, 'error');
-      throw error instanceof Error ? error : new Error(message);
+      throw error;
     }
-  }, [addLog]);
+  }, []);
 
   const saveTaskSource = useCallback(async (taskName: string, type: TaskSourceSaveType, content: string) => {
     addLog(`Saving task script: ${taskName} (${type})...`, 'system');
     try {
-      const res = await fetch('/api/upload-task', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskName, type, content }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || `Save failed with HTTP ${res.status}`);
+      const res = await apiClient.post('/api/upload-task', { taskName, type, content });
+      if (res.data.error) {
+        throw new Error(res.data.error);
       }
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      addLog(data.message || `Task ${taskName} saved successfully.`, 'system');
+      addLog(res.data.message || `Task ${taskName} saved successfully.`, 'system');
       await fetchTasks();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error saving task script: ${message}`, 'error');
-      throw error instanceof Error ? error : new Error(message);
+      throw error;
     }
   }, [addLog, fetchTasks]);
 

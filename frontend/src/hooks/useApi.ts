@@ -1,13 +1,10 @@
 /**
- * Generic API Hook for Ghost Runner Frontend
- *
- * This hook provides a generic API client with loading, error, and data states.
- * Extracted from App.tsx for reusability across components.
- *
- * Related: Development Execution Plan Task 1.3.1
+ * Generic API Hook for Ghost Runner Frontend using Axios under the hood
  */
 
 import { useState, useCallback, useRef } from 'react';
+import axios from 'axios';
+import { apiClient } from '@/lib/apiClient';
 
 /**
  * Return type for the useApi hook.
@@ -49,16 +46,6 @@ const DEFAULT_TIMEOUT = 30000;
 
 /**
  * Generic API hook with loading, error, and data states.
- *
- * @param options - Optional configuration for the hook
- * @returns API client object with state and fetch function
- *
- * @example
- * const { fetch, data, loading, error } = useApi<Task[]>({ timeout: 5000 });
- *
- * useEffect(() => {
- *   fetch('/api/tasks').then(setTasks);
- * }, []);
  */
 export function useApi<TData = unknown>(options: UseApiOptions<TData> = {}): UseApiResult<TData> {
   const { timeout = DEFAULT_TIMEOUT, headers = {}, onSuccess, onError } = options;
@@ -67,7 +54,6 @@ export function useApi<TData = unknown>(options: UseApiOptions<TData> = {}): Use
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Reset all state to initial values.
@@ -80,28 +66,16 @@ export function useApi<TData = unknown>(options: UseApiOptions<TData> = {}): Use
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
   }, []);
 
   /**
    * Fetch data from an API endpoint with automatic timeout and abort support.
-   *
-   * @param url - The URL to fetch from
-   * @param init - Optional fetch init options
-   * @returns Promise resolving to the fetched data
-   * @throws Error if the request fails or times out
    */
   const fetch = useCallback(
     async (url: string, init: RequestInit = {}): Promise<TData> => {
       // Abort any existing request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
-      }
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
       }
 
       // Create new abort controller for this request
@@ -111,51 +85,20 @@ export function useApi<TData = unknown>(options: UseApiOptions<TData> = {}): Use
       setLoading(true);
       setError(null);
 
-      // Set up timeout
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutRef.current = setTimeout(() => {
-          abortController.abort();
-          reject(new Error(`Request timeout after ${timeout}ms`));
-        }, timeout);
-      });
-
       try {
-        // Make the fetch request with timeout using global fetch to avoid shadowing
-        const response = (await Promise.race([
-          globalThis.fetch(url, {
-            ...init,
-            headers: {
-              'Content-Type': 'application/json',
-              ...headers,
-              ...init.headers,
-            },
-            signal: abortController.signal,
-          }),
-          timeoutPromise,
-        ])) as Response;
+        const response = await apiClient({
+          url,
+          method: init.method || 'GET',
+          headers: {
+            ...headers,
+            ...init.headers,
+          } as Record<string, string>,
+          data: init.body,
+          timeout,
+          signal: abortController.signal,
+        });
 
-        // Clear timeout
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = null;
-        }
-
-        // Check for HTTP errors
-        if (!response.ok) {
-          const errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-          const error = new Error(errorMessage);
-          throw error;
-        }
-
-        // Parse response
-        const contentType = response.headers.get('content-type');
-        let responseData: unknown;
-
-        if (contentType?.includes('application/json')) {
-          responseData = await response.json();
-        } else {
-          responseData = await response.text();
-        }
+        const responseData = response.data;
 
         // Handle API error responses
         if (
@@ -167,22 +110,22 @@ export function useApi<TData = unknown>(options: UseApiOptions<TData> = {}): Use
         }
 
         // Extract data if wrapped in response object
-        const data =
+        const extractedData =
           typeof responseData === 'object' &&
           responseData !== null &&
           'data' in responseData
             ? (responseData as { data: TData }).data
             : (responseData as TData);
 
-        setData(data);
+        setData(extractedData);
         setLoading(false);
-        onSuccess?.(data);
-        return data;
+        onSuccess?.(extractedData);
+        return extractedData;
       } catch (err) {
         setLoading(false);
 
-        // Handle abort errors (user cancelled or timeout)
-        if (err instanceof Error && err.name === 'AbortError') {
+        // Handle abort/cancel errors
+        if (axios.isCancel(err)) {
           const error = new Error('Request cancelled');
           setError(error);
           onError?.(error);
@@ -210,10 +153,6 @@ export function useApi<TData = unknown>(options: UseApiOptions<TData> = {}): Use
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
     setLoading(false);
   }, []);
 
@@ -223,13 +162,6 @@ export function useApi<TData = unknown>(options: UseApiOptions<TData> = {}): Use
 /**
  * Hook for making GET requests.
  * Convenience wrapper around useApi.
- *
- * @param url - The URL to fetch from
- * @param options - Optional configuration
- * @returns Object with fetch function and state
- *
- * @example
- * const { data, loading, error, refetch } = useGet<Task[]>('/api/tasks');
  */
 export function useGet<TData = unknown>(
   url: string,
@@ -247,14 +179,6 @@ export function useGet<TData = unknown>(
 /**
  * Hook for making POST requests.
  * Convenience wrapper around useApi.
- *
- * @param url - The URL to post to
- * @param options - Optional configuration
- * @returns Object with post function and state
- *
- * @example
- * const { post, loading, error } = usePost('/api/tasks');
- * await post({ task: 'my_task' });
  */
 export function usePost<TData = unknown, TBody = unknown>(
   url: string,
@@ -268,6 +192,7 @@ export function usePost<TData = unknown, TBody = unknown>(
     async (body: TBody): Promise<TData> => {
       return api.fetch(url, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
     },

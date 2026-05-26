@@ -10,6 +10,7 @@
 import { useState, useCallback } from 'react';
 import type { GeolocationSettings, Settings } from '@/types';
 import { DEFAULT_LOCATION } from '@/types';
+import axios from 'axios';
 
 export interface UseGeolocationResult {
   /** Current geolocation settings */
@@ -88,12 +89,8 @@ export function useGeolocation(options: UseGeolocationOptions = {}): UseGeolocat
 
   const detectApproximateLocation = async (): Promise<GeolocationSettings | null> => {
     try {
-      const response = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = (await response.json()) as { latitude?: unknown; longitude?: unknown };
+      const response = await axios.get('https://ipapi.co/json/');
+      const data = response.data as { latitude?: unknown; longitude?: unknown };
       if (typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
         return null;
       }

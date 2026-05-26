@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { InfoGatheringResult } from '@shared/types';
 import { getSocket } from './dashboardSocket';
 import type { LogType } from './useDashboardLogs';
+import { apiClient } from '@/lib/apiClient';
 
 /**
  * Hook to manage background scraping/info gathering states, results, and operations.
@@ -12,27 +13,20 @@ export function useDashboardInfoGathering(addLog: (message: string, type?: LogTy
 
   const fetchInfoGathering = useCallback(async () => {
     try {
-      const res = await fetch('/api/info-gathering');
-      const data = await res.json();
-      setInfoGatheringResults(data.results || []);
+      const res = await apiClient.get('/api/info-gathering');
+      setInfoGatheringResults(res.data.results || []);
     } catch (error) {
-      addLog('Error fetching info-gathering data', 'error');
-      console.error('Error fetching info-gathering data:', error);
+      // apiClient response interceptor already handles UI and console logging
     }
-  }, [addLog]);
+  }, []);
 
   const refreshInfoGatheringTask = useCallback(async (taskName: string) => {
     setRefreshingInfoGatheringTasks((prev) => [...prev, taskName]);
     addLog(`Refreshing information: ${taskName}...`, 'system');
     try {
-      await fetch('/api/run-task', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskName }),
-      });
+      await apiClient.post('/api/run-task', { taskName });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error refreshing task: ${message}`, 'error');
+      // apiClient response interceptor already handles UI and console logging
     } finally {
       setRefreshingInfoGatheringTasks((prev) => prev.filter((t) => t !== taskName));
     }
@@ -40,27 +34,23 @@ export function useDashboardInfoGathering(addLog: (message: string, type?: LogTy
 
   const clearInfoGatheringResult = useCallback(async (taskName: string) => {
     try {
-      const res = await fetch(`/api/info-gathering/${taskName}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const res = await apiClient.delete(`/api/info-gathering/${taskName}`);
+      if (res.data.error) throw new Error(res.data.error);
       setInfoGatheringResults((prev) => prev.filter((r) => r.taskName !== taskName));
       addLog(`Information cleared: ${taskName}`, 'system');
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error clearing result: ${message}`, 'error');
+      // apiClient response interceptor already handles UI and console logging
     }
   }, [addLog]);
 
   const clearAllInfoGatheringResults = useCallback(async () => {
     try {
-      const res = await fetch('/api/info-gathering', { method: 'DELETE' });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const res = await apiClient.delete('/api/info-gathering');
+      if (res.data.error) throw new Error(res.data.error);
       setInfoGatheringResults([]);
       addLog('All information cleared', 'system');
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error clearing results: ${message}`, 'error');
+      // apiClient response interceptor already handles UI and console logging
     }
   }, [addLog]);
 

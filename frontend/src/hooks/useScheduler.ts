@@ -10,6 +10,8 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSocket } from './useSocket';
+import { apiClient } from '@/lib/apiClient';
+import axios from 'axios';
 
 /**
  * Scheduler status states.
@@ -129,20 +131,16 @@ export function useScheduler(options: UseSchedulerOptions = {}): UseSchedulerRes
     abortControllerRef.current = new AbortController();
 
     try {
-      const response = await fetch('/api/scheduler/status', {
+      const response = await apiClient.get<SchedulerStatusResponse>('/api/scheduler/status', {
         signal: abortControllerRef.current.signal,
       });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      const data = (await response.json()) as SchedulerStatusResponse;
-      const newStatus = runningToStatus(data.running);
+      const newStatus = runningToStatus(response.data.running);
       setStatus(newStatus);
       onStatusChange?.(newStatus);
       setError(null);
     } catch (err) {
       // Ignore abort errors - they occur when component unmounts
-      if (err instanceof Error && err.name === 'AbortError') {
+      if (axios.isCancel(err)) {
         return;
       }
       const errorMessage =
@@ -177,18 +175,13 @@ export function useScheduler(options: UseSchedulerOptions = {}): UseSchedulerRes
     abortControllerRef.current = new AbortController();
 
     try {
-      const response = await fetch('/api/scheduler/start', {
-        method: 'POST',
+      const response = await apiClient.post<SchedulerActionResponse>('/api/scheduler/start', null, {
         signal: abortControllerRef.current.signal,
       });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      const data = (await response.json()) as SchedulerActionResponse;
 
       // Check for API error response
-      if (data.error) {
-        throw new Error(data.error);
+      if (response.data.error) {
+        throw new Error(response.data.error);
       }
 
       // Update status based on server response
@@ -198,7 +191,7 @@ export function useScheduler(options: UseSchedulerOptions = {}): UseSchedulerRes
       setError(null);
     } catch (err) {
       // Ignore abort errors - they occur when component unmounts
-      if (err instanceof Error && err.name === 'AbortError') {
+      if (axios.isCancel(err)) {
         return;
       }
       // Revert optimistic update on error
@@ -241,18 +234,13 @@ export function useScheduler(options: UseSchedulerOptions = {}): UseSchedulerRes
     abortControllerRef.current = new AbortController();
 
     try {
-      const response = await fetch('/api/scheduler/stop', {
-        method: 'POST',
+      const response = await apiClient.post<SchedulerActionResponse>('/api/scheduler/stop', null, {
         signal: abortControllerRef.current.signal,
       });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      const data = (await response.json()) as SchedulerActionResponse;
 
       // Check for API error response
-      if (data.error) {
-        throw new Error(data.error);
+      if (response.data.error) {
+        throw new Error(response.data.error);
       }
 
       // Update status based on server response
@@ -262,7 +250,7 @@ export function useScheduler(options: UseSchedulerOptions = {}): UseSchedulerRes
       setError(null);
     } catch (err) {
       // Ignore abort errors - they occur when component unmounts
-      if (err instanceof Error && err.name === 'AbortError') {
+      if (axios.isCancel(err)) {
         return;
       }
       // Revert optimistic update on error

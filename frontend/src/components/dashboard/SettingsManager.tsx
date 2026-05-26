@@ -22,6 +22,7 @@ import { GeolocationSection } from './settings/sections/GeolocationSection';
 import { BrowserModeSection } from './settings/sections/BrowserModeSection';
 import { BrowserConfigSection, type BrowserChannel } from './settings/sections/BrowserConfigSection';
 import { AuthenticationSection } from './settings/sections/AuthenticationSection';
+import { apiClient } from '@/lib/apiClient';
 
 export interface SettingsManagerProps {
   onSettingsSaved?: () => void;
@@ -49,21 +50,19 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/settings');
-      const data = await res.json();
-      if (data.settings) {
+      const res = await apiClient.get('/api/settings');
+      if (res.data.settings) {
         // Merge with defaults to ensure all fields are present
         setSettings({
-          geolocation: data.settings.geolocation || { ...DEFAULT_LOCATION },
-          headless: data.settings.headless ?? false,
-          browserChannel: data.settings.browserChannel || 'chrome',
-          executablePath: data.settings.executablePath,
-          profileDir: data.settings.profileDir
+          geolocation: res.data.settings.geolocation || { ...DEFAULT_LOCATION },
+          headless: res.data.settings.headless ?? false,
+          browserChannel: res.data.settings.browserChannel || 'chrome',
+          executablePath: res.data.settings.executablePath,
+          profileDir: res.data.settings.profileDir
         });
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
-      onLog?.('Error fetching settings', 'error');
     } finally {
       setLoading(false);
     }
@@ -71,17 +70,11 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
 
   const saveSettings = async (settingsToSave: Settings): Promise<boolean> => {
     try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: settingsToSave })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const res = await apiClient.post('/api/settings', { settings: settingsToSave });
+      if (res.data.error) throw new Error(res.data.error);
       return true;
     } catch (error) {
       console.error('Error saving settings:', error);
-      onLog?.('Failed to save settings', 'error');
       return false;
     }
   };
@@ -98,14 +91,11 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
   const handleSetupLogin = async () => {
     setSettingUpLogin(true);
     try {
-      const res = await fetch('/api/setup-login', { method: 'POST' });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      onLog?.(data.message, 'system');
+      const res = await apiClient.post('/api/setup-login');
+      if (res.data.error) throw new Error(res.data.error);
+      onLog?.(res.data.message, 'system');
     } catch (error) {
       console.error('Error starting setup login:', error);
-      const message = error instanceof Error ? error.message : String(error);
-      onLog?.(`Failed to start setup login: ${message}`, 'error');
     } finally {
       setSettingUpLogin(false);
     }

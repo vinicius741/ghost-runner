@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from "framer-motion";
 import { Timer, AlertCircle, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { apiClient } from '@/lib/apiClient';
 
 interface NextTask {
     task: string;
@@ -20,9 +21,8 @@ export function NextTaskTimer({ schedulerRunning, onHeaderDoubleClick }: NextTas
 
     const fetchNextTask = async () => {
         try {
-            const res = await fetch('/api/scheduler/next-task');
-            const data = await res.json();
-            setNextTask(data.nextTask);
+            const res = await apiClient.get('/api/scheduler/next-task');
+            setNextTask(res.data.nextTask);
         } catch {
             console.error('Error fetching next task');
         }

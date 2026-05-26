@@ -11,6 +11,7 @@ import type {
 } from '@/types';
 import { getStoredLayout, saveLayout, getSidebarState, saveSidebarState, type StoredLayoutResult } from '@/lib/dashboardLayout';
 import type { LogType } from './useDashboardLogs';
+import { apiClient } from '@/lib/apiClient';
 
 /**
  * Hook to manage dashboard layout panels (left/right reordering, minimization),
@@ -30,16 +31,14 @@ export function useDashboardLayout(addLog: (message: string, type?: LogType) => 
 
   const fetchSettings = useCallback(async () => {
     try {
-      const res = await fetch('/api/settings');
-      const data = await res.json();
-      if (data.settings && data.settings.geolocation) {
-        setSettings(data.settings);
+      const res = await apiClient.get('/api/settings');
+      if (res.data.settings && res.data.settings.geolocation) {
+        setSettings(res.data.settings);
       }
     } catch (error) {
-      addLog('Error fetching settings', 'error');
-      console.error('Error fetching settings:', error);
+      // apiClient response interceptor already handles UI and console logging
     }
-  }, [addLog]);
+  }, []);
 
   const handleCardReorder = useCallback((event: DragEndEvent) => {
     const { active, over } = event;

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { FailureRecord } from '@shared/types';
 import { getSocket } from './dashboardSocket';
 import type { LogType } from './useDashboardLogs';
+import { apiClient } from '@/lib/apiClient';
 
 /**
  * Hook to manage task failure records state and actions.
@@ -11,39 +12,33 @@ export function useDashboardFailures(addLog: (message: string, type?: LogType) =
 
   const fetchFailures = useCallback(async () => {
     try {
-      const res = await fetch('/api/failures');
-      const data = await res.json();
-      setFailures(data.failures || []);
+      const res = await apiClient.get('/api/failures');
+      setFailures(res.data.failures || []);
     } catch (error) {
-      addLog('Error fetching failures', 'error');
-      console.error('Error fetching failures:', error);
+      // apiClient response interceptor already handles UI and console logging
     }
-  }, [addLog]);
+  }, []);
 
   const clearFailures = useCallback(async () => {
     try {
-      const res = await fetch('/api/failures', { method: 'DELETE' });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const res = await apiClient.delete('/api/failures');
+      if (res.data.error) throw new Error(res.data.error);
       setFailures([]);
       addLog('All failures cleared', 'system');
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error clearing failures: ${message}`, 'error');
+      // apiClient response interceptor already handles UI and console logging
     }
   }, [addLog]);
 
   const dismissFailure = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`/api/failures/${id}/dismiss`, { method: 'POST' });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const res = await apiClient.post(`/api/failures/${id}/dismiss`);
+      if (res.data.error) throw new Error(res.data.error);
       setFailures((prev) => prev.filter((f) => f.id !== id));
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`Error dismissing failure: ${message}`, 'error');
+      // apiClient response interceptor already handles UI and console logging
     }
-  }, [addLog]);
+  }, []);
 
   // Set up socket event listeners and initial fetch
   useEffect(() => {

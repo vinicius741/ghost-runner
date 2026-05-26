@@ -8,7 +8,7 @@
  * @module contexts/DashboardContext
  */
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useEffect } from 'react';
 import type { DragEndEvent } from '@dnd-kit/core';
 import type {
   Task,
@@ -30,6 +30,7 @@ import { useDashboardTasks } from './useDashboardTasks';
 import { useDashboardScheduler } from './useDashboardScheduler';
 import { useDashboardFailures } from './useDashboardFailures';
 import { useDashboardInfoGathering } from './useDashboardInfoGathering';
+import { setApiLogCallback } from '@/lib/apiClient';
 
 /**
  * Context value interface.
@@ -119,6 +120,14 @@ interface DashboardProviderProps {
 export function DashboardProvider({ children }: DashboardProviderProps) {
   // 1. Logs state and functions (independent)
   const { logs, addLog, clearLogs } = useDashboardLogs();
+
+  // Register API client logging callback
+  useEffect(() => {
+    setApiLogCallback(addLog);
+    return () => {
+      setApiLogCallback(null);
+    };
+  }, [addLog]);
 
   // 2. Specialized sub-hooks that consume the log function
   const {
