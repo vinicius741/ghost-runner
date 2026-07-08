@@ -10,14 +10,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "ignoreDeprecations": "6.0",
     "moduleResolution": "nodenext",
     "allowSyntheticDefaultImports": true,
-    "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "@shared/types": ["shared/types"]
-    }
+    "types": ["node"]
   },
   "include": ["src/**/*", "shared/**/*", "*.ts"],
   "exclude": ["node_modules", "frontend", "dist", "tasks"]
