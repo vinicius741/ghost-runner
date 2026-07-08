@@ -49,21 +49,6 @@ export function Header() {
         className="flex items-center gap-4 relative z-10"
       >
         <ThemeSwitcher />
-        
-        <div className="w-px h-6 bg-border/60" />
-        
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_15px_-3px_rgba(16,185,129,0.15)] bg-clip-padding backdrop-filter backdrop-blur-sm"
-        >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_0_rgba(16,185,129,0.8)]"></span>
-          </span>
-          <span className="text-[11px] uppercase tracking-widest text-emerald-500 font-bold drop-shadow-sm">System Online</span>
-        </motion.div>
       </motion.div>
     </header>
   );
