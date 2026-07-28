@@ -130,9 +130,9 @@ export function FailureCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -10 }}
+      initial={{ opacity: 0, x: -4 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 10 }}
+      exit={{ opacity: 0, x: 4 }}
       className="group min-w-0"
     >
       {/* Task header - clickable to expand */}
@@ -152,7 +152,7 @@ export function FailureCard({
               <h3 className="text-slate-200 font-semibold text-sm truncate">
                 {taskName}
               </h3>
-              <span className={`px-1.5 py-0.5 rounded ${failureStyles.badgeBgClass} ${failureStyles.badgeTextClass} text-[10px] font-medium border ${failureStyles.borderClass.replace('/30', '/20')} animate-pulse`}>
+              <span className={`px-1.5 py-0.5 rounded ${failureStyles.badgeBgClass} ${failureStyles.badgeTextClass} text-[10px] font-medium border ${failureStyles.borderClass.replace('/30', '/20')}`}>
                 {totalCount} failing
               </span>
             </div>

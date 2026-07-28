@@ -18,9 +18,9 @@ export function ControlPanel({ onStartScheduler, onStopScheduler, onRecordTask, 
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, x: -6 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
+      transition={{ duration: 0.22, delay: 0.04 }}
     >
       <Card className="card-premium">
         <CardHeader className="pb-4" onDoubleClick={onHeaderDoubleClick}>
@@ -31,7 +31,7 @@ export function ControlPanel({ onStartScheduler, onStopScheduler, onRecordTask, 
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200" />
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-30 group-hover:opacity-60 transition duration-300" />
             <Button
               onClick={() => setIsModalOpen(true)}
               className="relative w-full bg-card border border-border hover:bg-muted text-foreground"

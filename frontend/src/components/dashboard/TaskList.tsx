@@ -111,9 +111,9 @@ export function TaskList({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.4 }}
+      transition={{ duration: 0.22, delay: 0.04 }}
     >
       <Card className="card-premium h-full overflow-hidden">
         <CardHeader className="flex flex-col gap-6 pb-6 border-b border-border/50" onDoubleClick={onHeaderDoubleClick}>
@@ -210,7 +210,7 @@ export function TaskList({
                       layout
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      transition={{ duration: 0.2, delay: index * 0.03 }}
                       role="button"
                       tabIndex={isRunning ? -1 : 0}
                       aria-disabled={isRunning}

@@ -50,9 +50,9 @@ interface ScheduleItemProps {
 function ScheduleItem({ item, onDelete }: ScheduleItemProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
+      exit={{ opacity: 0, scale: 0.98 }}
       className="group flex items-center justify-between p-4 bg-card/50 border border-border/50 rounded-2xl hover:border-primary/30 transition-all duration-300"
     >
       <div className="flex flex-col gap-1">

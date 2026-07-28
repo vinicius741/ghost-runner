@@ -350,9 +350,9 @@ export function InfoGathering({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.4 }}
+      transition={{ duration: 0.22, delay: 0.04 }}
     >
       <Card className="card-premium flex flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border/50 bg-muted/20" onDoubleClick={onHeaderDoubleClick}>
@@ -424,9 +424,9 @@ export function InfoGathering({
                     return (
                       <motion.div
                         key={category}
-                        initial={{ opacity: 0, x: -10 }}
+                        initial={{ opacity: 0, x: -4 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 10 }}
+                        exit={{ opacity: 0, x: 4 }}
                         className="group"
                       >
                         {/* Category header */}

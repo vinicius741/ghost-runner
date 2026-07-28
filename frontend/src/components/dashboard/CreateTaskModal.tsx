@@ -81,7 +81,7 @@ export function CreateTaskModal({ isOpen, onClose, onRecord }: CreateTaskModalPr
 
         <DialogFooter className="pt-2">
           <div className="relative w-full group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-sky-400 rounded-xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200" />
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-sky-400 rounded-xl blur opacity-30 group-hover:opacity-60 transition duration-300" />
             <Button
               onClick={handleRecord}
               className="relative w-full h-12 bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-100 font-bold uppercase tracking-widest transition-all duration-300"

@@ -134,13 +134,15 @@ export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDet
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.15 }}
         className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:static print:block print:p-0 print:bg-white print:backdrop-blur-none"
         onClick={onClose}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 12 }}
+          initial={{ opacity: 0, scale: 0.98, y: 4 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 12 }}
+          exit={{ opacity: 0, scale: 0.98, y: 4 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           onClick={(e) => e.stopPropagation()}
           className="relative max-w-4xl w-full bg-slate-950 border border-red-900/40 rounded-2xl shadow-2xl overflow-hidden print:max-w-none print:rounded-none print:border print:border-gray-300 print:shadow-none print:bg-white print:overflow-visible"
         >

@@ -52,7 +52,7 @@ export function ThemeSwitcher() {
         aria-haspopup="listbox"
       >
         <CurrentIcon
-          className="w-3.5 h-3.5 text-primary transition-transform group-hover:scale-110"
+          className="w-3.5 h-3.5 text-primary transition-transform group-hover:scale-105"
         />
         <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground group-hover:text-foreground transition-colors">
           {themeConfig.name}
@@ -103,7 +103,7 @@ export function ThemeSwitcher() {
                   >
                     {/* Color preview */}
                     <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-[1.02]"
                       style={{
                         background: `linear-gradient(135deg, ${config.colors.primary}40, ${config.colors.background})`,
                         border: `1px solid ${config.colors.primary}60`,

@@ -174,7 +174,7 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
           {/* Save button */}
           <div className="space-y-4">
             <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-300" />
               <Button
                 onClick={handleSave}
                 disabled={saving || loading}

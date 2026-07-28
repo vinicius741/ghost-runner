@@ -87,19 +87,19 @@ export function WarningsPanel({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 }}
+      transition={{ duration: 0.22, delay: 0.04 }}
       className="min-w-0 max-w-full"
     >
       <Card className={`card-premium flex flex-col overflow-hidden ${filteredCount > 0 ? 'border-red-500/40 shadow-red-950/30' : ''}`}>
         {/* Header */}
         <CardHeader className={`flex flex-col gap-3 border-b border-border/50 pb-3 sm:flex-row sm:items-center sm:justify-between ${filteredCount > 0 ? 'bg-red-950/25' : 'bg-muted/20'}`} onDoubleClick={onHeaderDoubleClick}>
           <CardTitle className="text-foreground flex min-w-0 flex-wrap items-center gap-2 font-medium tracking-tight">
-            <AlertTriangle className={`w-4 h-4 ${filteredCount > 0 ? 'text-red-400 animate-pulse' : 'text-amber-500'}`} />
+            <AlertTriangle className={`w-4 h-4 ${filteredCount > 0 ? 'text-red-400' : 'text-amber-500'}`} />
             Task Failures
             {filteredCount > 0 && (
-              <span className="ml-2 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold border border-red-500/30 animate-pulse">
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold border border-red-500/30">
                 {filteredCount} active
               </span>
             )}

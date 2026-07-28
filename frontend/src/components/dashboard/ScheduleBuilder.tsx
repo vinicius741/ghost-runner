@@ -154,7 +154,7 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
             </ScheduleConfigPanel>
 
             <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000" />
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-300" />
               <Button
                 onClick={handleAdd}
                 className="relative w-full h-11 bg-primary-foreground text-primary hover:bg-white transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)] disabled:opacity-50 disabled:grayscale disabled:shadow-none"

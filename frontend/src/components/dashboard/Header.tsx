@@ -9,16 +9,16 @@ export function Header() {
 
       {/* Left section: Identity */}
       <motion.div
-        initial={{ opacity: 0, x: -20 }}
+        initial={{ opacity: 0, x: -6 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
         className="flex items-center gap-4 relative z-10"
       >
         <motion.div
           className="relative"
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.22, delay: 0.04 }}
         >
           <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
           <img
@@ -42,10 +42,10 @@ export function Header() {
       </motion.div>
 
       {/* Right section: Controls & Status */}
-      <motion.div 
-        initial={{ opacity: 0, x: 20 }}
+      <motion.div
+        initial={{ opacity: 0, x: 6 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
         className="flex items-center gap-4 relative z-10"
       >
         <ThemeSwitcher />

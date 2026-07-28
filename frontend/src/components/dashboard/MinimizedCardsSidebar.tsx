@@ -56,9 +56,9 @@ export function MinimizedCardsSidebar({ isOpen, minimizedCards, onRestoreCard, o
                     return (
                       <motion.button
                         key={card.id}
-                        initial={{ opacity: 0, x: 10 }}
+                        initial={{ opacity: 0, x: 4 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 10 }}
+                        exit={{ opacity: 0, x: 4 }}
                         transition={{ duration: 0.2 }}
                         onClick={() => onRestoreCard(card.id)}
                         className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 text-left transition-colors group"

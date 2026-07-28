@@ -47,7 +47,7 @@ export function AuthenticationSection({
       </p>
 
       <div className="relative group">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-yellow-400 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-yellow-400 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-300" />
         <Button
           onClick={onSetupLogin}
           disabled={isSettingUpLogin || isLoading}

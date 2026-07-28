@@ -34,9 +34,9 @@ export function LogsConsole({ logs, onClearLogs, onHeaderDoubleClick }: LogsCons
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.5 }}
+      transition={{ duration: 0.22, delay: 0.04 }}
     >
       <Card className="card-premium mt-6 flex flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border/50 bg-muted/20" onDoubleClick={onHeaderDoubleClick}>
