@@ -185,7 +185,7 @@ describe('TaskList', () => {
       });
 
       expect(props.onRunTask).not.toHaveBeenCalled();
-      expect(await screen.findByLabelText('Automation source editor')).toHaveValue(defaultTaskSource.content);
+      expect(await screen.findByLabelText(/script source/i)).toHaveValue(defaultTaskSource.content);
     });
 
     it('saves edited task source and keeps the dialog open after save', async () => {
@@ -193,7 +193,7 @@ describe('TaskList', () => {
       render(<TaskList {...props} />);
 
       fireEvent.click(screen.getByRole('button', { name: /edit test-task-1/i }));
-      const editor = await screen.findByLabelText('Automation source editor');
+      const editor = await screen.findByLabelText(/script source/i);
 
       fireEvent.change(editor, {
         target: { value: 'module.exports = { run: async () => { console.log("changed"); } };' },
@@ -227,7 +227,7 @@ describe('TaskList', () => {
       render(<TaskList {...props} />);
 
       fireEvent.click(screen.getByRole('button', { name: /edit test-task-3/i }));
-      const editor = await screen.findByLabelText('Automation source editor');
+      const editor = await screen.findByLabelText(/script source/i);
       fireEvent.change(editor, {
         target: { value: 'module.exports = { run: async () => { return "root"; } };' },
       });
@@ -262,14 +262,14 @@ describe('TaskList', () => {
       render(<TaskList {...props} />);
 
       fireEvent.click(screen.getByRole('button', { name: /edit test-task-1/i }));
-      const editor = await screen.findByLabelText('Automation source editor');
+      const editor = await screen.findByLabelText(/script source/i);
       fireEvent.change(editor, {
         target: { value: 'module.exports = { run: async () => { throw new Error("oops"); } };' },
       });
       fireEvent.click(screen.getByRole('button', { name: /save script/i }));
 
       expect(await screen.findByText(/save failed/i)).toBeInTheDocument();
-      expect(screen.getByLabelText('Automation source editor')).toBeInTheDocument();
+      expect(screen.getByLabelText(/script source/i)).toBeInTheDocument();
     });
   });
 });

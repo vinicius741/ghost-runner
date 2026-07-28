@@ -31,6 +31,22 @@ function formatSourceOrigin(sourceOrigin: TaskSource['sourceOrigin']): string {
   return sourceOrigin === 'writable' ? 'Writable file' : 'Bundled file';
 }
 
+// `react-simple-code-editor` ships a CommonJS build (`exports.default = Editor`).
+// Vite's dependency pre-bundling wraps it so a default ESM import resolves to
+// the CJS exports object (`{ default: Editor }`) instead of the component
+// itself. Normalize the shape by unwrapping nested `.default` properties so the
+// real component is used. Without this, React throws "Element type is invalid:
+// ... got: object" when the editor renders, which unmounts the dialog and
+// leaves only the dark overlay (the reported black screen).
+function resolveEditor<T>(source: unknown): T {
+  let current: unknown = source;
+  for (let depth = 0; depth < 2 && current && typeof current === 'object' && 'default' in current; depth += 1) {
+    current = (current as { default: unknown }).default;
+  }
+  return current as T;
+}
+const CodeEditor = resolveEditor<typeof Editor>(Editor);
+
 export function TaskEditorDialog({
   task,
   open,
@@ -193,7 +209,7 @@ export function TaskEditorDialog({
                 Script Source
               </label>
               <div className="relative h-[420px] w-full overflow-hidden rounded-2xl border border-border/60 shadow-inner transition focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 bg-slate-950">
-                <Editor
+                <CodeEditor
                   value={content}
                   onValueChange={code => {
                       setContent(code);
@@ -206,6 +222,7 @@ export function TaskEditorDialog({
                     fontSize: 14,
                     minHeight: "100%",
                   }}
+                  textareaId="task-source-editor"
                   textareaClassName="focus:outline-none"
                   className="h-full w-full overflow-auto font-mono text-sm leading-6 text-slate-100"
                 />
