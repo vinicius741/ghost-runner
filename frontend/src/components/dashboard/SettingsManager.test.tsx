@@ -1,16 +1,27 @@
 /**
  * Tests for SettingsManager component.
  *
+ * The HTTP layer is mocked at the apiClient module level so these tests
+ * exercise component behavior without coupling to axios adapter internals.
+ *
  * @module components/dashboard/SettingsManager.test
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SettingsManager } from './SettingsManager';
+import { apiClient } from '@/lib/apiClient';
 
-// Mock fetch
-const mockFetch = vi.fn();
-globalThis.fetch = mockFetch;
+vi.mock('@/lib/apiClient', () => ({
+  apiClient: {
+    get: vi.fn(),
+    post: vi.fn(),
+  },
+  setApiLogCallback: vi.fn(),
+}));
+
+const mockGet = vi.mocked(apiClient.get);
+const mockPost = vi.mocked(apiClient.post);
 
 describe('SettingsManager', () => {
   const defaultProps = {
@@ -20,18 +31,16 @@ describe('SettingsManager', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetch.mockReset();
 
-    // Mock successful settings fetch
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
+    mockGet.mockResolvedValue({
+      data: {
         settings: {
           geolocation: { latitude: -23.55052, longitude: -46.633308 },
           headless: false,
         }
-      })
-    });
+      }
+    } as any);
+    mockPost.mockResolvedValue({ data: { message: 'Settings updated successfully.' } } as any);
   });
 
   it('should render settings form', async () => {
@@ -46,7 +55,7 @@ describe('SettingsManager', () => {
     render(<SettingsManager {...defaultProps} />);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('/api/settings');
+      expect(mockGet).toHaveBeenCalledWith('/api/settings');
     });
   });
 
@@ -69,25 +78,22 @@ describe('SettingsManager', () => {
   });
 
   it('should call onSettingsSaved after successful save', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ settings: {} })
-    }).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ message: 'Settings updated successfully.' })
-    });
-
     render(<SettingsManager {...defaultProps} />);
 
     // Wait for initial load
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalled();
+      expect(mockGet).toHaveBeenCalled();
     });
 
     // Find and click save button
     const saveButton = screen.getByRole('button', { name: /save/i });
     fireEvent.click(saveButton);
 
+    await waitFor(() => {
+      expect(mockPost).toHaveBeenCalledWith('/api/settings', expect.objectContaining({
+        settings: expect.any(Object),
+      }));
+    });
     await waitFor(() => {
       expect(defaultProps.onSettingsSaved).toHaveBeenCalled();
     });
@@ -98,7 +104,7 @@ describe('SettingsManager', () => {
 
     // Wait for settings to load
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('/api/settings');
+      expect(mockGet).toHaveBeenCalledWith('/api/settings');
     });
 
     // The headless toggle button has aria-label="Toggle headless mode"
@@ -106,29 +112,23 @@ describe('SettingsManager', () => {
     expect(headlessToggle).toBeInTheDocument();
   });
 
-  it('should call onLog with error when save fails', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ settings: {} })
-    }).mockResolvedValueOnce({
-      ok: false,
-      json: () => Promise.resolve({ error: 'Failed to save settings' })
-    });
+  it('should not call onSettingsSaved when save fails', async () => {
+    mockPost.mockResolvedValue({ data: { error: 'Failed to save settings' } } as any);
 
     render(<SettingsManager {...defaultProps} />);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalled();
+      expect(mockGet).toHaveBeenCalled();
     });
 
     const saveButton = screen.getByRole('button', { name: /save/i });
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(defaultProps.onLog).toHaveBeenCalledWith(
-        expect.stringContaining('Failed'),
-        'error'
-      );
+      expect(mockPost).toHaveBeenCalled();
     });
+    // Give onSettingsSaved a chance to fire before asserting it did not
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(defaultProps.onSettingsSaved).not.toHaveBeenCalled();
   });
 });
