@@ -38,11 +38,11 @@
   },
   "homepage": "https://github.com/vinicius741/ghost-runner#readme",
   "dependencies": {
-    "cron-parser": "^5.6.1",
+    "cron-parser": "^5.10.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "node-cron": "^4.6.0",
-    "playwright": "^1.61.1",
+    "playwright": "^1.62.1",
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "socket.io": "^4.8.3",
@@ -50,13 +50,13 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@types/node": "^26.1.1",
-    "@types/supertest": "^7.2.0",
-    "c8": "^11.0.0",
-    "electron": "^43.1.0",
+    "@types/node": "^26.2.0",
+    "@types/supertest": "^7.2.1",
+    "c8": "^12.0.0",
+    "electron": "^43.4.1",
     "electron-builder": "^26.15.3",
     "supertest": "^7.2.2",
-    "tsx": "^4.23.0",
+    "tsx": "^4.23.12",
     "typescript": "^7.0.2"
   },
   "build": {
