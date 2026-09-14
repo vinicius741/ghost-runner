@@ -487,3 +487,11 @@
 .dark-calendar .rbc-today {
   background-color: hsl(var(--primary) / 0.08);
 }
+
+/* Radix ScrollArea wraps viewport content in a display:table element, which
+   grows to the widest nowrap line and breaks truncate/min-w-0 layouts (e.g.
+   the WarningsPanel error lines pushing the details button out of view).
+   Force block layout so children size to the viewport width instead. */
+[data-radix-scroll-area-viewport] > div {
+  display: block !important;
+}
