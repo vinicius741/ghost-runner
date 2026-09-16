@@ -1,6 +1,7 @@
 import { chromium as chromiumExtra } from 'playwright-extra';
 import stealth from 'puppeteer-extra-plugin-stealth';
 import { chromium as chromiumStandard } from 'playwright';
+import { execFile } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import type { BrowserContext } from 'playwright';
@@ -8,6 +9,136 @@ import { SETTINGS_FILE, USER_DATA_DIR, initializeRuntimeStorage } from './runtim
 
 // Apply the stealth plugin (only used for headless mode)
 chromiumExtra.use(stealth());
+
+/**
+ * Matches the errors Chromium emits when the persistent profile's singleton is
+ * still held by a live browser process (e.g. "Opening in existing browser session"
+ * on macOS or "user data directory is already in use" on Linux).
+ */
+const PROFILE_IN_USE_PATTERN =
+  /opening in existing browser session|already in use|profile appears to be in use|ProcessSingleton/i;
+
+/**
+ * Detects launch errors caused by another Chromium instance holding the profile.
+ * Exported for reuse and unit testing.
+ */
+export function isProfileInUseError(error: Error): boolean {
+  return PROFILE_IN_USE_PATTERN.test(error.message);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function execFileAsync(command: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    execFile(command, args, { timeout: 5000 }, (error, stdout, stderr) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve({ stdout: String(stdout), stderr: String(stderr) });
+      }
+    });
+  });
+}
+
+function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Removes Chromium profile lock files left behind by an unclean shutdown.
+ * Uses lstat so broken symlinks (the usual state of a stale SingletonLock) are
+ * detected — existsSync follows symlinks and misses them.
+ */
+export function removeStaleLockFiles(profileDir: string, baseUserDataDir: string): void {
+  const lockFiles = [
+    path.join(profileDir, 'SingletonLock'),
+    path.join(profileDir, 'SingletonSocket'),
+    path.join(profileDir, 'SingletonCookie'),
+    path.join(profileDir, 'lockfile'),
+    path.join(baseUserDataDir, 'SingletonLock'),
+    path.join(baseUserDataDir, 'lockfile'),
+  ];
+
+  for (const lockFile of lockFiles) {
+    try {
+      fs.lstatSync(lockFile);
+      console.log(`Removing stale lock file: ${lockFile}`);
+      fs.unlinkSync(lockFile);
+    } catch (err) {
+      const error = err as NodeJS.ErrnoException;
+      if (error.code !== 'ENOENT') {
+        console.warn(`Could not remove lock file ${lockFile}: ${error.message}`);
+      }
+    }
+  }
+}
+
+/**
+ * Terminates leftover browser processes still bound to the given profile directory.
+ * Only processes launched with this app's exact `--user-data-dir` are matched, so
+ * the user's personal Chrome instance is never affected. SIGTERM is tried first,
+ * escalating to SIGKILL after a grace period. Returns how many processes were
+ * targeted; unkillable processes are logged and skipped (best effort).
+ */
+export async function terminateStaleBrowserProcesses(profileDir: string): Promise<number> {
+  if (process.platform === 'win32') {
+    // pgrep is unavailable; Windows users must end stale Chrome processes manually.
+    console.warn('Cannot reclaim profile on Windows automatically; close any Chrome window using this profile.');
+    return 0;
+  }
+
+  let pids: number[] = [];
+  try {
+    const { stdout } = await execFileAsync('pgrep', ['-f', '--', `--user-data-dir=${escapeRegExp(profileDir)}`]);
+    pids = stdout
+      .split('\n')
+      .map((line) => Number.parseInt(line.trim(), 10))
+      .filter((pid) => Number.isInteger(pid) && pid > 0 && pid !== process.pid);
+  } catch {
+    return 0; // pgrep exits non-zero when nothing matches — the common, healthy case
+  }
+
+  if (pids.length === 0) {
+    return 0;
+  }
+
+  console.log(`Terminating ${pids.length} stale browser process(es) still holding the profile...`);
+  for (const pid of pids) {
+    try {
+      process.kill(pid, 'SIGTERM');
+    } catch (err) {
+      console.warn(`Could not terminate stale browser process ${pid}: ${(err as Error).message}`);
+    }
+  }
+
+  // Give Chrome a moment to flush the profile before escalating.
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline && pids.some((pid) => isProcessAlive(pid))) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  const survivors = pids.filter((pid) => isProcessAlive(pid));
+  if (survivors.length > 0) {
+    console.log(`Force killing ${survivors.length} browser process(es) that ignored SIGTERM...`);
+    for (const pid of survivors) {
+      try {
+        process.kill(pid, 'SIGKILL');
+      } catch {
+        // Already gone — nothing to do
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  return pids.length;
+}
 
 interface Geolocation {
   latitude: number;
@@ -221,24 +352,8 @@ const launchBrowser = async (): Promise<BrowserContext> => {
   console.log(`Headless mode: ${settings.headless}`);
   console.log(`Browser mode: ${settings.headless ? 'Stealth (playwright-extra)' : 'Standard (debuggable)'}`);
 
-  // Check for profile lock files
-  const lockFiles = [
-    path.join(profileDir, 'SingletonLock'),
-    path.join(profileDir, 'lockfile'),
-    path.join(baseUserDataDir, 'SingletonLock'),
-    path.join(baseUserDataDir, 'lockfile'),
-  ];
-
-  for (const lockFile of lockFiles) {
-    try {
-      if (fs.existsSync(lockFile)) {
-        console.log(`Removing stale lock file: ${lockFile}`);
-        fs.unlinkSync(lockFile);
-      }
-    } catch (err) {
-      console.warn(`Could not remove lock file ${lockFile}:`, err);
-    }
-  }
+  // Clear stale profile locks from previous unclean shutdowns
+  removeStaleLockFiles(profileDir, baseUserDataDir);
 
   // Verify executable exists if explicitly provided
   if (executablePath && !fs.existsSync(executablePath)) {
@@ -291,6 +406,19 @@ const launchBrowser = async (): Promise<BrowserContext> => {
           console.error('  - Chrome is already running with this profile');
           console.error('  - Profile corruption (try creating a new profile)');
           console.error('  - Insufficient permissions');
+        }
+
+        // A leftover Chrome holding the profile singleton is the usual cause of
+        // "Opening in existing browser session" — reclaim the profile and retry
+        // instead of burning the remaining attempts on a doomed launch.
+        if (isProfileInUseError(err)) {
+          const terminated = await terminateStaleBrowserProcesses(profileDir);
+          removeStaleLockFiles(profileDir, baseUserDataDir);
+          if (terminated > 0) {
+            console.log(`Reclaimed profile from ${terminated} stale browser process(es).`);
+          } else {
+            console.warn('Profile reports as in use, but no stale browser process was found; cleared lock files.');
+          }
         }
       }
       // Small delay before retry
@@ -349,6 +477,20 @@ export function getProfileDir(): string {
 
   // Fallback: return base user_data directory
   return baseUserDataDir;
+}
+
+/**
+ * Ensures the persistent profile is free for the next task run: terminates any
+ * browser process still bound to it and clears leftover lock files. Call after
+ * closing a browser context so a Chrome child that outlived context.close()
+ * cannot hold the profile singleton and fail every later launch with
+ * "Opening in existing browser session".
+ */
+export async function releaseProfileLock(): Promise<void> {
+  initializeRuntimeStorage();
+  const profileDir = getProfileDir();
+  await terminateStaleBrowserProcesses(profileDir);
+  removeStaleLockFiles(profileDir, USER_DATA_DIR);
 }
 
 export { launchBrowser };

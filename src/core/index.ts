@@ -1,4 +1,4 @@
-import { launchBrowser } from '../config/browserConfig';
+import { launchBrowser, releaseProfileLock } from '../config/browserConfig';
 import { createMonitoredPage, MonitoredPage } from './pageWrapper';
 import { reportTaskResult, reportTaskStarted, getExitCode, reportTaskResultWithData } from './taskReporter';
 import fs from 'fs';
@@ -217,8 +217,17 @@ async function main(): Promise<void> {
 
     if (browserContext) {
       console.log('Closing browser...');
-      await browserContext.close();
+      try {
+        await browserContext.close();
+      } catch (closeError) {
+        console.warn('Browser close failed:', closeError instanceof Error ? closeError.message : closeError);
+      }
     }
+
+    // A Chrome child that outlived context.close() would keep the profile
+    // singleton locked and fail every subsequent launch with
+    // "Opening in existing browser session" — reclaim it before exiting.
+    await releaseProfileLock();
 
     // Exit with appropriate code (0 for success, 1 for failure)
     process.exit(getExitCode(result));
