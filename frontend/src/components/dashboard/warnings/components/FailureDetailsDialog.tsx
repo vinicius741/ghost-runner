@@ -6,6 +6,7 @@
  */
 
 import { useMemo, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { type LucideIcon, X, MapPin, AlertCircle, Timer, Bug, Copy, ExternalLink, Image, FileCode2, TerminalSquare, Sparkles, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { FailureRecord } from '@/types';
@@ -128,7 +129,7 @@ export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDet
     setTimeout(() => setCopied(false), 1800);
   };
 
-  return (
+  const dialog = (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
@@ -167,7 +168,7 @@ export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDet
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-0 max-h-[72vh] overflow-y-auto custom-scrollbar print:block print:max-h-none print:overflow-visible">
-              <div className="p-6 space-y-5 border-r border-slate-800/80 print:border-r-0">
+              <div className="min-w-0 p-6 space-y-5 border-r border-slate-800/80 print:border-r-0">
                 <Section icon={<AlertCircle className="w-4 h-4" />} title="What went wrong">
                   <ContextValue label="Error Message" value={context.errorMessage || 'Unknown error'} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -192,18 +193,18 @@ export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDet
                 )}
 
                 <Section icon={<TerminalSquare className="w-4 h-4" />} title="Recent logs">
-                  <pre className="p-3 bg-black/70 rounded-lg border border-slate-800 text-xs text-slate-300 whitespace-pre-wrap max-h-52 overflow-auto custom-scrollbar print:bg-transparent print:border-gray-300 print:text-black print:max-h-none print:overflow-visible">{recentLogs.length ? recentLogs.join('\n') : 'No recent task logs captured.'}</pre>
+                  <pre className="p-3 bg-black/70 rounded-lg border border-slate-800 text-xs text-slate-300 whitespace-pre-wrap break-words max-h-52 overflow-auto custom-scrollbar print:bg-transparent print:border-gray-300 print:text-black print:max-h-none print:overflow-visible">{recentLogs.length ? recentLogs.join('\n') : 'No recent task logs captured.'}</pre>
                 </Section>
               </div>
 
-              <div className="p-6 space-y-5 bg-slate-950/70 print:bg-transparent">
+              <div className="min-w-0 p-6 space-y-5 bg-slate-950/70 print:bg-transparent">
                 <Section icon={<Sparkles className="w-4 h-4 text-amber-300" />} title="Copy/paste agent prompt">
                   <p className="text-sm text-slate-400 print:text-gray-700">Send this to Claude Code or another coding agent. It includes the failure, artifacts, logs, and requested fix.</p>
                   <button onClick={copyPrompt} className="w-full px-4 py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm hover:bg-amber-400 transition-colors inline-flex items-center justify-center gap-2 print:hidden">
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? 'Copied prompt' : 'Copy repair prompt'}
                   </button>
-                  <pre className="p-3 bg-black/60 rounded-lg border border-slate-800 text-xs text-slate-300 whitespace-pre-wrap max-h-72 overflow-auto custom-scrollbar print:bg-transparent print:border-gray-300 print:text-black print:max-h-none print:overflow-visible">{agentPrompt}</pre>
+                  <pre className="p-3 bg-black/60 rounded-lg border border-slate-800 text-xs text-slate-300 whitespace-pre-wrap break-words max-h-72 overflow-auto custom-scrollbar print:bg-transparent print:border-gray-300 print:text-black print:max-h-none print:overflow-visible">{agentPrompt}</pre>
                 </Section>
 
                 <Section icon={<Bug className="w-4 h-4" />} title="Full structured context">
@@ -226,4 +227,8 @@ export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDet
       </motion.div>
     </AnimatePresence>
   );
+
+  // Portal to <body>: the dialog renders inside framer-motion drag cards whose
+  // transforms turn position:fixed into position:absolute, caging the overlay.
+  return createPortal(dialog, document.body);
 }
