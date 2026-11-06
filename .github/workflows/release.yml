@@ -3,12 +3,18 @@ name: Publish desktop release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing stable release tag to build and attach files to
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: desktop-release-${{ github.event.release.tag_name }}
+  group: desktop-release-${{ inputs.release_tag || github.event.release.tag_name }}
   cancel-in-progress: false
 
 jobs:
@@ -31,10 +37,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.release_tag || github.event.release.tag_name }}
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.5
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -46,7 +50,7 @@ jobs:
       - run: pnpm --dir frontend install --frozen-lockfile
       - name: Set installer version from release tag
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
         run: |
           node -e "const fs = require('fs'); const tag = process.env.RELEASE_TAG; const version = tag.replace(/^v/, ''); if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('Use a stable release tag such as v1.2.3'); const pkg = JSON.parse(fs.readFileSync('package.json')); pkg.version = version; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
       - run: pnpm run build:frontend:verified
@@ -107,5 +111,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
         run: gh release upload "$RELEASE_TAG" release/* --clobber

@@ -16,7 +16,18 @@ export function createUpdateController(
     state = { currentVersion, ...next };
     publish({ ...state });
   };
-  const fail = (error: Error) => update({ status: 'error', message: error.message });
+  const fail = (error: Error & { code?: string }) => {
+    // Keep HTTP headers, local paths and stack traces in desktop logs only.
+    console.error('[updater]', error);
+    const errorCode = [
+      'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND', 'ERR_UPDATER_LATEST_VERSION_NOT_FOUND',
+      'ERR_UPDATER_NO_PUBLISHED_VERSIONS',
+    ].includes(error.code ?? '') || /Cannot find latest[^\s]*\.yml/i.test(error.message)
+      ? 'release-unavailable'
+      : /ENOTFOUND|ECONN|ETIMEDOUT|ERR_(INTERNET_DISCONNECTED|NETWORK|CONNECTION|NAME_NOT_RESOLVED)|offline/i.test(`${error.code} ${error.message}`)
+        ? 'network' : 'unknown';
+    update({ status: 'error', errorCode });
+  };
 
   updater.autoDownload = true;
   updater.autoInstallOnAppQuit = true;

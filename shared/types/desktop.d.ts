@@ -4,6 +4,7 @@ export interface UpdateState {
   version?: string;
   percent?: number;
   message?: string;
+  errorCode?: 'release-unavailable' | 'network' | 'unknown';
 }
 
 export interface DesktopBridge {

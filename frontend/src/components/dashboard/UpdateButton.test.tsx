@@ -48,10 +48,13 @@ it('shows errors and lets users retry', async () => {
   render(<UpdateButton />);
   await waitFor(() => expect(screen.getByRole('button')).toBeEnabled());
   fireEvent.click(screen.getByRole('button'));
-  await screen.findByText('Could not update. Please try again.');
+  await screen.findByText('Updates unavailable');
+  fireEvent.click(screen.getByRole('button', { name: 'Update status details' }));
+  expect(await screen.findByRole('dialog')).toHaveTextContent('Could not update. Please try again.');
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
   emit({ status: 'error', currentVersion: '1.0.0', message: 'Download failed' });
-  expect(screen.getByRole('status')).toHaveTextContent('Download failed');
-  fireEvent.click(screen.getByRole('button'));
+  expect(screen.getByRole('status')).toHaveTextContent('Updates unavailable');
+  fireEvent.click(screen.getByRole('button', { name: 'Retry update check' }));
   await screen.findByText('You have the latest version.');
 });
 
@@ -59,4 +62,36 @@ it('disables unsupported desktop builds', async () => {
   bridge({ status: 'disabled', currentVersion: '1.0.0' });
   render(<UpdateButton />);
   expect(await screen.findByRole('button', { name: 'Updates unavailable' })).toBeDisabled();
+});
+
+it('keeps raw updater diagnostics out of the header and explains missing release files on demand', async () => {
+  const diagnostics = 'Cannot find latest-mac.yml: HttpError: 404 Headers: ' + 'private diagnostics '.repeat(1000);
+  const { emit } = bridge({ status: 'error', currentVersion: '1.0.0', errorCode: 'release-unavailable', message: diagnostics });
+  render(<UpdateButton />);
+  await screen.findByRole('button', { name: 'Retry update check' });
+  expect(screen.getByRole('status')).toHaveTextContent(/^Updates unavailable$/);
+  expect(document.body).not.toHaveTextContent('private diagnostics');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Update status details' }));
+  expect(await screen.findByRole('dialog')).toHaveTextContent('does not include update files for this platform');
+  expect(document.body).not.toHaveTextContent('HttpError');
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  emit({ status: 'idle', currentVersion: '1.0.0' });
+  expect(screen.queryByRole('button', { name: 'Update status details' })).not.toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('Version 1.0.0');
+});
+
+it('blocks repeated checks while the desktop request is pending', async () => {
+  const { desktop } = bridge({ status: 'idle', currentVersion: '1.0.0' });
+  let finish!: (state: UpdateState) => void;
+  vi.mocked(desktop.checkForUpdates).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+  render(<UpdateButton />);
+  const button = await screen.findByRole('button', { name: 'Check for updates' });
+  await waitFor(() => expect(button).toBeEnabled());
+  fireEvent.click(button);
+  fireEvent.click(button);
+  expect(button).toBeDisabled();
+  expect(desktop.checkForUpdates).toHaveBeenCalledOnce();
+  await act(async () => finish({ status: 'idle', currentVersion: '1.0.0' }));
+  expect(button).toBeEnabled();
 });

@@ -80,13 +80,13 @@ test('coalesces concurrent checks and reports no update', async () => {
 test('network and download errors reach the UI and allow retry', async () => {
   const { updater, controller } = setup();
   updater.checkForUpdates = async () => { throw new Error('Offline'); };
-  assert.equal((await controller.check()).message, 'Offline');
+  assert.equal((await controller.check()).errorCode, 'network');
   updater.checkForUpdates = async () => { updater.emit('update-not-available'); };
   assert.equal((await controller.check()).status, 'idle');
   updater.emit('update-available', { version: '1.1.0' });
   updater.emit('error', new Error('Download failed'));
   assert.equal(controller.getState().status, 'error');
-  assert.equal(controller.getState().message, 'Download failed');
+  assert.equal(controller.getState().errorCode, 'unknown');
   assert.equal((await controller.check()).status, 'idle');
 });
 
@@ -98,5 +98,21 @@ test('reports a failed shutdown without installing', async () => {
   });
   updater.emit('update-downloaded', { version: '1.1.0' });
   await controller.install();
-  assert.equal(controller.getState().message, 'Shutdown failed');
+  assert.equal(controller.getState().errorCode, 'unknown');
+});
+
+test('missing release metadata sends a safe error code without HTTP diagnostics', async () => {
+  const { updater, controller, published } = setup();
+  const error = Object.assign(new Error('Cannot find latest-mac.yml in the latest release artifacts: HttpError: 404\nHeaders: sensitive\n at /Applications/Ghost Runner.app'), {
+    code: 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND',
+  });
+  updater.checkForUpdates = async () => { throw error; };
+  assert.deepEqual(await controller.check(), {
+    currentVersion: '1.0.0', status: 'error', errorCode: 'release-unavailable',
+  });
+  assert.equal(JSON.stringify(published).includes('sensitive'), false);
+  updater.emit('error', new Error('Cannot find latest-linux.yml in the latest release artifacts'));
+  assert.equal(controller.getState().errorCode, 'release-unavailable');
+  updater.emit('error', Object.assign(new Error('net::ERR_NAME_NOT_RESOLVED'), { code: 'ENOTFOUND' }));
+  assert.equal(controller.getState().errorCode, 'network');
 });

@@ -26,6 +26,13 @@ prereleases. Keep the ZIP, blockmaps, and YAML files attached to the release,
 since the updater needs them. All enabled platform builds must succeed before the
 workflow attaches files. A failed run can be rerun for the same release.
 
+If a release already exists without files, run **Publish desktop release** from
+the Actions tab on the default branch and enter its tag in `release_tag`. This
+uses the current workflow to build the tagged source, so workflow fixes do not
+require moving an existing tag. Publish a new version to ship application fixes.
+The pnpm setup action reads the version from `package.json`; do not add a second
+version in the workflow.
+
 The update feed is the public repository `vinicius741/ghost-runner`, configured
 in `package.json` under `build.publish`. Change it if you move the repository.
 No GitHub token is bundled with the app. Private repositories need a separate
@@ -47,6 +54,17 @@ macOS auto-updates require signed builds. Without `MAC_CSC_LINK`, the workflow
 skips macOS and publishes Linux and Windows. Once that secret is present, the
 remaining signing secrets are required. Keep the same signing identity across releases. Windows
 installers currently ship unsigned and may show SmartScreen warnings.
+
+If macOS is skipped, the release will have no `latest-mac.yml` and installed
+macOS builds cannot update from it. Configure signing and build the release
+again to supply that file and its signed installers. The dashboard reports this
+as unavailable update files, with an explanation under **Update status details**.
+Full updater errors stay in the desktop logs.
+
+An existing ad-hoc signed macOS installation needs a manual installation of the
+first Developer ID signed build before secure automatic updates can be verified.
+Do not publish ad-hoc builds as macOS update artifacts. A local build can test
+the dashboard, but it cannot validate signed update installation.
 
 ## Verify a release
 
