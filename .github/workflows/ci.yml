@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # The pnpm version comes from package.json "packageManager".
+      # Do not add a "version" input: pnpm/action-setup fails when both are set.
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir frontend install --frozen-lockfile
+      # Mirrors the Publish desktop release build steps so breakage surfaces
+      # on push instead of at the next release.
+      - run: pnpm run build:frontend:verified
+      - run: pnpm run build:server
+      - run: pnpm run build:electron
+      - run: pnpm test
+      - run: pnpm --dir frontend run test:run
+      # TODO: add `pnpm --dir frontend run lint` once typescript-eslint
+      # supports TypeScript 7 (it currently crashes; typescript-eslint#10940).
