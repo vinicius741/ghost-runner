@@ -1,0 +1,111 @@
+name: Publish desktop release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: ${{ !github.event.release.prerelease }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: linux
+            args: --linux --x64
+          - os: windows-latest
+            target: windows
+            args: --win --x64
+          - os: macos-latest
+            target: macos
+            args: --mac --universal
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir frontend install --frozen-lockfile
+      - name: Set installer version from release tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          node -e "const fs = require('fs'); const tag = process.env.RELEASE_TAG; const version = tag.replace(/^v/, ''); if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('Use a stable release tag such as v1.2.3'); const pkg = JSON.parse(fs.readFileSync('package.json')); pkg.version = version; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
+      - run: pnpm run build:frontend:verified
+      - run: pnpm run build:server
+      - run: pnpm run build:electron
+      - run: pnpm test
+      - name: Check macOS signing configuration
+        id: mac-signing
+        if: matrix.target == 'macos'
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+        run: |
+          if [ -n "$CSC_LINK" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping macOS installers. Configure the signing secrets in documentation/auto-updates.md to enable them."
+          fi
+      - name: Package Windows and Linux
+        if: matrix.target != 'macos'
+        run: pnpm exec electron-builder ${{ matrix.args }} --publish never
+      - name: Package and notarize macOS
+        if: matrix.target == 'macos' && steps.mac-signing.outputs.enabled == 'true'
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          node -e "for (const key of ['CSC_LINK', 'CSC_KEY_PASSWORD', 'APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID']) { if (!process.env[key]) throw new Error('Missing macOS signing secret: ' + key); }"
+          pnpm exec electron-builder ${{ matrix.args }} --publish never --config.mac.forceCodeSigning=true
+      - uses: actions/upload-artifact@v4
+        if: matrix.target != 'macos' || steps.mac-signing.outputs.enabled == 'true'
+        with:
+          name: desktop-${{ matrix.target }}
+          if-no-files-found: error
+          path: |
+            release/*.AppImage
+            release/*.exe
+            release/*.dmg
+            release/*.zip
+            release/*.blockmap
+            release/latest*.yml
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          merge-multiple: true
+          path: release
+      - name: Attach installers and update metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" release/* --clobber

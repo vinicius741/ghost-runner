@@ -110,6 +110,9 @@ Open `http://localhost:3333` in your browser.
 | `npm run electron:start` | Launch desktop app from existing build artifacts |
 | `npm run electron:dist` | Build a macOS distributable in `release/` |
 
+Desktop builds can download and install updates from GitHub Releases. See
+[Desktop updates](documentation/auto-updates.md) for the release workflow and signing setup.
+
 When running as a desktop app, mutable runtime data is stored in the Electron app data directory (`~/Library/Application Support/<App>/ghost-runner`) instead of the git repository. On first launch, the app copies `tasks/public` and `tasks/private` (if present) into that runtime directory.
 
 The app automatically handles ASAR archives for packaged builds. Since ASAR archives are read-only and cannot be used as a working directory for spawned processes, the TaskRunner detects ASAR paths and uses the parent directory for child process execution. This ensures tasks, scheduler, and setup-login processes spawn correctly in both development and packaged environments.

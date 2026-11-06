@@ -40,6 +40,7 @@
   "dependencies": {
     "cron-parser": "^5.10.0",
     "dotenv": "^17.4.2",
+    "electron-updater": "^6.8.11",
     "express": "^5.2.1",
     "node-cron": "^4.6.0",
     "playwright": "^1.63.0",
@@ -74,12 +75,7 @@
       "dist-electron/**/*",
       "frontend/dist/**/*",
       "tasks/public/**/*",
-      "tasks/private/**/*",
       "src/server/public/**/*",
-      "settings.json",
-      "schedule.json",
-      "failures.json",
-      "info-gathering.json",
       "package.json"
     ],
     "npmRebuild": false,
@@ -93,8 +89,31 @@
       "extendInfo": {
         "NSLocationUsageDescription": "Ghost Runner uses your location to configure browser geolocation for automation tasks.",
         "NSLocationWhenInUseUsageDescription": "Ghost Runner uses your location to configure browser geolocation for automation tasks."
+      },
+      "hardenedRuntime": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "vinicius741",
+        "repo": "ghost-runner",
+        "releaseType": "release"
       }
-    }
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Utility",
+      "icon": "build/icon.png"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "artifactName": "Ghost-Runner-${version}-${os}-${arch}.${ext}"
   },
   "packageManager": "pnpm@9.15.5+sha512.845196026aab1cc3f098a0474b64dfbab2afe7a1b4e91dd86895d8e4aa32a7a6d03049e2d0ad770bbe4de023a7122fb68c1a1d6e0d033c7076085f9d5d4800d4"
 }

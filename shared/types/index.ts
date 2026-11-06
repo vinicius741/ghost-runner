@@ -17,6 +17,7 @@
  */
 
 // Schedule types
+export type { UpdateState, DesktopBridge } from './desktop';
 export type { ScheduleItem, NextTask, ScheduleUpdatePayload } from './schedule';
 
 // Task types

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { UpdateButton } from './UpdateButton';
 
 export function Header() {
   return (
@@ -48,6 +49,7 @@ export function Header() {
         transition={{ duration: 0.22, ease: "easeOut" }}
         className="flex items-center gap-4 relative z-10"
       >
+        <UpdateButton />
         <ThemeSwitcher />
       </motion.div>
     </header>

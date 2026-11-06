@@ -4,6 +4,16 @@ import { GlobalState } from './lib/types';
 import { initializeTray, destroyTray, updateTrayPresentation } from './lib/tray';
 import { showMainWindow } from './lib/window';
 import { startBackendAndUi, shutdownBackend } from './lib/backend';
+import { initializeUpdater } from './lib/updater';
+
+let disposeUpdater: (() => void) | undefined;
+
+async function prepareToQuit(): Promise<void> {
+  state.isShuttingDown = true;
+  disposeUpdater?.();
+  destroyTray(state);
+  await shutdownBackend(state);
+}
 
 const state: GlobalState = {
   mainWindow: null,
@@ -30,11 +40,8 @@ async function handleBeforeQuit(event: Event): Promise<void> {
   }
 
   event.preventDefault();
-  state.isShuttingDown = true;
-
   try {
-    destroyTray(state);
-    await shutdownBackend(state);
+    await prepareToQuit();
   } finally {
     app.quit();
   }
@@ -46,6 +53,7 @@ app.on('before-quit', (event) => {
 
 app.whenReady().then(async () => {
   try {
+    disposeUpdater = initializeUpdater(state, prepareToQuit);
     await startBackendAndUi(state);
     initializeTray(state);
   } catch (error) {
