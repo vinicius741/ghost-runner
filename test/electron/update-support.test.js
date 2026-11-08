@@ -13,15 +13,17 @@ test('only supported packaged builds enable updates', () => {
   assert.equal(getUpdateDisabledReason(true, 'win32', undefined, unexpected), undefined);
 });
 
-test('macOS requires a Developer ID identity and fails closed when signing cannot be read', () => {
+test('macOS requires a certificate identity and fails closed when signing cannot be read', () => {
   for (const signature of ['', 'Signature=adhoc\nTeamIdentifier=not set',
-    'Authority=Apple Development: Example\nTeamIdentifier=ABC123',
-    'Authority=Developer ID Application: Example\nTeamIdentifier=not set']) {
+    'Identifier=com.ghostrunner.desktop\nSignature=adhoc\nAuthority=\nTeamIdentifier=not set']) {
     assert.equal(getUpdateDisabledReason(true, 'darwin', undefined, () => signature), 'unsigned-mac');
   }
   assert.equal(getUpdateDisabledReason(true, 'darwin', undefined, () => { throw new Error('codesign failed'); }), 'unsigned-mac');
   assert.equal(getUpdateDisabledReason(true, 'darwin', undefined,
     () => 'Authority=Developer ID Application: Example (ABC123)\nTeamIdentifier=ABC123\n'), undefined);
+  // The project's self-signed certificate has no Apple team, but it still pins a stable identity.
+  assert.equal(getUpdateDisabledReason(true, 'darwin', undefined,
+    () => 'Signature size=1650\nAuthority=Ghost Runner Self-Signed\nTeamIdentifier=not set\n'), undefined);
 });
 
 test('manual macOS builds report the reason and never contact the update feed', async () => {

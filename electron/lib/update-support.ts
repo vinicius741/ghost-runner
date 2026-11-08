@@ -1,7 +1,12 @@
 import { spawnSync } from 'node:child_process';
 import type { UpdateState } from '../../shared/types/desktop';
 
-/** Ad-hoc macOS builds must be replaced manually before signed updates can work. */
+/**
+ * macOS (Squirrel.Mac) only installs an update whose signature satisfies the running app's
+ * designated requirement. Ad-hoc signatures pin a single build's hash, so they can never be
+ * updated in place; any certificate-based identity (Developer ID or the project's self-signed
+ * certificate) pins the certificate instead, which every later build signed with it satisfies.
+ */
 export function getUpdateDisabledReason(
   packaged: boolean,
   platform: string,
@@ -15,8 +20,7 @@ export function getUpdateDisabledReason(
   if (platform === 'darwin') {
     try {
       const signature = readSignature();
-      if (!/^Authority=Developer ID Application:/m.test(signature) ||
-          !/^TeamIdentifier=(?!not set$)\S+$/m.test(signature)) return 'unsigned-mac';
+      if (/^Signature=adhoc$/m.test(signature) || !/^Authority=\S/m.test(signature)) return 'unsigned-mac';
     } catch {
       return 'unsigned-mac';
     }

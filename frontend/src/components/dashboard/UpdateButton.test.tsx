@@ -70,7 +70,7 @@ it('explains manual macOS updates without offering a retry or hiding the install
   expect(await screen.findByRole('button', { name: 'Manual updates' })).toBeDisabled();
   expect(screen.getByRole('status')).toHaveTextContent('Version 1.1.1');
   fireEvent.click(screen.getByRole('button', { name: 'Update status details' }));
-  expect(await screen.findByRole('dialog')).toHaveTextContent('Install a Developer ID signed release');
+  expect(await screen.findByRole('dialog')).toHaveTextContent('signed with the Ghost Runner certificate');
   expect(desktop.checkForUpdates).not.toHaveBeenCalled();
   expect(screen.queryByRole('button', { name: 'Retry update check' })).not.toBeInTheDocument();
 });

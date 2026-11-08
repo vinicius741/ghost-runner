@@ -13,7 +13,7 @@ const errorMessages = {
 const disabledMessages = {
   development: 'Automatic updates are available in supported packaged desktop builds.',
   'appimage-required': 'Install the AppImage build to use automatic updates on Linux.',
-  'unsigned-mac': 'This local macOS build requires manual updates. Install a Developer ID signed release to enable automatic updates. Your tasks and settings stay in your app data folder.',
+  'unsigned-mac': 'This macOS build is ad-hoc signed, so macOS will not let it update itself. Install a build signed with the Ghost Runner certificate once to enable automatic updates. Your tasks and settings stay in your app data folder.',
 };
 
 export function UpdateButton() {
