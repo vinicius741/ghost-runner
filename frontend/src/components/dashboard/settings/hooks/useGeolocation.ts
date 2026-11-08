@@ -36,6 +36,12 @@ export interface UseGeolocationOptions {
   onSave?: (settings: Settings) => Promise<boolean>;
   /** Callback when save completes successfully */
   onSaved?: () => void;
+  /**
+   * Callback when a location (precise or IP-based fallback) has been detected.
+   * The caller must propagate this to whatever state feeds the UI — the hook's
+   * internal geolocation state is not rendered anywhere.
+   */
+  onDetected?: (geolocation: GeolocationSettings) => void;
   /** Callback for logging */
   onLog?: (message: string, type: 'normal' | 'error' | 'system') => void;
 }
@@ -59,7 +65,7 @@ export interface UseGeolocationOptions {
  * });
  */
 export function useGeolocation(options: UseGeolocationOptions = {}): UseGeolocationResult {
-  const { onSave, onSaved, onLog } = options;
+  const { onSave, onSaved, onDetected, onLog } = options;
 
   const [geolocation, setGeolocationState] = useState<GeolocationSettings>({ ...DEFAULT_LOCATION });
   const [isDetecting, setIsDetecting] = useState(false);
@@ -140,6 +146,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}): UseGeolocat
       };
 
       setGeolocation(newGeo);
+      onDetected?.(newGeo);
       setIsDetecting(false);
 
       // Automatically save the detected location
@@ -174,6 +181,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}): UseGeolocat
       }
 
       setGeolocation(approximate);
+      onDetected?.(approximate);
       setIsDetecting(false);
       onLog?.(
         'Using approximate location from IP. You can fine-tune coordinates manually if needed.',
@@ -240,7 +248,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}): UseGeolocat
         maximumAge: 0,
       }
     );
-  }, [onSave, onSaved, onLog, setGeolocation]);
+  }, [onSave, onSaved, onDetected, onLog, setGeolocation]);
 
   return {
     geolocation,

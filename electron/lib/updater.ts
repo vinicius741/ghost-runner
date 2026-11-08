@@ -2,14 +2,16 @@ import { app, ipcMain } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { createUpdateController } from './update-controller';
+import { getUpdateDisabledReason } from './update-support';
 import type { GlobalState } from './types';
 
 export function initializeUpdater(state: GlobalState, prepareToInstall: () => Promise<void>): () => void {
-  const enabled = app.isPackaged && (process.platform !== 'linux' || Boolean(process.env.APPIMAGE));
+  const disabledReason = getUpdateDisabledReason(app.isPackaged, process.platform, process.env.APPIMAGE);
+  const enabled = !disabledReason;
   const controller = createUpdateController(autoUpdater, app.getVersion(), enabled, (next) => {
     const window = state.mainWindow;
     if (window && !window.isDestroyed()) window.webContents.send('updates:changed', next);
-  }, prepareToInstall);
+  }, prepareToInstall, disabledReason);
 
   // Only the dashboard's top-level frame may invoke privileged update actions.
   const authorize = (event: IpcMainInvokeEvent) => {

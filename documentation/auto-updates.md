@@ -40,31 +40,57 @@ authenticated distribution service.
 
 ## macOS signing
 
-Add these GitHub Actions repository secrets to enable macOS releases:
+macOS installs an update only when its code signature matches the certificate of
+the app that is already installed. Ad-hoc signed builds (the default when no
+certificate is configured) pin one exact build, so they can never update in
+place. Ghost Runner uses a free self-signed certificate for this instead of a
+paid Apple Developer ID.
 
-| Secret | Value |
-| --- | --- |
-| `MAC_CSC_LINK` | Base64-encoded Developer ID Application `.p12` certificate |
-| `MAC_CSC_KEY_PASSWORD` | Password for that certificate |
-| `APPLE_ID` | Apple developer account email |
-| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password for notarization |
-| `APPLE_TEAM_ID` | Apple developer team ID |
+### One-time setup (self-signed)
 
-macOS auto-updates require signed builds. Without `MAC_CSC_LINK`, the workflow
-skips macOS and publishes Linux and Windows. Once that secret is present, the
-remaining signing secrets are required. Keep the same signing identity across releases. Windows
-installers currently ship unsigned and may show SmartScreen warnings.
+1. On your Mac, run `scripts/macos-create-signing-cert.sh`. It creates the
+   certificate in `~/.ghost-runner-signing/` and trusts it for code signing on
+   this Mac (macOS asks for your password once). Back up that folder. If you
+   lose it, every installed copy needs one more manual reinstall.
+2. Let GitHub Actions sign releases with the same certificate:
+   ```bash
+   base64 -i ~/.ghost-runner-signing/ghost-runner-signing.p12 | gh secret set MAC_CSC_LINK
+   gh secret set MAC_CSC_KEY_PASSWORD < ~/.ghost-runner-signing/ghost-runner-signing.password
+   ```
+3. Build a signed copy with `scripts/macos-build-signed.sh` and replace the app
+   in `/Applications` with `release/mac-arm64/Ghost Runner.app` by hand. This is
+   the last manual install. Later releases update it automatically.
 
-If macOS is skipped, the release will have no `latest-mac.yml` and installed
-macOS builds cannot update from it. Configure signing and build the release
-again to supply that file and its signed installers. The dashboard reports this
-as unavailable update files, with an explanation under **Update status details**.
-Full updater errors stay in the desktop logs.
+Always sign with the same certificate. A build signed with a different one is
+rejected by installed apps.
 
-An existing ad-hoc signed macOS installation needs a manual installation of the
-first Developer ID signed build before secure automatic updates can be verified.
-Do not publish ad-hoc builds as macOS update artifacts. A local build can test
-the dashboard, but it cannot validate signed update installation.
+Self-signed builds are not notarized. They run without warnings on the Mac that
+built them and update normally, because updates downloaded by the app are not
+quarantined. On another Mac, the first install from a downloaded DMG needs
+right-click → **Open** (or `xattr -dr com.apple.quarantine`). macOS may also ask
+once to allow Ghost Runner to update apps under **System Settings → Privacy &
+Security → App Management**.
+
+### Developer ID (optional)
+
+To notarize instead, set `MAC_CSC_LINK` and `MAC_CSC_KEY_PASSWORD` to a
+Developer ID Application certificate and add `APPLE_ID`,
+`APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID`. When `APPLE_ID` is set, the
+workflow signs and notarizes. Switching certificates requires one manual
+reinstall.
+
+### Without signing secrets
+
+Without `MAC_CSC_LINK`, the workflow skips macOS and publishes Linux and
+Windows. The release then has no `latest-mac.yml`, and installed macOS builds
+cannot update from it. The dashboard reports this as unavailable update files,
+with an explanation under **Update status details**. Full updater errors stay in
+the desktop logs. Windows installers currently ship unsigned and may show
+SmartScreen warnings.
+
+Ad-hoc macOS builds show **Manual updates** and the installed version. They do
+not check or download from the update feed. Development and non-AppImage Linux
+builds also explain why automatic updates are disabled.
 
 ## Verify a release
 

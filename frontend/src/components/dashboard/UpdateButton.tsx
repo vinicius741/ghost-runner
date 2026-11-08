@@ -10,6 +10,12 @@ const errorMessages = {
   unknown: 'Could not complete the update. Please try again later.',
 };
 
+const disabledMessages = {
+  development: 'Automatic updates are available in supported packaged desktop builds.',
+  'appimage-required': 'Install the AppImage build to use automatic updates on Linux.',
+  'unsigned-mac': 'This macOS build is ad-hoc signed, so macOS will not let it update itself. Install a build signed with the Ghost Runner certificate once to enable automatic updates. Your tasks and settings stay in your app data folder.',
+};
+
 export function UpdateButton() {
   const desktop = window.ghostRunnerDesktop;
   const [state, setState] = useState<UpdateState>();
@@ -34,16 +40,18 @@ export function UpdateButton() {
   const busy = pending || (!state && !error) || Boolean(state && ['checking', 'available', 'downloading'].includes(state.status));
   const disabled = state?.status === 'disabled';
   const failed = Boolean(error) || state?.status === 'error';
-  const explanation = error ?? errorMessages[state?.errorCode ?? 'unknown'];
+  const manual = disabled && state.disabledReason === 'unsigned-mac';
+  const explanation = disabled ? disabledMessages[state.disabledReason ?? 'development']
+    : error ?? errorMessages[state?.errorCode ?? 'unknown'];
   const status = failed ? 'Updates unavailable'
-    : disabled ? 'Desktop build required'
+    : disabled ? `Version ${state.currentVersion}`
     : state?.status === 'idle' && state.message ? 'You have the latest version.'
     : state ? `Version ${state.currentVersion}` : 'Loading update status…';
   const label = state?.status === 'downloaded' ? `Restart to update to ${state.version}`
     : state?.status === 'downloading' ? `Downloading update ${state.percent ?? 0}%`
     : state?.status === 'available' ? `Downloading ${state.version}`
     : state?.status === 'checking' ? 'Checking for updates…'
-    : disabled ? 'Updates unavailable' : failed ? 'Retry update check' : 'Check for updates';
+    : manual ? 'Manual updates' : disabled ? 'Updates unavailable' : failed ? 'Retry update check' : 'Check for updates';
   const Icon = busy ? Loader2 : failed ? AlertCircle : state?.status === 'downloaded' ? Download : RefreshCw;
 
   async function handleClick() {
@@ -68,7 +76,7 @@ export function UpdateButton() {
       </Button>
       <div className="flex h-5 max-w-full items-center gap-1.5 text-xs text-muted-foreground">
         <span role="status" className="truncate">{status}</span>
-        {failed && (
+        {(failed || disabled) && (
           <Dialog>
             <DialogTrigger asChild>
               <button className="shrink-0 rounded p-1 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Update status details">
@@ -77,7 +85,7 @@ export function UpdateButton() {
             </DialogTrigger>
             <DialogContent className="w-[calc(100%_-_2rem)] max-w-md rounded-lg">
               <DialogHeader>
-                <DialogTitle>Updates unavailable</DialogTitle>
+                <DialogTitle>{manual ? 'Manual updates' : 'Updates unavailable'}</DialogTitle>
                 <DialogDescription className="break-words pt-2">{explanation}</DialogDescription>
               </DialogHeader>
             </DialogContent>

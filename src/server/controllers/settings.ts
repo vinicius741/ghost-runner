@@ -33,7 +33,7 @@ export const getSettings = (req: Request, res: Response): void => {
   }
 };
 
-export const saveSettings = (req: Request, res: Response): void => {
+export const saveSettings = async (req: Request, res: Response): Promise<void> => {
   const io = req.app.get('io');
   const { settings } = req.body;
   if (!settings || typeof settings !== 'object') {
@@ -41,12 +41,26 @@ export const saveSettings = (req: Request, res: Response): void => {
     return;
   }
 
-  fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2), (err) => {
-    if (err) {
-      res.status(500).json({ error: 'Failed to save settings.' });
-      return;
+  try {
+    // Clients may post partial settings (e.g. the geolocation auto-save after
+    // location detection), so merge with the stored file instead of replacing
+    // it and losing headless/browserChannel/profileDir.
+    let existing: Settings = {};
+    if (fs.existsSync(SETTINGS_FILE)) {
+      try {
+        existing = JSON.parse(await fs.promises.readFile(SETTINGS_FILE, 'utf8'));
+      } catch (e) {
+        console.warn(`Settings file '${SETTINGS_FILE}' is not valid JSON; overwriting it.`);
+      }
     }
+
+    const merged: Settings = { ...existing, ...settings };
+    await fs.promises.writeFile(SETTINGS_FILE, JSON.stringify(merged, null, 2));
+
     res.json({ message: 'Settings updated successfully.' });
     if (io) io.emit('log', '[System] Global settings updated via UI.');
-  });
+  } catch (err) {
+    console.error('Failed to save settings:', err);
+    res.status(500).json({ error: 'Failed to save settings.' });
+  }
 };

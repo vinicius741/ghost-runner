@@ -5,6 +5,7 @@ export interface UpdateState {
   percent?: number;
   message?: string;
   errorCode?: 'release-unavailable' | 'network' | 'unknown';
+  disabledReason?: 'development' | 'appimage-required' | 'unsigned-mac';
 }
 
 export interface DesktopBridge {
