@@ -25,9 +25,22 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
   exit 1
 fi
 
+trust_certificate() {
+  if security verify-cert -q -c "$CERT_PEM" -p codeSign >/dev/null 2>&1; then
+    echo "The certificate is already trusted for code signing on this Mac."
+    return
+  fi
+  echo "Trusting the certificate for code signing (macOS will ask for your password)..."
+  # Trust lets electron-builder find the identity. It only affects code signing
+  # on this Mac; it does not make the certificate trusted for websites or email.
+  security add-trusted-cert -r trustRoot -p codeSign \
+    -k "$HOME/Library/Keychains/login.keychain-db" "$CERT_PEM"
+}
+
 if [[ -e "$P12" ]]; then
   echo "A signing certificate already exists at $P12."
-  echo "Reuse it. Replacing it would stop installed apps from updating."
+  echo "Reusing it. Replacing it would stop installed apps from updating."
+  trust_certificate
   exit 0
 fi
 
@@ -62,11 +75,7 @@ P12_PASSWORD="$(cat "$PASSWORD_FILE")" "$OPENSSL" pkcs12 -export \
   -out "$P12" -passout env:P12_PASSWORD
 
 echo
-echo "Trusting the certificate for code signing (macOS will ask for your password)..."
-# Trust lets electron-builder find the identity. It only affects code signing
-# on this Mac; it does not make the certificate trusted for websites or email.
-security add-trusted-cert -r trustRoot -p codeSign \
-  -k "$HOME/Library/Keychains/login.keychain-db" "$CERT_PEM"
+trust_certificate
 
 echo
 echo "Created $P12"
