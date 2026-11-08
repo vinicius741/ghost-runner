@@ -1,173 +1,71 @@
-import { useState } from 'react';
-import { Header } from "@/components/dashboard/Header";
-import { TaskCalendar } from "@/components/dashboard/TaskCalendar";
-import { SettingsManager } from "@/components/dashboard/SettingsManager";
-import { LocationWarning } from "@/components/dashboard/LocationWarning";
-import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
-import { MinimizedCardsSidebar } from "@/components/dashboard/MinimizedCardsSidebar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useDashboard } from "@/contexts/DashboardContext";
-import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Calendar, Settings as SettingsIcon } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { useDashboard } from '@/contexts/DashboardContext';
+import { NextTaskProvider } from '@/contexts/NextTaskContext';
+import { Sidebar } from '@/components/shell/Sidebar';
+import { getStoredPage, storePage, type PageId } from '@/components/shell/navigation';
+import { CreateTaskModal } from './CreateTaskModal';
+import { OverviewPage } from '@/components/pages/OverviewPage';
+import { TasksPage } from '@/components/pages/TasksPage';
+import { SchedulePage } from '@/components/pages/SchedulePage';
+import { DataPage, FailuresPage, LogsPage, SettingsPage } from '@/components/pages/SimplePages';
 
 /**
- * Dashboard content component using the DashboardContext.
- * Separated to use context hooks within the provider.
+ * App shell: sidebar navigation plus the active page. Pages read state
+ * straight from DashboardContext.
  */
 export function DashboardContent() {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [showLocationWarning, setShowLocationWarning] = useState(true);
-
+  const [page, setPage] = useState<PageId>(getStoredPage);
+  const [recordOpen, setRecordOpen] = useState(false);
   const {
-    sidebarOpen,
-    layout,
-    schedulerStatus,
     tasks,
     schedule,
-    logs,
     failures,
     infoGatheringResults,
-    refreshingInfoGatheringTasks,
-    addLog,
-    clearLogs,
+    schedulerStatus,
     startScheduler,
     stopScheduler,
-    runTask,
     recordTask,
-    uploadTask,
-    loadTaskSource,
-    saveTaskSource,
-    addScheduleItem,
-    deleteScheduleItem,
-    clearFailures,
-    dismissFailure,
-    refreshInfoGatheringTask,
-    clearInfoGatheringResult,
-    clearAllInfoGatheringResults,
-    handleCardReorder,
-    minimizeCard,
-    restoreCard,
-    toggleSidebar,
-    fetchSettings,
-    showLocationWarning: contextLocationWarning,
-    dismissLocationWarning,
-    runningTasks,
   } = useDashboard();
 
+  const navigate = useCallback((next: PageId) => {
+    setPage(next);
+    storePage(next);
+    window.scrollTo({ top: 0 });
+  }, []);
+
+  const openRecord = useCallback(() => setRecordOpen(true), []);
+
   return (
-    <div className={`min-h-screen min-w-0 overflow-x-hidden bg-background text-foreground font-sans transition-all duration-500 ${sidebarOpen ? 'pr-0 xl:pr-52' : 'pr-0 xl:pr-8'}`}>
-      {/* Theme-aware background overlay */}
-      <div className="fixed inset-0 pointer-events-none theme-bg-overlay" />
-      <div className="fixed inset-0 pointer-events-none theme-bg-texture" />
+    <NextTaskProvider schedulerRunning={schedulerStatus}>
+      <div className="min-h-screen bg-background text-foreground">
+        <Sidebar
+          page={page}
+          onNavigate={navigate}
+          counts={{
+            tasks: tasks.length,
+            schedule: schedule.length,
+            failures: failures.length,
+            data: infoGatheringResults.length,
+          }}
+          schedulerRunning={schedulerStatus}
+          onStartScheduler={startScheduler}
+          onStopScheduler={stopScheduler}
+        />
 
-      {/* Sidebar */}
-      <MinimizedCardsSidebar
-        isOpen={sidebarOpen}
-        minimizedCards={layout.minimized}
-        onRestoreCard={restoreCard}
-        onToggle={toggleSidebar}
-      />
-
-      <div className="relative mx-auto max-w-7xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
-        <Header />
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
-          <div className="flex justify-center">
-            <TabsList className="bg-card/40 backdrop-blur-xl border border-border/50 h-14 p-1.5 gap-1.5 rounded-2xl shadow-2xl">
-              <TabsTrigger
-                value="dashboard"
-                className="px-8 py-2.5 gap-2.5 rounded-xl text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 hover:text-foreground"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span className="font-bold uppercase tracking-widest text-[10px]">Dashboard</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="calendar"
-                className="px-8 py-2.5 gap-2.5 rounded-xl text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 hover:text-foreground"
-              >
-                <Calendar className="w-4 h-4" />
-                <span className="font-bold uppercase tracking-widest text-[10px]">Calendar</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="settings"
-                className="px-8 py-2.5 gap-2.5 rounded-xl text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 hover:text-foreground"
-              >
-                <SettingsIcon className="w-4 h-4" />
-                <span className="font-bold uppercase tracking-widest text-[10px]">Settings</span>
-              </TabsTrigger>
-            </TabsList>
+        <main className="min-w-0 lg:pl-56">
+          <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+            {page === 'overview' && <OverviewPage onNavigate={navigate} onRecordTask={openRecord} />}
+            {page === 'tasks' && <TasksPage onRecordTask={openRecord} />}
+            {page === 'schedule' && <SchedulePage />}
+            {page === 'failures' && <FailuresPage />}
+            {page === 'data' && <DataPage />}
+            {page === 'logs' && <LogsPage />}
+            {page === 'settings' && <SettingsPage />}
           </div>
+        </main>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.22 }}
-            >
-              <TabsContent value="dashboard" className="mt-0 space-y-8">
-                <AnimatePresence>
-                  {showLocationWarning && contextLocationWarning && (
-                    <LocationWarning
-                      onDismiss={() => {
-                        setShowLocationWarning(false);
-                        dismissLocationWarning();
-                      }}
-                      onGoToSettings={() => setActiveTab('settings')}
-                    />
-                  )}
-                </AnimatePresence>
-                <DashboardGrid
-                  layout={layout}
-                  minimizedCards={layout.minimized}
-                  onMinimize={minimizeCard}
-                  onDragEnd={handleCardReorder}
-                  onStartScheduler={startScheduler}
-                  onStopScheduler={stopScheduler}
-                  onRecordTask={recordTask}
-                  schedulerStatus={schedulerStatus}
-                  tasks={tasks}
-                  schedule={schedule}
-                  onAddSchedule={addScheduleItem}
-                  onDeleteSchedule={(index) => {
-                    if (confirm('Are you sure you want to delete this schedule?')) {
-                      deleteScheduleItem(index);
-                    }
-                  }}
-                  onRunTask={runTask}
-                  onUploadTask={uploadTask}
-                  onLoadTaskSource={loadTaskSource}
-                  onSaveTaskSource={saveTaskSource}
-                  runningTasks={runningTasks}
-                  logs={logs}
-                  onClearLogs={clearLogs}
-                  failures={failures}
-                  onClearFailures={clearFailures}
-                  onDismissFailure={dismissFailure}
-                  infoGatheringResults={infoGatheringResults}
-                  onRefreshInfoGatheringTask={refreshInfoGatheringTask}
-                  onClearInfoGatheringResult={clearInfoGatheringResult}
-                  onClearAllInfoGatheringResults={clearAllInfoGatheringResults}
-                  refreshingInfoGatheringTasks={refreshingInfoGatheringTasks}
-                />
-              </TabsContent>
-
-              <TabsContent value="calendar" className="mt-0">
-                <div className="card-premium p-6 rounded-3xl">
-                  <TaskCalendar schedule={schedule} onDeleteSchedule={deleteScheduleItem} />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="settings" className="mt-0">
-                <div className="max-w-3xl mx-auto py-4">
-                  <SettingsManager onSettingsSaved={fetchSettings} onLog={addLog} />
-                </div>
-              </TabsContent>
-            </motion.div>
-          </AnimatePresence>
-        </Tabs>
+        <CreateTaskModal isOpen={recordOpen} onClose={() => setRecordOpen(false)} onRecord={recordTask} />
       </div>
-    </div>
+    </NextTaskProvider>
   );
 }

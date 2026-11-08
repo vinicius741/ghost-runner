@@ -1,41 +1,17 @@
 /**
- * Warnings Panel - displays task failures grouped by task name.
- *
- * Features:
- * - Grouped failures by task with occurrence counts
- * - Filter by error type
- * - Details dialog with full error context
- * - Real-time updates via props
- *
- * Refactored in Phase 2 to use extracted components:
- * - FilterTabs for error type filtering
- * - FailureCard for individual task failure groups
- * - FailureDetailsDialog for detailed failure information
- *
- * Related: Development Execution Plan Task 2.2.5
+ * Failures panel: task failures grouped by task, filterable by error type,
+ * with a details dialog that produces a repair prompt.
  */
 
 import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  AlertTriangle,
-  Clock,
-  Trash2,
-  CheckCircle,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2 } from 'lucide-react';
 import type { FailureRecord } from '@/types';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/common/EmptyState';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useFailureFilters } from '@/hooks/useFailureFilters';
+import { cn } from '@/lib/utils';
 import { FilterTabs } from './warnings/components/FilterTabs';
 import { FailureCard } from './warnings/components/FailureCard';
 import { FailureDetailsDialog } from './warnings/components/FailureDetailsDialog';
@@ -44,163 +20,89 @@ export interface WarningsPanelProps {
   failures: FailureRecord[];
   onClearFailures: () => void;
   onDismissFailure: (id: string) => void;
-  onHeaderDoubleClick?: () => void;
+  className?: string;
 }
 
-/**
- * Empty state component when no failures are recorded.
- */
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/60">
-      <CheckCircle className="w-12 h-12 mb-3 text-emerald-500/20" />
-      <p className="text-sm font-medium">No failures recorded</p>
-      <p className="text-xs mt-1">Task failures will appear here</p>
-    </div>
-  );
-}
-
-/**
- * Main WarningsPanel component.
- */
 export function WarningsPanel({
   failures,
   onClearFailures,
   onDismissFailure,
-  onHeaderDoubleClick,
+  className,
 }: WarningsPanelProps) {
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
   const [selectedFailure, setSelectedFailure] = useState<FailureRecord | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Use the failure filters hook
-  const {
-    filters,
-    setErrorType,
-    groupedFailures,
-    filteredCount,
-    uniqueTaskCount,
-  } = useFailureFilters(failures);
-
-  // Convert grouped failures to array for rendering
-  const filteredFailuresArray = Object.entries(groupedFailures);
+  const { filters, setErrorType, groupedFailures, filteredCount, uniqueTaskCount } = useFailureFilters(failures);
+  const groups = Object.entries(groupedFailures);
+  const affectedTasks = new Set(failures.map((f) => f.taskName)).size;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, delay: 0.04 }}
-      className="min-w-0 max-w-full"
-    >
-      <Card className={`card-premium flex flex-col overflow-hidden ${filteredCount > 0 ? 'border-red-500/40 shadow-red-950/30' : ''}`}>
-        {/* Header */}
-        <CardHeader className={`flex flex-col gap-3 border-b border-border/50 pb-3 sm:flex-row sm:items-center sm:justify-between ${filteredCount > 0 ? 'bg-red-950/25' : 'bg-muted/20'}`} onDoubleClick={onHeaderDoubleClick}>
-          <CardTitle className="text-foreground flex min-w-0 flex-wrap items-center gap-2 font-medium tracking-tight">
-            <AlertTriangle className={`w-4 h-4 ${filteredCount > 0 ? 'text-red-400' : 'text-amber-500'}`} />
-            Task Failures
-            {filteredCount > 0 && (
-              <span className="ml-2 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold border border-red-500/30">
-                {filteredCount} active
-              </span>
+    <>
+      <Card className={cn('overflow-hidden', className)}>
+        <CardHeader className="flex-wrap">
+          <CardTitle>
+            {filteredCount > 0 ? (
+              <>
+                <span className="text-destructive">{filteredCount}</span>
+                <span className="font-normal text-muted-foreground">
+                  across {uniqueTaskCount} task{uniqueTaskCount !== 1 ? 's' : ''}
+                </span>
+              </>
+            ) : (
+              'All clear'
             )}
           </CardTitle>
-          <div className="flex shrink-0 items-center gap-2 self-start sm:self-auto">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/50 border border-border/50">
-              <Clock className="w-3 h-3 text-muted-foreground" />
-              <span className="text-[10px] font-mono text-muted-foreground">
-                {uniqueTaskCount} task{uniqueTaskCount !== 1 ? 's' : ''}
-              </span>
-            </div>
-            {filteredCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowClearConfirm(true)}
-                className="h-8 text-muted-foreground hover:text-red-400 hover:bg-red-500/5 transition-colors gap-2"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span className="text-xs">Clear</span>
+          <div className="flex items-center gap-2">
+            <FilterTabs
+              activeFilter={filters.errorType}
+              onFilterChange={setErrorType}
+              failureCount={failures.length}
+            />
+            {failures.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => setShowClearConfirm(true)}>
+                Clear all
               </Button>
             )}
           </div>
         </CardHeader>
 
-        {/* Content */}
-        <CardContent className="p-0 bg-black/20 min-w-0">
-          {/* Filter tabs */}
-          <FilterTabs
-            activeFilter={filters.errorType}
-            onFilterChange={setErrorType}
-            failureCount={filteredCount}
+        {groups.length === 0 ? (
+          <EmptyState
+            icon={CheckCircle2}
+            title={failures.length === 0 ? 'No failures recorded' : 'No failures of this type'}
+            description={failures.length === 0 ? 'When a task fails, the error and its diagnostics show up here.' : undefined}
           />
-
-          {/* Failures list */}
-          <ScrollArea className="h-[280px] w-full min-w-0">
-            <div className="p-4 space-y-3 min-w-0">
-              {filteredFailuresArray.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <AnimatePresence mode="popLayout">
-                  {filteredFailuresArray.map(([taskName, taskFailures]) => (
-                    <FailureCard
-                      key={taskName}
-                      taskName={taskName}
-                      failures={taskFailures}
-                      isExpanded={expandedTask === taskName}
-                      onToggle={() => setExpandedTask(expandedTask === taskName ? null : taskName)}
-                      onViewDetails={(failure) => setSelectedFailure(failure)}
-                    />
-                  ))}
-                </AnimatePresence>
-              )}
-            </div>
-          </ScrollArea>
-        </CardContent>
+        ) : (
+          <ul className="divide-y divide-border">
+            {groups.map(([taskName, taskFailures]) => (
+              <FailureCard
+                key={taskName}
+                taskName={taskName}
+                failures={taskFailures}
+                isExpanded={expandedTask === taskName}
+                onToggle={() => setExpandedTask(expandedTask === taskName ? null : taskName)}
+                onViewDetails={setSelectedFailure}
+              />
+            ))}
+          </ul>
+        )}
       </Card>
 
-      {/* Clear all confirmation dialog */}
-      <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
-        <DialogContent className="bg-slate-950/95 border-slate-800/50 text-slate-100 sm:max-w-[400px] rounded-2xl backdrop-blur-xl shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-slate-100 font-medium tracking-tight flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-950/40 flex items-center justify-center border border-red-500/30">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
-              </div>
-              Clear All Failures
-            </DialogTitle>
-            <DialogDescription className="text-slate-400 text-sm pt-2">
-              This will permanently remove all {failures.length} failure{failures.length !== 1 ? 's' : ''} across {new Set(failures.map(f => f.taskName)).size} task{new Set(failures.map(f => f.taskName)).size !== 1 ? 's' : ''}. This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => setShowClearConfirm(false)}
-              className="text-slate-400 hover:text-slate-200 hover:bg-slate-800/70"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                onClearFailures();
-                setShowClearConfirm(false);
-              }}
-              className="bg-red-600 hover:bg-red-500 text-white gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Clear All
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={showClearConfirm}
+        onOpenChange={setShowClearConfirm}
+        title="Clear all failures?"
+        description={`This permanently removes ${failures.length} failure${failures.length !== 1 ? 's' : ''} across ${affectedTasks} task${affectedTasks !== 1 ? 's' : ''}.`}
+        confirmLabel="Clear all"
+        onConfirm={onClearFailures}
+      />
 
-      {/* Details dialog */}
       <FailureDetailsDialog
         failure={selectedFailure}
         onClose={() => setSelectedFailure(null)}
         onDismiss={onDismissFailure}
       />
-    </motion.div>
+    </>
   );
 }

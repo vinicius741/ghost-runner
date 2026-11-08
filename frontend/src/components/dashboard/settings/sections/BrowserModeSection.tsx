@@ -1,84 +1,45 @@
 /**
- * Browser Mode Section Component for Settings Manager
- *
- * Manages headless/headful browser mode settings.
- * Extracted from SettingsManager.tsx for reusability.
- *
- * Related: Development Execution Plan Task 2.3.3
+ * Headless / visible browser toggle.
  */
 
-import { Monitor, Eye, EyeOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface BrowserModeSectionProps {
-  /** Whether headless mode is enabled */
   headless: boolean;
-  /** Callback when headless mode is toggled */
   onHeadlessChange: (headless: boolean) => void;
 }
 
 /**
- * Browser mode section with headless toggle.
- *
- * @example
- * <BrowserModeSection
- *   headless={settings.headless ?? false}
- *   onHeadlessChange={(headless) => setSettings({ ...settings, headless })}
- * />
+ * Rendered inside the Browser settings section as a single switch row.
  */
-export function BrowserModeSection({
-  headless,
-  onHeadlessChange,
-}: BrowserModeSectionProps) {
+export function BrowserModeSection({ headless, onHeadlessChange }: BrowserModeSectionProps) {
   return (
-    <div className="flex flex-col gap-4 p-4 rounded-xl bg-card/50 border border-border/50">
-      <div className="flex items-center gap-2 mb-2">
-        <Monitor className="w-4 h-4 text-purple-500" />
-        <h3 className="text-foreground font-medium tracking-tight">Browser Mode</h3>
+    <div className="flex items-center justify-between gap-4">
+      <div className="min-w-0">
+        <p className="text-[13px] text-foreground">Run headless</p>
+        <p className="text-xs text-muted-foreground">
+          {headless
+            ? 'The browser runs without a visible window. Recommended on macOS.'
+            : 'A browser window is shown while tasks run.'}
+        </p>
       </div>
-
-      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3">
-        Headless Mode
-      </p>
-
-      <div className="flex items-center justify-between p-3 rounded-lg bg-muted border border-border">
-        <div className="flex items-center gap-3">
-          {headless ? (
-            <EyeOff className="w-4 h-4 text-purple-500" />
-          ) : (
-            <Eye className="w-4 h-4 text-purple-500" />
+      <button
+        type="button"
+        onClick={() => onHeadlessChange(!headless)}
+        aria-pressed={headless}
+        aria-label="Toggle headless mode"
+        className={cn(
+          'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+          headless ? 'border-primary bg-primary' : 'border-border-strong bg-muted'
+        )}
+      >
+        <span
+          className={cn(
+            'inline-block h-3.5 w-3.5 rounded-full',
+            headless ? 'translate-x-[18px] bg-primary-foreground' : 'translate-x-[2px] bg-muted-foreground'
           )}
-          <div className="flex flex-col">
-            <span className="text-sm text-foreground">
-              {headless ? 'Headless (Hidden)' : 'Headful (Visible)'}
-            </span>
-            <span className="text-[10px] text-muted-foreground">
-              {headless
-                ? 'Browser runs without visible window'
-                : 'Browser window will be visible'}
-            </span>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => onHeadlessChange(!headless)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-            headless ? 'bg-primary' : 'bg-muted'
-          }`}
-          aria-pressed={headless}
-          aria-label="Toggle headless mode"
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-              headless ? 'translate-x-6' : 'translate-x-1'
-            }`}
-          />
-        </button>
-      </div>
-
-      <p className="text-[10px] text-muted-foreground leading-relaxed">
-        Headless mode is recommended on macOS to avoid browser crashes.
-        Set to false to see the browser window during automation.
-      </p>
+        />
+      </button>
     </div>
   );
 }

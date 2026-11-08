@@ -5,6 +5,16 @@ import { getSocket } from './dashboardSocket';
 export type LogType = 'normal' | 'error' | 'system';
 
 /**
+ * The server sends plain strings and marks severity inside the text, e.g.
+ * "[Scheduler ERROR] …", "[Task: x SYSTEM ERROR] …", "[SYSTEM CRASH] …".
+ */
+export function classifySocketLog(message: string): LogType {
+  if (/^\[[^\]]*\bERROR\]|^\[SYSTEM CRASH\]/.test(message)) return 'error';
+  if (/^\[(System|Scheduler)\]/.test(message)) return 'system';
+  return 'normal';
+}
+
+/**
  * Hook to manage dashboard logs state, socket connection, and operations.
  */
 export function useDashboardLogs() {
@@ -29,7 +39,7 @@ export function useDashboardLogs() {
   useEffect(() => {
     const socket = getSocket();
     const handleLog = (message: string) => {
-      addLog(message);
+      addLog(message, classifySocketLog(message));
     };
 
     socket.on('log', handleLog);

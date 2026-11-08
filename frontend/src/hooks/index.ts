@@ -19,5 +19,5 @@ export type { UseSchedulerResult, UseSchedulerOptions, SchedulerStatus } from '.
 export { useFailureFilters, useFailureFiltersWithSort } from './useFailureFilters';
 export type { UseFailureFiltersResult, FailureFilters } from './useFailureFilters';
 
-export { useFailureStyles, useFailureAnimationVariants } from './useFailureStyles';
-export type { UseFailureStylesResult, FailureStyleConfig, FailureStyleConfigWithLabel } from './useFailureStyles';
+export { useNextTask } from './useNextTask';
+export type { NextTaskState } from './useNextTask';

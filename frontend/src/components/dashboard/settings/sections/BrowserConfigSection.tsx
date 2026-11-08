@@ -1,42 +1,22 @@
 /**
- * Browser Configuration Section Component for Settings Manager
- *
- * Manages browser channel selection and custom executable path.
- * Extracted from SettingsManager.tsx for reusability.
- *
- * Related: Development Execution Plan Task 2.3.4
+ * Browser channel, custom executable path, and the active profile.
  */
 
 import { Input } from '@/components/ui/input';
-import { Globe } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export type BrowserChannel = 'chrome' | 'chromium' | 'msedge';
 
 export interface BrowserConfigSectionProps {
-  /** Current browser channel */
   browserChannel?: BrowserChannel;
-  /** Custom executable path */
   executablePath?: string;
-  /** Current profile directory (read-only) */
+  /** Current profile directory (read-only). */
   profileDir?: string;
-  /** Callback when browser channel changes */
   onBrowserChannelChange: (channel: BrowserChannel) => void;
-  /** Callback when executable path changes */
   onExecutablePathChange: (path?: string) => void;
 }
 
-/**
- * Browser configuration section with channel selection and custom path.
- *
- * @example
- * <BrowserConfigSection
- *   browserChannel={settings.browserChannel || 'chrome'}
- *   executablePath={settings.executablePath}
- *   profileDir={settings.profileDir}
- *   onBrowserChannelChange={(channel) => setSettings({ ...settings, browserChannel: channel })}
- *   onExecutablePathChange={(path) => setSettings({ ...settings, executablePath: path })}
- * />
- */
 export function BrowserConfigSection({
   browserChannel = 'chrome',
   executablePath,
@@ -45,59 +25,41 @@ export function BrowserConfigSection({
   onExecutablePathChange,
 }: BrowserConfigSectionProps) {
   return (
-    <div className="flex flex-col gap-4 p-4 rounded-xl bg-card/50 border border-border/50">
-      <div className="flex items-center gap-2 mb-2">
-        <Globe className="w-4 h-4 text-green-500" />
-        <h3 className="text-foreground font-medium tracking-tight">Browser Configuration</h3>
+    <>
+      <div className="space-y-1.5">
+        <Label htmlFor="browser-channel">Browser</Label>
+        <Select value={browserChannel} onValueChange={(v: BrowserChannel) => onBrowserChannelChange(v)}>
+          <SelectTrigger id="browser-channel" className="sm:w-72" aria-label="Select browser channel">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="chrome">System Chrome (recommended)</SelectItem>
+            <SelectItem value="chromium">Chromium</SelectItem>
+            <SelectItem value="msedge">Microsoft Edge</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Browser channel selection */}
-      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3">
-        Browser Channel
-      </p>
-      <div className="space-y-2">
-        <select
-          value={browserChannel}
-          onChange={(e) => onBrowserChannelChange(e.target.value as BrowserChannel)}
-          className="w-full h-10 bg-muted border border-border text-foreground focus:border-primary/50 focus:ring-primary/20 rounded-lg px-3 text-sm"
-          aria-label="Select browser channel"
-        >
-          <option value="chrome">System Chrome (Recommended)</option>
-          <option value="chromium">Chromium</option>
-          <option value="msedge">Microsoft Edge</option>
-        </select>
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
-          Select which browser to use. System Chrome is recommended for best compatibility.
-        </p>
-      </div>
-
-      {/* Custom executable path */}
-      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3 mt-4">
-        Custom Executable Path (Advanced)
-      </p>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
+        <Label htmlFor="executable-path">Custom executable path</Label>
         <Input
+          id="executable-path"
           type="text"
           value={executablePath || ''}
           onChange={(e) => onExecutablePathChange(e.target.value || undefined)}
           placeholder="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-          className="h-10 bg-muted border border-border text-foreground focus:border-primary/50 focus:ring-primary/20 transition-all font-mono text-sm"
+          className="font-mono text-xs"
           aria-label="Custom executable path"
         />
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
-          Optional: Specify a custom Chrome executable path. Leave empty to use system Chrome.
-        </p>
+        <p className="text-xs text-faint">Optional. Leave empty to use the browser selected above.</p>
       </div>
 
-      {/* Current profile display */}
       {profileDir && (
-        <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-1">
-            Current Profile
-          </p>
-          <p className="text-xs text-muted-foreground font-mono break-all">{profileDir}</p>
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground">Profile directory</p>
+          <p className="break-all font-mono text-xs text-faint">{profileDir}</p>
         </div>
       )}
-    </div>
+    </>
   );
 }

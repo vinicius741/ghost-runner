@@ -69,24 +69,24 @@ export function UpdateButton() {
   }
 
   return (
-    <div className="flex min-w-0 max-w-full flex-col items-start gap-1 xl:items-end">
-      <Button className="max-w-full" variant="outline" size="sm" disabled={busy || disabled} onClick={() => void handleClick()}>
-        <Icon aria-hidden="true" className={busy ? 'animate-spin' : undefined} />
+    <div className="flex min-w-0 flex-col gap-1">
+      <Button className="w-full justify-start" variant="ghost" size="sm" disabled={busy || disabled} onClick={() => void handleClick()}>
+        <Icon aria-hidden="true" className={busy ? 'animate-spin' : state?.status === 'downloaded' ? 'text-primary' : undefined} />
         <span className="truncate">{label}</span>
       </Button>
-      <div className="flex h-5 max-w-full items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="flex h-5 min-w-0 items-center gap-1 px-2.5 text-xs text-faint">
         <span role="status" className="truncate">{status}</span>
         {(failed || disabled) && (
           <Dialog>
             <DialogTrigger asChild>
-              <button className="shrink-0 rounded p-1 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Update status details">
+              <button className="shrink-0 rounded p-0.5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60" aria-label="Update status details">
                 <Info aria-hidden="true" className="h-3.5 w-3.5" />
               </button>
             </DialogTrigger>
-            <DialogContent className="w-[calc(100%_-_2rem)] max-w-md rounded-lg">
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>{manual ? 'Manual updates' : 'Updates unavailable'}</DialogTitle>
-                <DialogDescription className="break-words pt-2">{explanation}</DialogDescription>
+                <DialogDescription className="break-words">{explanation}</DialogDescription>
               </DialogHeader>
             </DialogContent>
           </Dialog>

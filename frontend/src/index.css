@@ -3,495 +3,299 @@
 @config "../tailwind.config.js";
 
 /* ==================================================
-   MIDNIGHT PROTOCOL (Default Theme)
-   Cyberpunk command center with electric blue accents
+   Ghost Runner — Noir
+   A single, quiet dark theme: warm near-black surfaces,
+   one copper accent, and no decorative motion.
    ================================================== */
 @layer base {
-  :root,
-  [data-theme="midnight-protocol"] {
-    --background: 222 47% 6%;
-    --foreground: 213 31% 91%;
+  :root {
+    color-scheme: dark;
 
-    --card: 222 47% 8%;
-    --card-foreground: 213 31% 91%;
+    /* Surfaces */
+    --background: 30 6% 4.5%;
+    --card: 30 5% 7%;
+    --popover: 30 5% 8%;
+    --muted: 30 5% 10%;
+    --accent: 30 5% 11%;
+    --secondary: 30 5% 11%;
 
-    --popover: 222 47% 7%;
-    --popover-foreground: 213 31% 91%;
+    /* Lines */
+    --border: 30 5% 13%;
+    --border-strong: 30 5% 19%;
+    --input: 30 5% 16%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
+    /* Text */
+    --foreground: 36 18% 88%;
+    --card-foreground: 36 18% 88%;
+    --popover-foreground: 36 18% 88%;
+    --accent-foreground: 36 18% 92%;
+    --secondary-foreground: 36 18% 88%;
+    --muted-foreground: 32 8% 63%;
+    /* Lightest secondary text that still clears 4.5:1 on --card. */
+    --faint: 30 5% 51%;
 
-    --secondary: 222 47% 14%;
-    --secondary-foreground: 213 31% 91%;
+    /* Accent: copper */
+    --primary: 27 62% 57%;
+    --primary-foreground: 25 40% 7%;
+    --ring: 27 62% 57%;
 
-    --muted: 222 47% 14%;
-    --muted-foreground: 215 20% 55%;
-
-    --accent: 222 47% 14%;
-    --accent-foreground: 213 31% 91%;
-
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 222 47% 14%;
-    --input: 222 47% 14%;
-    --ring: 217 91% 60%;
-
-    --radius: 0.75rem;
-
-    /* Typography */
-    --font-sans: 'Inter', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-    --font-display: 'Inter', system-ui, sans-serif;
-
-    /* Effects */
-    --shadow-color: 222 47% 4%;
-    --glow-primary: 0 0 20px hsl(217 91% 60% / 0.4);
-    --glow-secondary: 0 0 30px hsl(217 91% 60% / 0.2);
-
-    /* Transitions */
-    --transition-fast: 150ms;
-    --transition-normal: 300ms;
-    --transition-slow: 500ms;
-
-    /* Background */
-    --bg-gradient-start: 222 47% 6%;
-    --bg-gradient-end: 222 47% 3%;
-    --bg-overlay: radial-gradient(circle at 50% -20%, hsla(217, 91%, 60%, 0.12), transparent 70%);
-    --bg-texture: url('https://grainy-gradients.vercel.app/noise.svg');
-    --bg-texture-opacity: 0.2;
-
-    /* Primary color variants for components */
-    --primary-50: 214 100% 97%;
-    --primary-100: 214 95% 93%;
-    --primary-200: 213 94% 85%;
-    --primary-300: 212 95% 75%;
-    --primary-400: 213 94% 68%;
-    --primary-500: 217 91% 60%;
-    --primary-600: 221 83% 53%;
-    --primary-700: 224 76% 48%;
-    --primary-800: 226 72% 40%;
-    --primary-900: 224 65% 33%;
-    --primary-950: 226 59% 22%;
-  }
-
-  /* ==================================================
-     OBSIDIAN NOIR
-     Luxury dark mode with warm copper/gold accents
-     ================================================== */
-  [data-theme="obsidian-noir"] {
-    --background: 0 0% 3%;
-    --foreground: 30 20% 92%;
-
-    --card: 0 0% 5%;
-    --card-foreground: 30 20% 92%;
-
-    --popover: 0 0% 4%;
-    --popover-foreground: 30 20% 92%;
-
-    --primary: 28 70% 54%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 30 20% 92%;
-
-    --muted: 0 0% 10%;
-    --muted-foreground: 30 10% 50%;
-
-    --accent: 0 0% 10%;
-    --accent-foreground: 30 20% 92%;
-
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
-    --ring: 28 70% 54%;
+    /* Status */
+    --destructive: 4 60% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 140 28% 54%;
+    --warning: 38 70% 60%;
+    --info: 205 30% 64%;
 
     --radius: 0.375rem;
 
-    /* Typography */
-    --font-sans: 'DM Sans', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-    --font-display: 'Crimson Pro', Georgia, serif;
-
-    /* Effects */
-    --shadow-color: 0 0% 0%;
-    --glow-primary: 0 0 25px hsl(28 70% 54% / 0.35);
-    --glow-secondary: 0 0 40px hsl(45 70% 50% / 0.15);
-
-    /* Transitions */
-    --transition-fast: 150ms;
-    --transition-normal: 350ms;
-    --transition-slow: 600ms;
-
-    /* Background */
-    --bg-gradient-start: 0 0% 3%;
-    --bg-gradient-end: 0 0% 1%;
-    --bg-overlay: linear-gradient(135deg, hsla(28, 70%, 54%, 0.03) 0%, transparent 50%);
-    --bg-texture: url('https://www.transparenttextures.com/patterns/linen.png');
-    --bg-texture-opacity: 0.03;
-
-    /* Primary color variants for components */
-    --primary-50: 25 80% 95%;
-    --primary-100: 26 75% 88%;
-    --primary-200: 27 70% 78%;
-    --primary-300: 27 70% 68%;
-    --primary-400: 28 70% 60%;
-    --primary-500: 28 70% 54%;
-    --primary-600: 28 65% 48%;
-    --primary-700: 28 60% 40%;
-    --primary-800: 28 55% 33%;
-    --primary-900: 27 50% 26%;
-    --primary-950: 25 45% 18%;
-
-    /* Gold accent for highlights */
-    --accent-gold: 45 70% 50%;
+    --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   }
 
-  /* ==================================================
-     SYNTHWAVE SUNSET
-     80s retro-futurism with neon pink/cyan
-     ================================================== */
-  [data-theme="synthwave-sunset"] {
-    --background: 280 50% 8%;
-    --foreground: 300 50% 95%;
-
-    --card: 280 50% 10%;
-    --card-foreground: 300 50% 95%;
-
-    --popover: 280 50% 9%;
-    --popover-foreground: 300 50% 95%;
-
-    --primary: 330 85% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 280 50% 16%;
-    --secondary-foreground: 300 50% 95%;
-
-    --muted: 280 50% 16%;
-    --muted-foreground: 280 30% 55%;
-
-    --accent: 180 85% 55%;
-    --accent-foreground: 280 50% 8%;
-
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 280 50% 18%;
-    --input: 280 50% 18%;
-    --ring: 330 85% 60%;
-
-    --radius: 1.25rem;
-
-    /* Typography */
-    --font-sans: 'Outfit', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-    --font-display: 'Space Grotesk', system-ui, sans-serif;
-
-    /* Effects */
-    --shadow-color: 280 50% 5%;
-    --glow-primary: 0 0 25px hsl(330 85% 60% / 0.5);
-    --glow-secondary: 0 0 30px hsl(180 85% 55% / 0.3);
-
-    /* Transitions */
-    --transition-fast: 100ms;
-    --transition-normal: 250ms;
-    --transition-slow: 400ms;
-
-    /* Background */
-    --bg-gradient-start: 280 50% 8%;
-    --bg-gradient-end: 320 50% 5%;
-    --bg-overlay: linear-gradient(180deg, hsla(280, 50%, 8%, 0) 0%, hsla(330, 85%, 60%, 0.05) 100%);
-    --bg-texture: url('https://grainy-gradients.vercel.app/noise.svg');
-    --bg-texture-opacity: 0.15;
-
-    /* Primary color variants for components */
-    --primary-50: 330 100% 97%;
-    --primary-100: 330 100% 92%;
-    --primary-200: 330 95% 82%;
-    --primary-300: 330 90% 72%;
-    --primary-400: 330 88% 65%;
-    --primary-500: 330 85% 60%;
-    --primary-600: 330 80% 52%;
-    --primary-700: 330 75% 44%;
-    --primary-800: 330 70% 36%;
-    --primary-900: 330 65% 28%;
-    --primary-950: 330 60% 20%;
-
-    /* Cyan accent */
-    --accent-cyan: 180 85% 55%;
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
+  }
+
+  html {
+    background-color: hsl(var(--background));
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-size: 14px;
+    line-height: 1.5;
+    font-feature-settings: "ss01" 1, "cv11" 1;
   }
 
-  /* Apply display font to headings */
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-  }
-
-  /* Apply mono font to code elements */
-  code, pre, .font-mono {
+  code, pre, kbd, .font-mono {
     font-family: var(--font-mono);
+    font-feature-settings: normal;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.28);
+    color: hsl(var(--foreground));
+  }
+
+  /* Honour reduced-motion everywhere, including third-party widgets. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-@layer components {
-  .glass {
-    background-color: hsl(var(--card) / 0.4);
-    backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border) / 0.5);
-    box-shadow: 0 8px 32px hsl(var(--shadow-color) / 0.4);
-  }
-
-  .text-glow {
-    text-shadow: var(--glow-primary);
-  }
-
-  .card-premium {
-    background-color: hsl(var(--card) / 0.5);
-    backdrop-filter: blur(8px);
-    border: 1px solid hsl(var(--border) / 0.6);
-    transition: all var(--transition-normal) ease;
-  }
-
-  .card-premium:hover {
-    border-color: hsl(var(--border));
-  }
-
-  /* Drag and drop styles for dashboard cards */
-  .drag-handle {
-    @apply opacity-0 group-hover:opacity-100 transition-opacity duration-200;
-  }
-
-  .sortable-card {
-    @apply relative;
-  }
-
-  .sortable-card.dragging {
-    @apply opacity-50 shadow-2xl scale-[1.02] z-50;
-  }
-
-  /* Theme-aware background with gradient and texture */
-  .theme-bg {
-    background: linear-gradient(180deg, hsl(var(--bg-gradient-start)) 0%, hsl(var(--bg-gradient-end)) 100%);
-  }
-
-  .theme-bg-overlay::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: var(--bg-overlay);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .theme-bg-texture::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: var(--bg-texture);
-    opacity: var(--bg-texture-opacity);
-    pointer-events: none;
-    z-index: 0;
-    filter: brightness(0.5) contrast(1.5);
-  }
-
-  /* Custom theme-aware scrollbar */
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted) / 0.3);
-  }
-
-  .custom-scrollbar:hover {
-    scrollbar-color: hsl(var(--primary) / 0.6) hsl(var(--muted) / 0.4);
-  }
-
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: hsl(var(--muted) / 0.3);
-    border-radius: var(--radius);
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary) / 0.4);
-    border-radius: var(--radius);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.6);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-corner {
-    background: transparent;
-  }
-}
-
-/* Global scrollbar styling for all scrollable elements */
 @layer utilities {
-  /* Apply to the whole page */
-  html {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted) / 0.3);
-  }
-
-  html:hover {
-    scrollbar-color: hsl(var(--primary) / 0.6) hsl(var(--muted) / 0.4);
-  }
-
-  html::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-
-  html::-webkit-scrollbar-track {
-    background: hsl(var(--muted) / 0.3);
-    border-radius: var(--radius);
-  }
-
-  html::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary) / 0.4);
-    border-radius: var(--radius);
-    border: 3px solid transparent;
-    background-clip: padding-box;
-  }
-
-  html::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.6);
-    border: 3px solid transparent;
-    background-clip: padding-box;
-  }
-
-  html::-webkit-scrollbar-corner {
-    background: transparent;
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 
+/* --------------------------------------------------
+   Scrollbars: thin, neutral, never accent-coloured
+   -------------------------------------------------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border-strong)) transparent;
+}
 
-/* React Big Calendar Overrides - Theme Aware */
-.dark-calendar .rbc-toolbar {
-  @apply mb-4;
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: hsl(var(--border-strong));
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--faint));
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* --------------------------------------------------
+   React Big Calendar
+   -------------------------------------------------- */
+.noir-calendar {
+  color: hsl(var(--foreground));
+  font-size: 13px;
+}
+
+.noir-calendar .rbc-toolbar {
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.noir-calendar .rbc-toolbar .rbc-toolbar-label {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.noir-calendar .rbc-btn-group button {
+  color: hsl(var(--muted-foreground));
+  border-color: hsl(var(--border-strong));
+  background-color: transparent;
+  font-size: 12px;
+  padding: 4px 10px;
+  box-shadow: none;
+}
+
+.noir-calendar .rbc-btn-group button:hover,
+.noir-calendar .rbc-btn-group button:focus {
+  background-color: hsl(var(--accent));
   color: hsl(var(--foreground));
 }
 
-.dark-calendar .rbc-toolbar button {
-  color: hsl(var(--muted-foreground));
+.noir-calendar .rbc-btn-group button.rbc-active,
+.noir-calendar .rbc-btn-group button.rbc-active:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border-strong));
+  box-shadow: inset 0 -2px 0 hsl(var(--primary));
+}
+
+.noir-calendar .rbc-month-view,
+.noir-calendar .rbc-time-view,
+.noir-calendar .rbc-agenda-view {
   border-color: hsl(var(--border));
-  background-color: transparent;
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 
-.dark-calendar .rbc-toolbar button:hover {
-  background-color: hsl(var(--muted) / 0.5);
+.noir-calendar .rbc-header {
+  border-color: hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  font-size: 12px;
+  padding: 6px 0;
 }
 
-.dark-calendar .rbc-toolbar button.rbc-active {
+.noir-calendar .rbc-month-row + .rbc-month-row,
+.noir-calendar .rbc-day-bg + .rbc-day-bg,
+.noir-calendar .rbc-header + .rbc-header,
+.noir-calendar .rbc-time-header-content,
+.noir-calendar .rbc-time-content,
+.noir-calendar .rbc-time-content > * + * > *,
+.noir-calendar .rbc-timeslot-group,
+.noir-calendar .rbc-day-slot .rbc-time-slot,
+.noir-calendar .rbc-time-header.rbc-overflowing,
+.noir-calendar .rbc-time-view .rbc-row {
+  border-color: hsl(var(--border));
+}
+
+.noir-calendar .rbc-off-range-bg {
+  background-color: hsl(var(--background));
+}
+
+.noir-calendar .rbc-off-range {
+  color: hsl(var(--faint));
+}
+
+.noir-calendar .rbc-date-cell {
+  padding: 4px 6px;
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+}
+
+.noir-calendar .rbc-date-cell.rbc-now {
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+.noir-calendar .rbc-today {
+  background-color: hsl(var(--primary) / 0.06);
+}
+
+.noir-calendar .rbc-event,
+.noir-calendar .rbc-day-slot .rbc-event {
+  background-color: hsl(var(--accent));
+  border: 1px solid hsl(var(--border-strong));
+  border-left: 2px solid hsl(var(--primary));
+  border-radius: 3px;
+  color: hsl(var(--foreground));
+  font-size: 11px;
+  padding: 1px 6px;
+}
+
+.noir-calendar .rbc-event.rbc-selected,
+.noir-calendar .rbc-event:hover {
+  background-color: hsl(var(--muted));
+  border-color: hsl(var(--faint));
+  border-left-color: hsl(var(--primary));
+}
+
+.noir-calendar .rbc-event:focus {
+  outline: 1px solid hsl(var(--ring));
+}
+
+.noir-calendar .rbc-show-more {
+  background: transparent;
+  color: hsl(var(--primary));
+  font-size: 11px;
+}
+
+.noir-calendar .rbc-time-gutter .rbc-timeslot-group {
+  color: hsl(var(--faint));
+  font-size: 11px;
+}
+
+.noir-calendar .rbc-current-time-indicator {
   background-color: hsl(var(--primary));
-  border-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  box-shadow: var(--glow-primary);
 }
 
-.dark-calendar .rbc-header {
-  border-color: hsl(var(--border));
-  color: hsl(var(--muted-foreground));
-  @apply font-medium py-2;
-}
-
-.dark-calendar .rbc-month-view {
-  border-color: hsl(var(--border));
+.rbc-overlay {
+  background: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border-strong)) !important;
   border-radius: var(--radius);
-  @apply overflow-hidden;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.5) !important;
 }
 
-.dark-calendar .rbc-day-bg {
-  border-color: hsl(var(--border));
-}
-
-.dark-calendar .rbc-off-range-bg {
-  background-color: hsl(var(--muted) / 0.3);
-}
-
-.dark-calendar .rbc-date-cell {
+.rbc-overlay-header {
+  border-color: hsl(var(--border)) !important;
   color: hsl(var(--muted-foreground));
-  @apply p-2;
 }
 
-.dark-calendar .rbc-now {
-  color: hsl(var(--primary));
-  @apply font-bold;
+/* --------------------------------------------------
+   Leaflet: blend controls into the dark surface
+   -------------------------------------------------- */
+.leaflet-container {
+  background: hsl(var(--muted));
+  font-family: var(--font-sans);
 }
 
-.dark-calendar .rbc-event {
-  background-color: hsl(var(--primary) / 0.2);
-  border: 1px solid hsl(var(--primary) / 0.4);
-  border-radius: var(--radius);
-  color: hsl(var(--primary));
-  @apply text-[10px] font-bold uppercase tracking-wider p-1.5 transition-all duration-300;
+/* Darken the light OSM tiles to match the UI. */
+.noir-map-tiles {
+  filter: invert(1) hue-rotate(180deg) grayscale(0.55) brightness(0.82) contrast(0.92);
 }
 
-.dark-calendar .rbc-event:hover {
-  background-color: hsl(var(--primary) / 0.4);
-  border-color: hsl(var(--primary) / 0.6);
-  box-shadow: var(--glow-secondary);
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background-color: hsl(var(--popover));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border-strong));
 }
 
-.dark-calendar .rbc-time-view {
-  border-color: hsl(var(--border));
-  border-radius: var(--radius);
+.leaflet-control-attribution {
+  background: hsl(var(--background) / 0.8) !important;
+  color: hsl(var(--faint)) !important;
 }
 
-.dark-calendar .rbc-time-header {
-  border-color: hsl(var(--border));
-}
-
-.dark-calendar .rbc-time-content {
-  border-color: hsl(var(--border));
-}
-
-.dark-calendar .rbc-timeslot-group {
-  border-color: hsl(var(--border));
-}
-
-.dark-calendar .rbc-time-slot {
-  border-color: hsl(var(--border));
-}
-
-.dark-calendar .rbc-time-gutter .rbc-timeslot-group {
-  border-color: hsl(var(--border));
-  color: hsl(var(--muted-foreground));
-  @apply text-xs;
-}
-
-.dark-calendar .rbc-day-slot .rbc-time-slot {
-  border-color: hsl(var(--border));
-}
-
-.dark-calendar .rbc-today {
-  background-color: hsl(var(--primary) / 0.08);
-}
-
-/* Radix ScrollArea wraps viewport content in a display:table element, which
-   grows to the widest nowrap line and breaks truncate/min-w-0 layouts (e.g.
-   the WarningsPanel error lines pushing the details button out of view).
-   Force block layout so children size to the viewport width instead. */
-[data-radix-scroll-area-viewport] > div {
-  display: block !important;
+.leaflet-control-attribution a {
+  color: hsl(var(--muted-foreground)) !important;
 }

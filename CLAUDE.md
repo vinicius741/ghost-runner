@@ -6,12 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | Layer | Technologies |
 |-------|-------------|
-| Backend | Node.js, TypeScript 6 (tsx runtime), Express 5, Socket.io |
-| Frontend | React 19, Vite 8, TypeScript 6, Tailwind CSS 3, shadcn/ui (Radix UI) |
+| Backend | Node.js, TypeScript 7 (tsx runtime), Express 5, Socket.io |
+| Frontend | React 19, Vite 8, TypeScript 7, Tailwind CSS 4 (v3-style JS config via `@config`), shadcn/ui (Radix UI) |
 | Desktop | Electron 41, electron-builder |
 | Automation | Playwright 1.59, playwright-extra, puppeteer-extra-plugin-stealth |
 | Scheduling | node-cron, cron-parser |
-| State | Socket.io (real-time), localStorage (dashboard layout) |
+| State | Socket.io (real-time), localStorage (last open page) |
 | Testing | Node.js built-in test runner + c8 (backend), Vitest 4 + Testing Library (frontend) |
 | Validation | Zod 4 |
 
@@ -203,11 +203,13 @@ Centralized TypeScript types shared between frontend and backend:
 
 | Directory | Purpose |
 |-----------|---------|
-| `components/dashboard/` | Dashboard widgets: TaskList, ScheduleBuilder, TaskCalendar, SettingsManager, LogsConsole, WarningsPanel, ThemeSwitcher |
-| `components/ui/` | shadcn/ui primitives (Radix UI) |
-| `hooks/` | Custom React hooks including Socket.io integration |
-| `lib/` | Utilities including `dashboardLayout.ts` (localStorage persistence with versioned migrations) |
-| `themes/` | Theme configuration for dark/light mode |
+| `components/shell/` | App shell: `Sidebar` (navigation + scheduler control), `navigation.ts` (page ids, persisted last page) |
+| `components/pages/` | One component per page: Overview, Tasks, Schedule, Failures, Data, Logs, Settings |
+| `components/dashboard/` | Feature widgets used by pages: TaskList, ScheduleBuilder, TaskCalendar, SettingsManager, LogsConsole, WarningsPanel, InfoGathering |
+| `components/common/` | Shared building blocks: PageHeader, EmptyState, SegmentedControl, ConfirmDialog, TaskTypeTag |
+| `components/ui/` | shadcn/ui primitives (Radix UI), restyled for the Noir theme |
+| `hooks/` | Custom React hooks including Socket.io integration and `useNextTask` (next scheduled run + countdown) |
+| `lib/` | Utilities including `schedule.ts` (human-readable rules, next-run times) and `failureTypes.ts` |
 | `types.ts` | Centralized TypeScript type definitions |
 
 ## Key Architectural Patterns
@@ -256,7 +258,7 @@ Centralized TypeScript types shared between frontend and backend:
   - `saveType`: `'public'` or `'private'` (where edits are saved)
 - Root/bundled tasks are saved as public overrides in writable storage
 - Syntax validation via Node.js `vm.Script` before saving
-- Prism.js syntax highlighting with custom slate-themed colors (`prism-theme.css`)
+- Prism.js syntax highlighting with muted warm colors (`prism-theme.css`)
 
 ### 8. Task Failure Tracking
 - Page wrapped with `createMonitoredPage()` intercepts common failure points
@@ -271,12 +273,12 @@ Centralized TypeScript types shared between frontend and backend:
 - Server stores in `info-gathering.json` with TTL-based expiration
 - Frontend InfoGathering component displays cached results
 
-### 10. Dashboard Layout System
-- Stored in localStorage with versioning (current version 3)
-- Migration system handles layout schema changes
-- Drag-and-drop via `@dnd-kit/core` and `@dnd-kit/sortable`
-- Supports minimize/restore per card (MinimizedCardsSidebar)
-- Minimized count badge displayed on sidebar toggle button
+### 10. App Shell & Design System
+- Sidebar navigation between dedicated pages (collapses to a top bar on narrow windows); the last open page is stored in localStorage (`ghost-runner-page`)
+- Pages read state directly from `DashboardContext`; the Record dialog lives in the shell so any page can open it
+- Single dark theme ("Noir"): warm near-black surfaces, one copper accent, DM Sans + JetBrains Mono. Tokens are CSS variables in `frontend/src/index.css`, mapped to Tailwind colors (`success`, `warning`, `info`, `faint`, `border-strong`, …) in `tailwind.config.js`
+- No decorative motion: no entrance animations, glows, blurs, or gradients. Only short color transitions on hover and spinners for in-progress work
+- `cron-parser` must be imported by name (`import { CronExpressionParser } from 'cron-parser'`); the default import resolves to the CJS module object in the browser bundle
 
 ### 11. Development Runner
 - `dev-runner.ts` spawns backend server with color-coded console output
@@ -350,22 +352,22 @@ interface TaskSource {
 interface FailureRecord {
   id: string;
   taskName: string;
-  errorType: 'ElementNotFoundError' | 'NavigationFailureError' | 'TaskTimeoutError' | 'UnknownError';
-  context: string;
+  errorType: 'element_not_found' | 'navigation_failure' | 'timeout' | 'unknown';
+  context: Record<string, unknown>;  // selector, url, errorMessage, recentLogs, screenshotUrl, ...
   timestamp: string;
   count: number;
   lastSeen: string;
-  dismissed: boolean;
+  dismissed?: boolean;
 }
 ```
 
 ### Schedule Entry
 ```typescript
-interface ScheduleEntry {
-  taskName: string;
+interface ScheduleItem {
+  task: string;
   cron?: string;        // For recurring tasks
   executeAt?: string;   // ISO timestamp for one-time tasks
-  enabled: boolean;
+  enabled?: boolean;
 }
 ```
 
@@ -412,8 +414,8 @@ Use `npm run record` to generate task code via Playwright Codegen.
 - **Type Safety**: Zero `any` types (except 4 Playwright internal cases). Error handling uses `unknown` with type guards
 - **Electron Security**: `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`
 - **Electron Frontend Bundling**: Electron loads `frontend/dist/` (pre-built), NOT source files. Always run `npm run build:frontend` after frontend changes before testing in Electron.
-- **Theme System**: Dark/light theme with CSS variables. Components use theme-aware classes (`bg-background`, `text-foreground`, etc.). Custom scrollbars, countdown timers, and code editor all respect active theme.
-- **Running Task Feedback**: Active tasks show loading spinners in TaskList and dashboard cards via `DashboardContext.runningTasks` state.
+- **Theme**: One dark theme defined by CSS variables. Components use token classes (`bg-background`, `bg-card`, `text-muted-foreground`, `text-faint`, etc.), never raw palette colors.
+- **Running Task Feedback**: Active tasks show a spinner in TaskList via `DashboardContext.runningTasks` state.
 
 ## File References for Common Tasks
 
@@ -423,11 +425,11 @@ Use `npm run record` to generate task code via Playwright Codegen.
 | Modify task execution | `src/core/index.ts`, `src/server/services/TaskExecutionService.ts` |
 | Modify ASAR/spawn handling | `src/server/services/TaskRunner.ts` |
 | Task source editing | `src/server/controllers/tasks.ts`, `frontend/src/components/dashboard/TaskEditorDialog.tsx`, `shared/types/task.ts` |
-| Add dashboard widget | `frontend/src/components/dashboard/*.tsx`, `frontend/src/App.tsx` |
+| Add a page | `frontend/src/components/pages/*.tsx`, `frontend/src/components/shell/navigation.ts`, `frontend/src/components/dashboard/DashboardContent.tsx` |
 | Change scheduler logic | `src/core/scheduler.ts`, `src/server/services/scheduler.ts` |
 | Add new error type | `src/core/errors.ts`, `src/core/pageWrapper.ts`, `src/server/utils/taskParser.ts` |
-| Modify dashboard layout | `frontend/src/lib/dashboardLayout.ts`, `frontend/src/components/dashboard/DashboardGrid.tsx` |
+| Modify app layout / navigation | `frontend/src/components/shell/*`, `frontend/src/components/dashboard/DashboardContent.tsx` |
 | Modify Electron shell | `electron/main.ts`, `electron/preload.ts`, `electron/lib/*.ts` |
 | Change runtime paths | `src/config/runtimePaths.ts` |
 | Add shared type | `shared/types/*.ts`, `shared/types/index.ts` |
-| Theme-aware styling | `frontend/src/index.css`, `frontend/src/components/dashboard/prism-theme.css` |
+| Theme tokens / styling | `frontend/src/index.css`, `frontend/tailwind.config.js`, `frontend/src/components/dashboard/prism-theme.css` |
