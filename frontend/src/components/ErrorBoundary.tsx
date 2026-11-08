@@ -51,57 +51,46 @@ interface ErrorBoundaryState {
  */
 function DefaultFallback({ error, errorInfo, reset }: FallbackProps) {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
-      <div className="max-w-lg w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/30">
-            <AlertTriangle className="w-8 h-8 text-red-400" />
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground">
+      <div className="w-full max-w-lg rounded-lg border border-border bg-card p-6">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
           <div>
-            <h1 className="text-2xl font-bold text-slate-100">Something went wrong</h1>
-            <p className="text-slate-400 text-sm">An unexpected error occurred</p>
+            <h1 className="text-[15px] font-semibold">Something went wrong</h1>
+            <p className="mt-1 text-[13px] text-muted-foreground">The interface hit an unexpected error.</p>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="bg-slate-950 rounded-lg p-4 border border-slate-800">
-            <p className="text-xs text-slate-500 mb-2">Error Message</p>
-            <p className="text-sm text-red-400 font-mono break-all">{error.message}</p>
-          </div>
+        <pre className="mt-5 whitespace-pre-wrap break-all rounded-md bg-background px-3 py-2 font-mono text-xs text-destructive">
+          {error.message}
+        </pre>
 
-          {errorInfo && (
-            <details className="bg-slate-950 rounded-lg border border-slate-800">
-              <summary className="px-4 py-3 cursor-pointer text-sm text-slate-400 hover:text-slate-300 select-none">
-                Component Stack
-              </summary>
-              <div className="px-4 pb-4 border-t border-slate-800">
-                <pre className="text-xs text-slate-500 font-mono overflow-auto max-h-48">
-                  {errorInfo.componentStack}
-                </pre>
-              </div>
-            </details>
-          )}
-        </div>
+        {errorInfo?.componentStack && (
+          <details className="mt-3 rounded-md border border-border">
+            <summary className="cursor-pointer select-none px-3 py-2 text-xs text-muted-foreground hover:text-foreground">
+              Component stack
+            </summary>
+            <pre className="max-h-48 overflow-auto border-t border-border px-3 py-2 font-mono text-xs text-faint">
+              {errorInfo.componentStack}
+            </pre>
+          </details>
+        )}
 
-        <div className="mt-6 flex gap-3">
+        <div className="mt-5 flex gap-2">
           <button
             onClick={reset}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
           >
-            <RefreshCw className="w-4 h-4" />
-            Try Again
+            <RefreshCw className="h-3.5 w-3.5" />
+            Try again
           </button>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
+            className="inline-flex h-8 items-center rounded-md border border-border-strong px-3 text-[13px] font-medium text-foreground hover:bg-accent"
           >
-            Reload Page
+            Reload
           </button>
         </div>
-
-        <p className="mt-4 text-xs text-slate-600 text-center">
-          If this problem persists, please check the browser console for more details.
-        </p>
       </div>
     </div>
   );

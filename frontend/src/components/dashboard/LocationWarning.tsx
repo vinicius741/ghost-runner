@@ -1,5 +1,5 @@
-import { AlertTriangle, MapPin, X, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { MapPin, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface LocationWarningProps {
   onDismiss: () => void;
@@ -8,45 +8,21 @@ interface LocationWarningProps {
 
 export function LocationWarning({ onDismiss, onGoToSettings }: LocationWarningProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className="relative group"
+    <div
+      role="status"
+      className="flex items-center gap-3 rounded-lg border border-warning/25 bg-warning/[0.06] py-2 pl-4 pr-2"
     >
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-orange-500 rounded-2xl blur opacity-40 group-hover:opacity-60 transition duration-500" />
-      <div className="relative flex items-center justify-between p-4 bg-card border border-amber-500/30 rounded-xl">
-        <div className="flex items-start gap-3 flex-1">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
-            <MapPin className="w-5 h-5 text-amber-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <h3 className="text-amber-500 font-semibold text-sm tracking-wide">Default Location in Use</h3>
-            </div>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              You are using the default São Paulo location. For accurate geolocation in your automation tasks,
-              please set your actual location in{' '}
-              <button
-                onClick={onGoToSettings}
-                className="text-primary hover:text-primary/80 underline underline-offset-2 font-medium inline-flex items-center gap-1 transition-colors"
-              >
-                Settings
-                <ChevronRight className="w-3 h-3" />
-              </button>.
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={onDismiss}
-          className="flex-shrink-0 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-          aria-label="Dismiss warning"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-    </motion.div>
+      <MapPin className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+      <p className="min-w-0 flex-1 text-[13px] text-foreground/90">
+        Tasks are using the default São Paulo location.{' '}
+        <span className="text-muted-foreground">Set your real location so sites see consistent geolocation.</span>
+      </p>
+      <Button variant="outline" size="sm" onClick={onGoToSettings}>
+        Open settings
+      </Button>
+      <Button variant="ghost" size="icon-sm" onClick={onDismiss} aria-label="Dismiss warning">
+        <X />
+      </Button>
+    </div>
   );
 }

@@ -1,77 +1,43 @@
 /**
- * Coordinate Inputs Component for Settings Manager
- *
- * Form inputs for latitude and longitude coordinates.
- * Extracted from SettingsManager.tsx for reusability.
- *
- * Related: Development Execution Plan Task 2.3.7
+ * Latitude / longitude inputs.
  */
 
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import type { GeolocationSettings } from '@/types';
+import { cn } from '@/lib/utils';
 
 export interface CoordinateInputsProps {
-  /** Current geolocation coordinates */
   geolocation: GeolocationSettings;
-  /** Callback when coordinate is updated */
   onUpdate: (field: keyof GeolocationSettings, value: string | number) => void;
-  /** Additional CSS class for the container */
   className?: string;
 }
 
-/**
- * Coordinate input form fields for latitude and longitude.
- * Includes validation and number-specific input handling.
- *
- * @example
- * <CoordinateInputs
- *   geolocation={{ latitude: -23.55052, longitude: -46.633308 }}
- *   onUpdate={(field, value) => updateGeo(field, value)}
- * />
- */
-export function CoordinateInputs({
-  geolocation,
-  onUpdate,
-  className = '',
-}: CoordinateInputsProps) {
+export function CoordinateInputs({ geolocation, onUpdate, className }: CoordinateInputsProps) {
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${className}`}>
-      {/* Latitude input */}
+    <div className={cn('grid grid-cols-2 gap-3', className)}>
       <div className="space-y-1.5">
-        <Label
-          htmlFor="latitude"
-          className="text-[10px] text-slate-500 font-bold uppercase tracking-widest ml-1"
-        >
-          Latitude
-        </Label>
+        <Label htmlFor="latitude">Latitude</Label>
         <Input
           id="latitude"
           type="number"
           step="any"
           value={geolocation.latitude}
           onChange={(e) => onUpdate('latitude', e.target.value)}
-          className="h-10 bg-[hsl(var(--input))] border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:border-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]/20 transition-all font-mono text-sm"
+          className="font-mono text-xs tabular-nums"
           placeholder="-23.55052"
           aria-label="Latitude coordinate"
         />
       </div>
-
-      {/* Longitude input */}
       <div className="space-y-1.5">
-        <Label
-          htmlFor="longitude"
-          className="text-[10px] text-slate-500 font-bold uppercase tracking-widest ml-1"
-        >
-          Longitude
-        </Label>
+        <Label htmlFor="longitude">Longitude</Label>
         <Input
           id="longitude"
           type="number"
           step="any"
           value={geolocation.longitude}
           onChange={(e) => onUpdate('longitude', e.target.value)}
-          className="h-10 bg-[hsl(var(--input))] border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:border-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]/20 transition-all font-mono text-sm"
+          className="font-mono text-xs tabular-nums"
           placeholder="-46.633308"
           aria-label="Longitude coordinate"
         />

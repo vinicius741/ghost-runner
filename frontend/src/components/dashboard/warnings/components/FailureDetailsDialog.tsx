@@ -1,35 +1,27 @@
 /**
- * Failure Details Dialog Component for Warnings Panel
- *
- * Shows task failure diagnostics, captured artifacts, recent logs, and a
+ * Failure details: diagnostics, captured artifacts, recent logs, and a
  * ready-to-copy repair prompt for an AI coding agent.
  */
 
 import { useMemo, useState, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
-import { type LucideIcon, X, MapPin, AlertCircle, Timer, Bug, Copy, ExternalLink, Image, FileCode2, TerminalSquare, Sparkles, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Copy, ExternalLink, Image, FileCode2, Bug, Check } from 'lucide-react';
 import type { FailureRecord } from '@/types';
-import { useFailureStyles } from '@/hooks/useFailureStyles';
-import { toTitleCase } from '@/utils/formatters';
-import { type ErrorType } from '@/utils/styleHelpers';
-
-const ERROR_ICONS: Record<ErrorType, LucideIcon> = {
-  element_not_found: MapPin,
-  navigation_failure: AlertCircle,
-  timeout: Timer,
-  unknown: Bug,
-};
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { getFailureType } from '@/lib/failureTypes';
+import { cn } from '@/lib/utils';
 
 export interface FailureDetailsDialogProps {
   failure: FailureRecord | null;
   onClose: () => void;
   onDismiss: (id: string) => void;
-}
-
-interface ContextValueProps {
-  label: string;
-  value: unknown;
 }
 
 function stringifyValue(value: unknown): string {
@@ -43,28 +35,31 @@ function getContextString(context: Record<string, unknown>, key: string): string
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-function ContextValue({ label, value }: ContextValueProps) {
+function Field({ label, value, mono = true }: { label: string; value: unknown; mono?: boolean }) {
   return (
-    <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800/70 print:bg-gray-50 print:border-gray-300">
-      <p className="text-xs text-slate-500 mb-1 print:text-gray-500">{label}</p>
-      <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap break-words print:text-black">
+    <div className="min-w-0 space-y-0.5">
+      <dt className="text-xs text-faint">{label}</dt>
+      <dd className={cn('whitespace-pre-wrap break-words text-[13px] text-foreground/90', mono && 'font-mono text-xs')}>
         {stringifyValue(value)}
-      </pre>
+      </dd>
     </div>
   );
 }
 
-function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+function Section({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
   return (
     <section className="space-y-2">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 print:text-gray-600">
-        {icon}
-        {title}
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs font-medium text-muted-foreground">{title}</h3>
+        {action}
       </div>
       {children}
     </section>
   );
 }
+
+const ARTIFACT_LINK =
+  'inline-flex items-center gap-1.5 rounded-md border border-border-strong px-2.5 py-1 text-xs text-muted-foreground transition-colors duration-100 hover:bg-accent hover:text-foreground';
 
 function buildAgentPrompt(failure: FailureRecord): string {
   const c = failure.context || {};
@@ -107,21 +102,18 @@ What I need you to do:
 }
 
 export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDetailsDialogProps) {
-  const styles = useFailureStyles();
   const [copied, setCopied] = useState(false);
-  const agentPrompt = useMemo(() => failure ? buildAgentPrompt(failure) : '', [failure]);
+  const agentPrompt = useMemo(() => (failure ? buildAgentPrompt(failure) : ''), [failure]);
 
-  if (!failure) {
-    return null;
-  }
-
-  const context = failure.context || {};
+  const context = failure?.context || {};
   const screenshotUrl = getContextString(context, 'screenshotUrl');
   const htmlUrl = getContextString(context, 'htmlUrl');
   const diagnosticsUrl = getContextString(context, 'diagnosticsUrl');
   const recentLogs = Array.isArray(context.recentLogs) ? context.recentLogs : [];
   const hiddenKeys = new Set(['errorMessage', 'recentLogs', 'screenshotUrl', 'htmlUrl', 'diagnosticsUrl']);
-  const Icon = ERROR_ICONS[failure.errorType] || Bug;
+  const extraContext = Object.entries(context).filter(([key]) => !hiddenKeys.has(key));
+  const type = failure ? getFailureType(failure.errorType) : null;
+  const Icon = type?.icon ?? Bug;
 
   const copyPrompt = async () => {
     await navigator.clipboard.writeText(agentPrompt);
@@ -129,106 +121,104 @@ export function FailureDetailsDialog({ failure, onClose, onDismiss }: FailureDet
     setTimeout(() => setCopied(false), 1800);
   };
 
-  const dialog = (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:static print:block print:p-0 print:bg-white print:backdrop-blur-none"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98, y: 4 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.98, y: 4 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          onClick={(e) => e.stopPropagation()}
-          className="relative max-w-4xl w-full bg-slate-950 border border-red-900/40 rounded-2xl shadow-2xl overflow-hidden print:max-w-none print:rounded-none print:border print:border-gray-300 print:shadow-none print:bg-white print:overflow-visible"
-        >
-          <div className={`absolute -inset-0.5 bg-gradient-to-r ${styles.getGradient(failure.errorType)} rounded-2xl blur opacity-40 print:hidden`} />
-          <div className="relative">
-            <div className="p-6 border-b border-slate-800 bg-gradient-to-r from-red-950/45 via-slate-950 to-slate-950 print:bg-white print:border-gray-300">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className={`w-14 h-14 rounded-2xl bg-red-950/40 flex items-center justify-center border ${styles.getBorder(failure.errorType)} shadow-lg shadow-red-950/30 print:hidden`}>
-                    <Icon className={`w-7 h-7 ${styles.getColor(failure.errorType)}`} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-[0.28em] text-red-300/70 font-semibold print:text-gray-500">Failure requires attention</p>
-                    <h3 className="text-xl font-semibold text-slate-100 truncate print:text-black">{failure.taskName}</h3>
-                    <p className="text-sm text-slate-400 print:text-gray-600">{toTitleCase(failure.errorType)} · {failure.count} occurrence{failure.count !== 1 ? 's' : ''}</p>
-                  </div>
-                </div>
-                <button onClick={onClose} className="p-2 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-slate-800/70 transition-colors print:hidden" aria-label="Close dialog">
-                  <X className="w-5 h-5" />
-                </button>
+  return (
+    <Dialog open={failure !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-0 overflow-hidden p-0">
+        {failure && type && (
+          <>
+            <DialogHeader className="flex-row items-center gap-3 border-b border-border px-5 py-4">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border-strong bg-background">
+                <Icon className={cn('h-4 w-4', type.tone)} aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <DialogTitle className="truncate">{failure.taskName}</DialogTitle>
+                <DialogDescription>
+                  {type.label} · {failure.count} occurrence{failure.count !== 1 ? 's' : ''}
+                </DialogDescription>
               </div>
-            </div>
+            </DialogHeader>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-0 max-h-[72vh] overflow-y-auto custom-scrollbar print:block print:max-h-none print:overflow-visible">
-              <div className="min-w-0 p-6 space-y-5 border-r border-slate-800/80 print:border-r-0">
-                <Section icon={<AlertCircle className="w-4 h-4" />} title="What went wrong">
-                  <ContextValue label="Error Message" value={context.errorMessage || 'Unknown error'} />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <ContextValue label="Last Seen" value={new Date(failure.lastSeen).toLocaleString()} />
-                    <ContextValue label="First Occurred" value={new Date(failure.timestamp).toLocaleString()} />
-                  </div>
+            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+              <div className="min-w-0 space-y-5 p-5 lg:border-r lg:border-border">
+                <Section title="Error">
+                  <p className="whitespace-pre-wrap break-words rounded-md border border-destructive/25 bg-destructive/[0.06] px-3 py-2 font-mono text-xs text-destructive">
+                    {stringifyValue(context.errorMessage || 'Unknown error')}
+                  </p>
+                  <dl className="grid grid-cols-2 gap-3">
+                    <Field label="Last seen" value={new Date(failure.lastSeen).toLocaleString()} mono={false} />
+                    <Field label="First seen" value={new Date(failure.timestamp).toLocaleString()} mono={false} />
+                  </dl>
                 </Section>
 
                 {(screenshotUrl || htmlUrl || diagnosticsUrl) && (
-                  <Section icon={<Image className="w-4 h-4" />} title="Captured page artifacts">
+                  <Section title="Captured artifacts">
                     {screenshotUrl && (
-                      <a href={screenshotUrl} target="_blank" rel="noreferrer" className="block rounded-xl overflow-hidden border border-slate-800 bg-slate-900/50 hover:border-red-500/50 transition-colors">
-                        <img src={screenshotUrl} alt="Failure screenshot" className="w-full max-h-64 object-contain bg-black" />
+                      <a href={screenshotUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-md border border-border">
+                        <img src={screenshotUrl} alt="Failure screenshot" className="max-h-64 w-full bg-black object-contain" />
                       </a>
                     )}
                     <div className="flex flex-wrap gap-2">
-                      {screenshotUrl && <a className="px-3 py-2 rounded-lg bg-slate-900 text-slate-300 text-sm hover:bg-slate-800 inline-flex items-center gap-2" href={screenshotUrl} target="_blank" rel="noreferrer"><Image className="w-4 h-4" />Open screenshot<ExternalLink className="w-3 h-3" /></a>}
-                      {htmlUrl && <a className="px-3 py-2 rounded-lg bg-slate-900 text-slate-300 text-sm hover:bg-slate-800 inline-flex items-center gap-2" href={htmlUrl} target="_blank" rel="noreferrer"><FileCode2 className="w-4 h-4" />Open HTML<ExternalLink className="w-3 h-3" /></a>}
-                      {diagnosticsUrl && <a className="px-3 py-2 rounded-lg bg-slate-900 text-slate-300 text-sm hover:bg-slate-800 inline-flex items-center gap-2" href={diagnosticsUrl} target="_blank" rel="noreferrer"><Bug className="w-4 h-4" />Diagnostics<ExternalLink className="w-3 h-3" /></a>}
+                      {screenshotUrl && <a className={ARTIFACT_LINK} href={screenshotUrl} target="_blank" rel="noreferrer"><Image className="h-3.5 w-3.5" />Screenshot<ExternalLink className="h-3 w-3" /></a>}
+                      {htmlUrl && <a className={ARTIFACT_LINK} href={htmlUrl} target="_blank" rel="noreferrer"><FileCode2 className="h-3.5 w-3.5" />HTML<ExternalLink className="h-3 w-3" /></a>}
+                      {diagnosticsUrl && <a className={ARTIFACT_LINK} href={diagnosticsUrl} target="_blank" rel="noreferrer"><Bug className="h-3.5 w-3.5" />Diagnostics<ExternalLink className="h-3 w-3" /></a>}
                     </div>
                   </Section>
                 )}
 
-                <Section icon={<TerminalSquare className="w-4 h-4" />} title="Recent logs">
-                  <pre className="p-3 bg-black/70 rounded-lg border border-slate-800 text-xs text-slate-300 whitespace-pre-wrap break-words max-h-52 overflow-auto custom-scrollbar print:bg-transparent print:border-gray-300 print:text-black print:max-h-none print:overflow-visible">{recentLogs.length ? recentLogs.join('\n') : 'No recent task logs captured.'}</pre>
+                <Section title="Recent logs">
+                  <pre className="max-h-52 overflow-auto whitespace-pre-wrap break-words rounded-md bg-background px-3 py-2 text-xs text-foreground/80">
+                    {recentLogs.length ? recentLogs.join('\n') : 'No recent task logs captured.'}
+                  </pre>
                 </Section>
+
+                {extraContext.length > 0 && (
+                  <Section title="Context">
+                    <dl className="space-y-3">
+                      {extraContext.map(([key, value]) => (
+                        <Field key={key} label={key.replace(/([A-Z])/g, ' $1').trim()} value={value} />
+                      ))}
+                    </dl>
+                  </Section>
+                )}
               </div>
 
-              <div className="min-w-0 p-6 space-y-5 bg-slate-950/70 print:bg-transparent">
-                <Section icon={<Sparkles className="w-4 h-4 text-amber-300" />} title="Copy/paste agent prompt">
-                  <p className="text-sm text-slate-400 print:text-gray-700">Send this to Claude Code or another coding agent. It includes the failure, artifacts, logs, and requested fix.</p>
-                  <button onClick={copyPrompt} className="w-full px-4 py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm hover:bg-amber-400 transition-colors inline-flex items-center justify-center gap-2 print:hidden">
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    {copied ? 'Copied prompt' : 'Copy repair prompt'}
-                  </button>
-                  <pre className="p-3 bg-black/60 rounded-lg border border-slate-800 text-xs text-slate-300 whitespace-pre-wrap break-words max-h-72 overflow-auto custom-scrollbar print:bg-transparent print:border-gray-300 print:text-black print:max-h-none print:overflow-visible">{agentPrompt}</pre>
-                </Section>
-
-                <Section icon={<Bug className="w-4 h-4" />} title="Full structured context">
-                  <div className="space-y-2">
-                    {Object.entries(context).filter(([key]) => !hiddenKeys.has(key)).map(([key, value]) => (
-                      <ContextValue key={key} label={key.replace(/([A-Z])/g, ' $1').trim()} value={value} />
-                    ))}
-                  </div>
+              <div className="min-w-0 space-y-3 p-5">
+                <Section
+                  title="Repair prompt"
+                  action={
+                    <Button size="sm" onClick={() => void copyPrompt()}>
+                      {copied ? <Check /> : <Copy />}
+                      {copied ? 'Copied' : 'Copy prompt'}
+                    </Button>
+                  }
+                >
+                  <p className="text-xs text-muted-foreground">
+                    Paste into Claude Code or another coding agent. It includes the failure, artifacts, logs, and the requested fix.
+                  </p>
+                  <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-md bg-background px-3 py-2 text-xs text-foreground/80">
+                    {agentPrompt}
+                  </pre>
                 </Section>
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-800 bg-slate-950 flex justify-end gap-2 print:bg-white print:border-gray-300">
-              <button onClick={() => { onDismiss(failure.id); onClose(); }} className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition-colors print:hidden">
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+            <DialogFooter className="border-t border-border px-5 py-3">
+              <Button variant="ghost" onClick={onClose}>
+                Close
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  onDismiss(failure.id);
+                  onClose();
+                }}
+              >
+                Dismiss failure
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
-
-  // Portal to <body>: the dialog renders inside framer-motion drag cards whose
-  // transforms turn position:fixed into position:absolute, caging the overlay.
-  return createPortal(dialog, document.body);
 }

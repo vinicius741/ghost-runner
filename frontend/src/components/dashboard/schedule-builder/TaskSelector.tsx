@@ -1,3 +1,4 @@
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Task } from "./types";
 
@@ -9,19 +10,15 @@ interface TaskSelectorProps {
 
 export function TaskSelector({ tasks, selectedTask, onTaskChange }: TaskSelectorProps) {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Select Automation</label>
+    <div className="space-y-1.5">
+      <Label htmlFor="schedule-task">Task</Label>
       <Select value={selectedTask} onValueChange={onTaskChange}>
-        <SelectTrigger className="bg-card/50 border-border/50 text-foreground h-11 focus:ring-primary/20">
-          <SelectValue placeholder="Choose a task..." />
+        <SelectTrigger id="schedule-task">
+          <SelectValue placeholder="Choose a task" />
         </SelectTrigger>
-        <SelectContent className="bg-card border-border text-foreground">
-          {tasks.map(t => (
-            <SelectItem
-              key={`${t.name}-${t.type}`}
-              value={t.name}
-              className="focus:bg-primary/10 focus:text-primary uppercase text-xs font-semibold tracking-tight"
-            >
+        <SelectContent>
+          {tasks.map((t) => (
+            <SelectItem key={`${t.name}-${t.type}`} value={t.name}>
               {t.name}
             </SelectItem>
           ))}

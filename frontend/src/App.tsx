@@ -1,14 +1,14 @@
-import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DashboardProvider } from "@/contexts/DashboardContext";
 import { DashboardContent } from "@/components/dashboard/DashboardContent";
 
 function App() {
   return (
-    <ThemeProvider>
+    <ErrorBoundary>
       <DashboardProvider>
         <DashboardContent />
       </DashboardProvider>
-    </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -9,7 +9,6 @@
  */
 
 import { createContext, useContext, ReactNode, useEffect } from 'react';
-import type { DragEndEvent } from '@dnd-kit/core';
 import type {
   Task,
   TaskSource,
@@ -20,12 +19,8 @@ import type {
   FailureRecord,
   InfoGatheringResult,
 } from '@shared/types';
-import type {
-  DashboardCardId,
-  DashboardLayoutExtended,
-} from '@/types';
 import { useDashboardLogs, type LogType } from './useDashboardLogs';
-import { useDashboardLayout } from './useDashboardLayout';
+import { useDashboardSettings } from './useDashboardSettings';
 import { useDashboardTasks } from './useDashboardTasks';
 import { useDashboardScheduler } from './useDashboardScheduler';
 import { useDashboardFailures } from './useDashboardFailures';
@@ -45,8 +40,6 @@ export interface DashboardContextValue {
   failures: FailureRecord[];
   infoGatheringResults: InfoGatheringResult[];
   refreshingInfoGatheringTasks: string[];
-  layout: DashboardLayoutExtended;
-  sidebarOpen: boolean;
   showLocationWarning: boolean;
   runningTasks: Set<string>;
 
@@ -77,12 +70,6 @@ export interface DashboardContextValue {
   refreshInfoGatheringTask: (taskName: string) => Promise<void>;
   clearInfoGatheringResult: (taskName: string) => Promise<void>;
   clearAllInfoGatheringResults: () => Promise<void>;
-
-  // Layout operations
-  handleCardReorder: (event: DragEndEvent) => void;
-  minimizeCard: (cardId: DashboardCardId) => void;
-  restoreCard: (cardId: DashboardCardId) => void;
-  toggleSidebar: () => void;
 
   // Settings
   fetchSettings: () => Promise<void>;
@@ -131,17 +118,11 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
 
   // 2. Specialized sub-hooks that consume the log function
   const {
-    layout,
-    sidebarOpen,
     settings,
     showLocationWarning,
     fetchSettings,
-    handleCardReorder,
-    minimizeCard,
-    restoreCard,
-    toggleSidebar,
     dismissLocationWarning,
-  } = useDashboardLayout(addLog);
+  } = useDashboardSettings();
 
   const {
     tasks,
@@ -186,8 +167,6 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     failures,
     infoGatheringResults,
     refreshingInfoGatheringTasks,
-    layout,
-    sidebarOpen,
     showLocationWarning,
     runningTasks,
 
@@ -218,12 +197,6 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     refreshInfoGatheringTask,
     clearInfoGatheringResult,
     clearAllInfoGatheringResults,
-
-    // Layout operations
-    handleCardReorder,
-    minimizeCard,
-    restoreCard,
-    toggleSidebar,
 
     // Settings
     fetchSettings,

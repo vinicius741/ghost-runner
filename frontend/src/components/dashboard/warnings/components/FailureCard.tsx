@@ -1,116 +1,73 @@
 /**
- * Failure Card Component for Warnings Panel
- *
- * Displays an individual failure record with expandable details.
- * Extracted from WarningsPanel.tsx for reusability.
- *
- * Related: Development Execution Plan Task 2.2.2
+ * One task's failures: a summary row that expands to list each distinct
+ * failure with its selector / URL / message and a link to full details.
  */
 
-import { type LucideIcon, MapPin, AlertCircle, Timer, Bug, ChevronRight, Clock, Camera, FileCode2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ChevronRight, Camera, FileCode2 } from 'lucide-react';
 import type { FailureRecord } from '@/types';
-import { formatTimestamp, toTitleCase } from '@/utils/formatters';
-import { useFailureStyles } from '@/hooks/useFailureStyles';
-import { type ErrorType } from '@/utils/styleHelpers';
-
-/**
- * Map of error type icons to Lucide components.
- */
-const ERROR_ICONS: Record<ErrorType, LucideIcon> = {
-  element_not_found: MapPin,
-  navigation_failure: AlertCircle,
-  timeout: Timer,
-  unknown: Bug,
-};
+import { Button } from '@/components/ui/button';
+import { getFailureType } from '@/lib/failureTypes';
+import { formatAgo } from '@/lib/schedule';
+import { cn } from '@/lib/utils';
 
 export interface FailureCardProps {
-  /** Task name for this group of failures */
   taskName: string;
-  /** Array of failures for this task */
   failures: FailureRecord[];
-  /** Whether this card is expanded */
   isExpanded: boolean;
-  /** Callback when card is clicked */
   onToggle: () => void;
-  /** Callback when details button is clicked for a specific failure */
   onViewDetails: (failure: FailureRecord) => void;
 }
 
-/**
- * Icon component based on error type.
- */
-function ErrorTypeIcon({ errorType, className }: { errorType: ErrorType; className?: string }) {
-  const Icon = ERROR_ICONS[errorType] || Bug;
-  return <Icon className={className} />;
+function contextString(failure: FailureRecord, key: string): string | undefined {
+  const value = failure.context?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-/**
- * Individual failure item in the expanded view.
- */
-interface FailureItemProps {
-  failure: FailureRecord;
-  onViewDetails: (failure: FailureRecord) => void;
-}
-
-function FailureItem({ failure, onViewDetails }: FailureItemProps) {
-  const hasScreenshot = typeof failure.context?.screenshotUrl === 'string';
-  const hasHtml = typeof failure.context?.htmlUrl === 'string';
+function FailureItem({ failure, onViewDetails }: { failure: FailureRecord; onViewDetails: (f: FailureRecord) => void }) {
+  const type = getFailureType(failure.errorType);
+  const selector = contextString(failure, 'selector');
+  const url = contextString(failure, 'url');
+  const message = contextString(failure, 'errorMessage');
+  const hasScreenshot = Boolean(contextString(failure, 'screenshotUrl'));
+  const hasHtml = Boolean(contextString(failure, 'htmlUrl'));
 
   return (
-    <div className="min-w-0 overflow-hidden p-3 bg-red-950/10 rounded-lg border border-red-900/30 shadow-inner shadow-red-950/10">
-      <div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:justify-between">
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <p className="text-xs font-medium text-slate-400 mb-1">
-            {toTitleCase(failure.errorType)}
-          </p>
-          {typeof failure.context?.selector === 'string' && (
-            <p className="text-xs text-slate-500 font-mono truncate">
-              Selector: {failure.context.selector}
-            </p>
+    <li className="flex min-w-0 items-start gap-3 py-2.5 pl-11 pr-4">
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          <span className={cn('font-medium', type.tone)}>{type.label}</span>
+          <span className="text-faint">×{failure.count}</span>
+          <span className="text-faint">{formatAgo(failure.lastSeen)}</span>
+          {hasScreenshot && (
+            <span className="inline-flex items-center gap-1 text-faint">
+              <Camera className="h-3 w-3" /> screenshot
+            </span>
           )}
-          {typeof failure.context?.url === 'string' && (
-            <p className="text-xs text-slate-500 truncate">
-              URL: {failure.context.url}
-            </p>
+          {hasHtml && (
+            <span className="inline-flex items-center gap-1 text-faint">
+              <FileCode2 className="h-3 w-3" /> html
+            </span>
           )}
-          {typeof failure.context?.errorMessage === 'string' && (
-            <p className="text-xs text-red-300/80 truncate mt-1">
-              {failure.context.errorMessage}
-            </p>
-          )}
-          <div className="flex flex-wrap gap-1.5 mt-2 min-w-0">
-            {hasScreenshot && <span className="inline-flex items-center gap-1 text-[10px] text-sky-300/80 bg-sky-500/10 border border-sky-500/20 rounded px-1.5 py-0.5"><Camera className="w-3 h-3" /> screenshot</span>}
-            {hasHtml && <span className="inline-flex items-center gap-1 text-[10px] text-emerald-300/80 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5"><FileCode2 className="w-3 h-3" /> html</span>}
-          </div>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewDetails(failure);
-          }}
-          className="shrink-0 self-end px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-200 text-xs font-medium hover:bg-red-500/25 hover:text-white transition-colors sm:self-start"
-        >
-          Fix details
-        </button>
+        {message && <p className="truncate font-mono text-xs text-foreground/80" title={message}>{message}</p>}
+        {selector && (
+          <p className="truncate font-mono text-xs text-muted-foreground" title={selector}>
+            <span className="text-faint">selector </span>{selector}
+          </p>
+        )}
+        {url && (
+          <p className="truncate font-mono text-xs text-muted-foreground" title={url}>
+            <span className="text-faint">url </span>{url}
+          </p>
+        )}
       </div>
-    </div>
+      <Button variant="outline" size="sm" onClick={() => onViewDetails(failure)}>
+        Details
+      </Button>
+    </li>
   );
 }
 
-/**
- * Failure card component showing a task with its failures.
- * Displays task name, error type, occurrence count, and expandable details.
- *
- * @example
- * <FailureCard
- *   taskName="my_task"
- *   failures={[failure1, failure2]}
- *   isExpanded={expandedTask === 'my_task'}
- *   onToggle={() => setExpandedTask('my_task')}
- *   onViewDetails={setSelectedFailure}
- * />
- */
 export function FailureCard({
   taskName,
   failures,
@@ -118,77 +75,45 @@ export function FailureCard({
   onToggle,
   onViewDetails,
 }: FailureCardProps) {
-  const styles = useFailureStyles();
-
-  // Get the latest failure for display
-  const latestFailure = failures.sort((a, b) =>
-    new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()
-  )[0];
-
-  const failureStyles = styles.getFailureRecordStyles(latestFailure);
+  const sorted = [...failures].sort(
+    (a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()
+  );
+  const latest = sorted[0];
+  const type = getFailureType(latest.errorType);
+  const Icon = type.icon;
   const totalCount = failures.reduce((sum, f) => sum + f.count, 0);
+  const Chevron = isExpanded ? ChevronDown : ChevronRight;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -4 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 4 }}
-      className="group min-w-0"
-    >
-      {/* Task header - clickable to expand */}
-      <div
+    <li className="min-w-0">
+      <button
+        type="button"
         onClick={onToggle}
-        className="relative flex min-w-0 items-center justify-between overflow-hidden p-3 bg-red-950/10 border border-red-900/40 rounded-xl cursor-pointer hover:bg-red-950/20 hover:border-red-500/50 transition-all duration-300 shadow-lg shadow-red-950/10"
+        aria-expanded={isExpanded}
+        className="flex w-full min-w-0 items-center gap-3 px-4 py-2.5 text-left transition-colors duration-100 hover:bg-accent/60 focus-visible:bg-accent focus-visible:outline-none"
       >
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600/30 to-amber-500/20 rounded-xl blur opacity-60 group-hover:opacity-100 transition duration-500" />
-        <div className="relative flex items-center gap-3 flex-1 min-w-0">
-          <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center border ${failureStyles.borderClass}`}>
-            <div className={failureStyles.iconClass}>
-              <ErrorTypeIcon errorType={latestFailure.errorType} className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h3 className="text-slate-200 font-semibold text-sm truncate">
-                {taskName}
-              </h3>
-              <span className={`px-1.5 py-0.5 rounded ${failureStyles.badgeBgClass} ${failureStyles.badgeTextClass} text-[10px] font-medium border ${failureStyles.borderClass.replace('/30', '/20')}`}>
-                {totalCount} failing
-              </span>
-            </div>
-            <p className="text-slate-500 text-xs mt-0.5 flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {formatTimestamp(latestFailure.lastSeen)}
-            </p>
-          </div>
-          <div className={`text-slate-500 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
-            <ChevronRight className="w-4 h-4" />
-          </div>
-        </div>
-      </div>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border-strong bg-background">
+          <Icon className={cn('h-3.5 w-3.5', type.tone)} aria-hidden="true" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] font-medium text-foreground">{taskName}</span>
+          <span className="block truncate text-xs text-muted-foreground">
+            {type.label} · last {formatAgo(latest.lastSeen)}
+          </span>
+        </span>
+        <span className="shrink-0 font-mono text-xs text-destructive tabular-nums" title="Total occurrences">
+          {totalCount}×
+        </span>
+        <Chevron className="h-4 w-4 shrink-0 text-faint" aria-hidden="true" />
+      </button>
 
-      {/* Expanded details */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="mt-2 min-w-0 space-y-2 border-l-2 border-slate-800 pl-3 sm:ml-4 sm:pl-4">
-              {failures.map((failure) => (
-                <FailureItem
-                  key={failure.id}
-                  failure={failure}
-                  onViewDetails={onViewDetails}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      {isExpanded && (
+        <ul className="divide-y divide-border border-t border-border bg-background/50">
+          {sorted.map((failure) => (
+            <FailureItem key={failure.id} failure={failure} onViewDetails={onViewDetails} />
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }

@@ -12,16 +12,16 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Save, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Loader2, RotateCcw } from 'lucide-react';
 import type { Settings, GeolocationSettings } from '@/types';
 import { DEFAULT_LOCATION } from '@/types';
 import { GeolocationSection } from './settings/sections/GeolocationSection';
 import { BrowserModeSection } from './settings/sections/BrowserModeSection';
 import { BrowserConfigSection, type BrowserChannel } from './settings/sections/BrowserConfigSection';
 import { AuthenticationSection } from './settings/sections/AuthenticationSection';
+import { SettingsSection } from './settings/components/SettingsSection';
 import { apiClient } from '@/lib/apiClient';
 
 export interface SettingsManagerProps {
@@ -118,44 +118,24 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-    >
-      <Card className="card-premium h-full">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <CardTitle className="text-foreground font-medium tracking-tight flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-blue-500" />
-            Geolocation Settings
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={fetchSettings}
-            disabled={loading}
-            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          {/* Geolocation section */}
-          <GeolocationSection
-            geolocation={settings.geolocation}
-            onGeolocationChange={updateGeolocation}
-            onSaveSettings={saveSettings}
-            onSettingsSaved={onSettingsSaved}
-            onLog={onLog}
-          />
+    <div className="space-y-4">
+      <Card className="divide-y divide-border">
+        <GeolocationSection
+          geolocation={settings.geolocation}
+          onGeolocationChange={updateGeolocation}
+          onSaveSettings={saveSettings}
+          onSettingsSaved={onSettingsSaved}
+          onLog={onLog}
+        />
 
-          {/* Browser mode section */}
+        <SettingsSection
+          title="Browser"
+          description="Which browser launches tasks and how. Changes apply to new browser instances."
+        >
           <BrowserModeSection
             headless={settings.headless ?? false}
             onHeadlessChange={updateHeadless}
           />
-
-          {/* Browser configuration section */}
           <BrowserConfigSection
             browserChannel={settings.browserChannel as BrowserChannel}
             executablePath={settings.executablePath}
@@ -163,39 +143,26 @@ export function SettingsManager({ onSettingsSaved, onLog }: SettingsManagerProps
             onBrowserChannelChange={updateBrowserChannel}
             onExecutablePathChange={updateExecutablePath}
           />
+        </SettingsSection>
 
-          {/* Authentication section */}
-          <AuthenticationSection
-            isSettingUpLogin={settingUpLogin}
-            isLoading={loading}
-            onSetupLogin={handleSetupLogin}
-          />
-
-          {/* Save button */}
-          <div className="space-y-4">
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-300" />
-              <Button
-                onClick={handleSave}
-                disabled={saving || loading}
-                className="relative w-full h-11 bg-card border border-border hover:bg-muted text-foreground transition-all duration-300"
-              >
-                {saving ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin text-primary" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2 text-primary" />
-                )}
-                <span className="font-semibold tracking-wide">Save Configuration</span>
-              </Button>
-            </div>
-            <p className="text-[10px] text-muted-foreground text-center leading-relaxed px-4">
-              Changes apply to new browser instances.
-              <br />
-              Profiles update on next launch.
-            </p>
-          </div>
-        </CardContent>
+        <AuthenticationSection
+          isSettingUpLogin={settingUpLogin}
+          isLoading={loading}
+          onSetupLogin={handleSetupLogin}
+        />
       </Card>
-    </motion.div>
+
+      <div className="flex items-center justify-end gap-3">
+        <p className="mr-auto text-xs text-faint">Profiles update the next time a browser launches.</p>
+        <Button variant="ghost" onClick={fetchSettings} disabled={loading || saving}>
+          {loading ? <Loader2 className="animate-spin" /> : <RotateCcw />}
+          Reload
+        </Button>
+        <Button onClick={handleSave} disabled={saving || loading}>
+          {saving && <Loader2 className="animate-spin" />}
+          Save changes
+        </Button>
+      </div>
+    </div>
   );
 }

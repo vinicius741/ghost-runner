@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import {
   TaskSelector,
   ScheduleConfigPanel,
@@ -41,10 +41,10 @@ interface ScheduleBuilderProps {
   schedule: ScheduleItem[];
   onAddSchedule: (task: string, cron?: string, executeAt?: string) => void;
   onDeleteSchedule: (index: number) => void;
-  onHeaderDoubleClick?: () => void;
+  className?: string;
 }
 
-export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedule, onHeaderDoubleClick }: ScheduleBuilderProps) {
+export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedule, className }: ScheduleBuilderProps) {
   const [selectedTask, setSelectedTask] = useState<string>('');
   const [cronTab, setCronTab] = useState<CronTab>('once');
 
@@ -120,57 +120,38 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-    >
-      <Card className="card-premium h-full">
-        <CardHeader className="pb-4" onDoubleClick={onHeaderDoubleClick}>
-          <CardTitle className="text-foreground font-medium tracking-tight flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-primary" style={{ boxShadow: 'var(--glow-primary)' }} />
-            Schedule Builder
-          </CardTitle>
+    <div className={cn('grid min-w-0 gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start', className)}>
+      <Card>
+        <CardHeader>
+          <CardTitle>New schedule</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-6 mb-8">
-            <TaskSelector
-              tasks={tasks}
-              selectedTask={selectedTask}
-              onTaskChange={setSelectedTask}
-            />
-
-            <ScheduleConfigPanel
-              cronTab={cronTab}
-              onTabChange={setCronTab}
-              config={config}
-              onConfigChange={handleConfigChange}
-            >
-              <SchedulePreview
-                cronTab={cronTab}
-                cronPreview={cronPreview}
-                executeAtTime={executeAtTime}
-              />
-            </ScheduleConfigPanel>
-
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-300" />
-              <Button
-                onClick={handleAdd}
-                className="relative w-full h-11 bg-primary-foreground text-primary hover:bg-white transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)] disabled:opacity-50 disabled:grayscale disabled:shadow-none"
-                disabled={!selectedTask}
-              >
-                <span className="font-bold uppercase tracking-widest text-xs">Add to Schedule</span>
-              </Button>
-            </div>
-          </div>
-
-          <ScheduleList
-            schedule={schedule}
-            onDeleteSchedule={onDeleteSchedule}
+        <CardContent className="space-y-4">
+          <TaskSelector
+            tasks={tasks}
+            selectedTask={selectedTask}
+            onTaskChange={setSelectedTask}
           />
+
+          <ScheduleConfigPanel
+            cronTab={cronTab}
+            onTabChange={setCronTab}
+            config={config}
+            onConfigChange={handleConfigChange}
+          >
+            <SchedulePreview
+              cronTab={cronTab}
+              cronPreview={cronPreview}
+              executeAtTime={executeAtTime}
+            />
+          </ScheduleConfigPanel>
+
+          <Button onClick={handleAdd} className="w-full" disabled={!selectedTask}>
+            Add to schedule
+          </Button>
         </CardContent>
       </Card>
-    </motion.div>
+
+      <ScheduleList schedule={schedule} onDeleteSchedule={onDeleteSchedule} />
+    </div>
   );
 }

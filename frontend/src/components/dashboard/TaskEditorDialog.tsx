@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { Task, TaskSource, TaskSourceSaveType } from '@shared/types';
 import Editor from 'react-simple-code-editor';
 import { highlight, languages } from 'prismjs';
 import 'prismjs/components/prism-javascript';
 import './prism-theme.css';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,7 +27,7 @@ function formatSaveTarget(saveType: TaskSourceSaveType): string {
 }
 
 function formatSourceOrigin(sourceOrigin: TaskSource['sourceOrigin']): string {
-  return sourceOrigin === 'writable' ? 'Writable file' : 'Bundled file';
+  return sourceOrigin === 'writable' ? 'writable file' : 'bundled file';
 }
 
 // `react-simple-code-editor` ships a CommonJS build (`exports.default = Editor`).
@@ -139,125 +138,106 @@ export function TaskEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-hidden border-border/60 bg-card/95 p-0 sm:max-w-4xl">
-        <DialogHeader className="border-b border-border/50 px-6 py-5">
-          <DialogTitle className="flex items-center gap-3 text-xl">
-            Edit Automation Script
-            {task && (
-              <Badge variant="outline" className="font-mono text-[11px] uppercase tracking-[0.2em]">
-                {task.name}
-              </Badge>
-            )}
+      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader className="border-b border-border px-5 py-4">
+          <DialogTitle className="flex items-center gap-2">
+            Edit script
+            {task && <span className="font-mono text-[13px] font-normal text-muted-foreground">{task.name}</span>}
           </DialogTitle>
           <DialogDescription>
-            Edit the JavaScript source for this automation. Changes affect future runs only.
+            Changes apply to future runs only.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 px-6 py-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
           {taskSource && (
-            <div className="grid gap-3 rounded-2xl border border-border/50 bg-background/60 p-4 md:grid-cols-4">
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Name</p>
-                <p className="font-mono text-sm text-foreground">{taskSource.name}</p>
+            <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
+              <div className="flex gap-1.5">
+                <dt className="text-faint">Type</dt>
+                <dd className="text-muted-foreground">{taskSource.type}</dd>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Current Type</p>
-                <p className="font-mono text-sm text-foreground">{taskSource.type}</p>
+              <div className="flex gap-1.5">
+                <dt className="text-faint">Source</dt>
+                <dd className="text-muted-foreground">{formatSourceOrigin(taskSource.sourceOrigin)}</dd>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Source</p>
-                <p className="text-sm text-foreground">{formatSourceOrigin(taskSource.sourceOrigin)}</p>
+              <div className="flex gap-1.5">
+                <dt className="text-faint">Saves to</dt>
+                <dd className="text-muted-foreground">{formatSaveTarget(taskSource.saveType)}</dd>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Save Target</p>
-                <p className="text-sm text-foreground">{formatSaveTarget(taskSource.saveType)}</p>
-              </div>
-            </div>
+            </dl>
           )}
 
           {shouldExplainOverride && taskSource && (
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            <Notice tone="warning">
               {taskSource.type === 'root'
-                ? 'This automation currently resolves from a root task. Saving will create or update a public override.'
-                : 'This automation currently resolves from bundled app files. Saving will create or update a writable override.'}
-            </div>
+                ? 'This task resolves from a root task. Saving creates or updates a public override.'
+                : 'This task resolves from bundled app files. Saving creates or updates a writable override.'}
+            </Notice>
           )}
 
-          {saveNotice && (
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-              {saveNotice}
-            </div>
-          )}
-
-          {error && (
-            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-              {error}
-            </div>
-          )}
+          {saveNotice && <Notice tone="success">{saveNotice}</Notice>}
+          {error && <Notice tone="error">{error}</Notice>}
 
           {isLoading ? (
-            <div className="flex h-[420px] items-center justify-center rounded-2xl border border-dashed border-border/50 bg-background/40 text-sm text-muted-foreground">
-              Loading automation source...
+            <div className="flex h-[440px] items-center justify-center rounded-md border border-dashed border-border-strong text-[13px] text-muted-foreground">
+              Loading script…
             </div>
           ) : taskSource ? (
-            <div className="space-y-2">
-              <label
-                htmlFor="task-source-editor"
-                className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
-              >
-                Script Source
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="task-source-editor" className="sr-only">
+                Script source
               </label>
-              <div className="relative h-[420px] w-full overflow-hidden rounded-2xl border border-border/60 shadow-inner transition focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 bg-slate-950">
+              <div className="h-[440px] w-full overflow-hidden rounded-md border border-input bg-background focus-within:border-primary/60">
                 <CodeEditor
                   value={content}
-                  onValueChange={code => {
-                      setContent(code);
-                      setSaveNotice(null);
+                  onValueChange={(code) => {
+                    setContent(code);
+                    setSaveNotice(null);
                   }}
-                  highlight={code => highlight(code, languages.javascript, 'javascript')}
-                  padding={16}
+                  highlight={(code) => highlight(code, languages.javascript, 'javascript')}
+                  padding={14}
                   style={{
-                    fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                    fontSize: 14,
-                    minHeight: "100%",
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 13,
+                    minHeight: '100%',
                   }}
                   textareaId="task-source-editor"
                   textareaClassName="focus:outline-none"
-                  className="h-full w-full overflow-auto font-mono text-sm leading-6 text-slate-100"
+                  className="h-full w-full overflow-auto font-mono leading-6 text-foreground"
                 />
               </div>
             </div>
           ) : (
-            <div className="flex h-[420px] items-center justify-center rounded-2xl border border-dashed border-border/50 bg-background/40 text-sm text-muted-foreground">
-              Select an automation to edit.
+            <div className="flex h-[440px] items-center justify-center rounded-md border border-dashed border-border-strong text-[13px] text-muted-foreground">
+              Select a task to edit.
             </div>
           )}
         </div>
 
-        <DialogFooter className="border-t border-border/50 px-6 py-4">
-          <div className="mr-auto text-xs text-muted-foreground">
+        <DialogFooter className="border-t border-border px-5 py-3">
+          <p className="mr-auto text-xs text-muted-foreground">
             {taskSource ? (isDirty ? 'Unsaved changes' : 'No unsaved changes') : ''}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSaving}
-          >
+          </p>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Close
           </Button>
           <Button
-            type="button"
-            onClick={() => {
-              void handleSave();
-            }}
+            onClick={() => void handleSave()}
             disabled={isLoading || isSaving || !taskSource || !isDirty}
           >
-            {isSaving ? 'Saving...' : 'Save Script'}
+            {isSaving ? 'Saving…' : 'Save script'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+}
+
+function Notice({ tone, children }: { tone: 'warning' | 'success' | 'error'; children: ReactNode }) {
+  const styles = {
+    warning: 'border-warning/25 bg-warning/[0.07] text-warning',
+    success: 'border-success/25 bg-success/[0.07] text-success',
+    error: 'border-destructive/25 bg-destructive/[0.07] text-destructive',
+  }[tone];
+  return <div className={`rounded-md border px-3 py-2 text-[13px] ${styles}`}>{children}</div>;
 }

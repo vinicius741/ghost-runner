@@ -1,105 +1,120 @@
-import { useEffect, useRef } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Terminal, Trash2, Zap } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { LogEntry } from '@shared/types';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { SegmentedControl } from '@/components/common/SegmentedControl';
+import { cn } from '@/lib/utils';
 
-interface LogEntry {
-  message: string;
-  timestamp: string;
-  type: 'normal' | 'error' | 'system';
-}
+type LogFilter = 'all' | 'error' | 'system';
 
 interface LogsConsoleProps {
   logs: LogEntry[];
   onClearLogs: () => void;
-  onHeaderDoubleClick?: () => void;
+  title?: string;
+  /** Show only the most recent N lines (keeps compact panels light). */
+  limit?: number;
+  /** Show the All / Errors / System filter. */
+  filterable?: boolean;
+  className?: string;
+  /** Classes for the scrolling body, e.g. a fixed height. */
+  bodyClassName?: string;
 }
 
-export function LogsConsole({ logs, onClearLogs, onHeaderDoubleClick }: LogsConsoleProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+const FOLLOW_THRESHOLD_PX = 32;
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTo({
-          top: scrollContainer.scrollHeight,
-          behavior: 'smooth'
-        });
-      }
+export function LogsConsole({
+  logs,
+  onClearLogs,
+  title = 'Logs',
+  limit,
+  filterable = false,
+  className,
+  bodyClassName = 'h-[360px]',
+}: LogsConsoleProps) {
+  const [filter, setFilter] = useState<LogFilter>('all');
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const followRef = useRef(true);
+
+  const visible = useMemo(() => {
+    const filtered = filter === 'all' ? logs : logs.filter((log) => log.type === filter);
+    return limit ? filtered.slice(-limit) : filtered;
+  }, [logs, filter, limit]);
+
+  const errorCount = useMemo(() => logs.filter((log) => log.type === 'error').length, [logs]);
+
+  // Keep the newest line in view, but only while the reader is already at
+  // the bottom; scrolling up to read history pauses following.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el && followRef.current) {
+      el.scrollTop = el.scrollHeight;
     }
-  }, [logs]);
+  }, [visible]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    followRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < FOLLOW_THRESHOLD_PX;
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, delay: 0.04 }}
-    >
-      <Card className="card-premium mt-6 flex flex-col overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border/50 bg-muted/20" onDoubleClick={onHeaderDoubleClick}>
-          <CardTitle className="text-foreground font-medium tracking-tight flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-primary" />
-            System Runtime Logs
-          </CardTitle>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/50 border border-border/50">
-              <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
-              <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-tighter italic">Streaming</span>
-            </div>
-            <Button
-              variant="ghost"
+    <Card className={cn('flex flex-col overflow-hidden', className)}>
+      <CardHeader>
+        <CardTitle>
+          {title}
+          <span className="font-mono text-xs font-normal text-faint tabular-nums">{logs.length}</span>
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          {filterable && (
+            <SegmentedControl
               size="sm"
-              onClick={onClearLogs}
-              className="h-8 text-muted-foreground hover:text-red-400 hover:bg-red-500/5 transition-colors gap-2"
+              ariaLabel="Filter logs"
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'error', label: errorCount > 0 ? `Errors ${errorCount}` : 'Errors' },
+                { value: 'system', label: 'System' },
+              ]}
+            />
+          )}
+          <Button variant="ghost" size="sm" onClick={onClearLogs} disabled={logs.length === 0}>
+            Clear
+          </Button>
+        </div>
+      </CardHeader>
+
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className={cn('min-h-0 overflow-y-auto bg-background/60 py-2 font-mono text-xs leading-[1.6]', bodyClassName)}
+        role="log"
+        aria-live="polite"
+        aria-label={title}
+      >
+        {visible.length === 0 ? (
+          <p className="px-4 py-2 text-faint">
+            {logs.length === 0 ? 'No output yet. Logs from tasks and the scheduler stream here.' : 'No lines match this filter.'}
+          </p>
+        ) : (
+          visible.map((log, i) => (
+            <div
+              key={i}
+              className={cn(
+                'flex gap-3 border-l-2 px-4 py-px',
+                log.type === 'error'
+                  ? 'border-destructive bg-destructive/[0.06] text-destructive'
+                  : log.type === 'system'
+                    ? 'border-transparent text-primary'
+                    : 'border-transparent text-foreground/80'
+              )}
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span className="text-xs">Clear</span>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 bg-black/20">
-          <ScrollArea className="h-[350px] w-full" ref={scrollRef}>
-            <div className="font-mono text-[13px] p-4 pt-4 space-y-1.5">
-              <AnimatePresence mode="popLayout">
-                {logs.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-muted-foreground italic py-4 flex items-center gap-2"
-                  >
-                    <span className="w-1 h-3 bg-primary/50 animate-pulse" />
-                    Listening for bot signals...
-                  </motion.div>
-                ) : (
-                  logs.map((log, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -5 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className={`flex gap-3 leading-relaxed group ${log.type === 'error' ? 'text-red-400 bg-red-500/5 -mx-4 px-4' :
-                          log.type === 'system' ? 'text-primary/80 font-semibold' :
-                            'text-foreground/80'
-                        }`}
-                    >
-                      <span className="text-muted-foreground/70 select-none flex-shrink-0 min-w-[85px] group-hover:text-muted-foreground transition-colors">
-                        [{log.timestamp}]
-                      </span>
-                      <span className="break-all whitespace-pre-wrap">
-                        {log.type === 'system' && <span className="mr-2">»</span>}
-                        {log.message}
-                      </span>
-                    </motion.div>
-                  ))
-                )}
-              </AnimatePresence>
+              <span className="shrink-0 select-none text-faint tabular-nums">{log.timestamp}</span>
+              <span className="min-w-0 whitespace-pre-wrap break-words">{log.message}</span>
             </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-    </motion.div>
+          ))
+        )}
+      </div>
+    </Card>
   );
 }
-

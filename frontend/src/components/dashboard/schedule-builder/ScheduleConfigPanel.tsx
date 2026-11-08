@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { SegmentedControl } from "@/components/common/SegmentedControl";
 import type { CronTab, ScheduleConfigState } from "./types";
 
 interface ScheduleConfigPanelProps {
@@ -7,159 +9,104 @@ interface ScheduleConfigPanelProps {
   onTabChange: (tab: CronTab) => void;
   config: ScheduleConfigState;
   onConfigChange: (config: Partial<ScheduleConfigState>) => void;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
+
+const numberInput = "h-8 w-16 text-center tabular-nums";
 
 export function ScheduleConfigPanel({ cronTab, onTabChange, config, onConfigChange, children }: ScheduleConfigPanelProps) {
   return (
-    <div className="bg-card/50 border border-border/50 rounded-2xl p-5 space-y-4">
-      <Tabs value={cronTab} onValueChange={(v) => onTabChange(v as CronTab)} className="w-full">
-        <TabsList className="bg-muted/50 border border-border/50 w-full p-1 h-11">
-          <TabsTrigger value="once" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-muted data-[state=active]:text-primary">Once</TabsTrigger>
-          <TabsTrigger value="minutes" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-muted data-[state=active]:text-primary">Min</TabsTrigger>
-          <TabsTrigger value="hourly" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-muted data-[state=active]:text-primary">Hour</TabsTrigger>
-          <TabsTrigger value="daily" className="text-xs uppercase font-bold tracking-tight data-[state=active]:bg-muted data-[state=active]:text-primary">Day</TabsTrigger>
-        </TabsList>
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label id="schedule-mode-label">Repeat</Label>
+        <SegmentedControl
+          ariaLabelledBy="schedule-mode-label"
+          className="flex w-full"
+          value={cronTab}
+          onChange={onTabChange}
+          options={[
+            { value: 'once', label: 'Once' },
+            { value: 'minutes', label: 'Interval' },
+            { value: 'hourly', label: 'Hourly' },
+            { value: 'daily', label: 'Daily' },
+          ]}
+        />
+      </div>
 
-        <div className="pt-4 text-foreground/80 min-h-[60px] flex items-center justify-center">
-          <TabsContent value="once" className="mt-0 w-full">
-            <OnceTabContent
-              delayHours={config.delayHours}
-              delayMinutes={config.delayMinutes}
-              onDelayHoursChange={(v) => onConfigChange({ delayHours: v })}
-              onDelayMinutesChange={(v) => onConfigChange({ delayMinutes: v })}
+      <div className="flex min-h-9 flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
+        {cronTab === 'once' && (
+          <>
+            <span>Run in</span>
+            <Input
+              type="number"
+              min={0}
+              value={config.delayHours}
+              onChange={(e) => onConfigChange({ delayHours: parseInt(e.target.value) || 0 })}
+              className={numberInput}
+              placeholder="HH"
+              aria-label="Hours from now"
             />
-          </TabsContent>
-          <TabsContent value="minutes" className="mt-0 w-full">
-            <MinutesTabContent
-              minutes={config.minutes}
-              onMinutesChange={(v) => onConfigChange({ minutes: v })}
+            <span>h</span>
+            <Input
+              type="number"
+              min={0}
+              max={59}
+              value={config.delayMinutes}
+              onChange={(e) => onConfigChange({ delayMinutes: parseInt(e.target.value) || 0 })}
+              className={numberInput}
+              placeholder="MM"
+              aria-label="Minutes from now"
             />
-          </TabsContent>
-          <TabsContent value="hourly" className="mt-0 w-full">
-            <HourlyTabContent
-              hourlyMinute={config.hourlyMinute}
-              onHourlyMinuteChange={(v) => onConfigChange({ hourlyMinute: v })}
+            <span>m</span>
+          </>
+        )}
+
+        {cronTab === 'minutes' && (
+          <>
+            <span>Every</span>
+            <Input
+              type="number"
+              min={1}
+              max={59}
+              value={config.minutes}
+              onChange={(e) => onConfigChange({ minutes: parseInt(e.target.value) })}
+              className={numberInput}
+              aria-label="Interval in minutes"
             />
-          </TabsContent>
-          <TabsContent value="daily" className="mt-0 w-full">
-            <DailyTabContent
-              dailyTime={config.dailyTime}
-              onDailyTimeChange={(v) => onConfigChange({ dailyTime: v })}
+            <span>minutes</span>
+          </>
+        )}
+
+        {cronTab === 'hourly' && (
+          <>
+            <span>Every hour at minute</span>
+            <Input
+              type="number"
+              min={0}
+              max={59}
+              value={config.hourlyMinute}
+              onChange={(e) => onConfigChange({ hourlyMinute: parseInt(e.target.value) })}
+              className={numberInput}
+              aria-label="Minute past the hour"
             />
-          </TabsContent>
-        </div>
-      </Tabs>
+          </>
+        )}
+
+        {cronTab === 'daily' && (
+          <>
+            <span>Every day at</span>
+            <Input
+              type="time"
+              value={config.dailyTime}
+              onChange={(e) => onConfigChange({ dailyTime: e.target.value })}
+              className="h-8 w-[110px] tabular-nums [color-scheme:dark]"
+              aria-label="Time of day"
+            />
+          </>
+        )}
+      </div>
+
       {children}
-    </div>
-  );
-}
-
-// Tab content components
-
-function OnceTabContent({
-  delayHours,
-  delayMinutes,
-  onDelayHoursChange,
-  onDelayMinutesChange,
-}: {
-  delayHours: number;
-  delayMinutes: number;
-  onDelayHoursChange: (value: number) => void;
-  onDelayMinutesChange: (value: number) => void;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-3 text-sm font-medium">
-      <span>In</span>
-      <div className="flex items-center gap-1">
-        <Input
-          type="number"
-          min={0}
-          value={delayHours}
-          onChange={(e) => onDelayHoursChange(parseInt(e.target.value) || 0)}
-          className="w-16 h-9 bg-input border-border text-center font-bold text-foreground focus:border-primary focus:ring-primary/20"
-          placeholder="HH"
-        />
-        <span className="text-muted-foreground text-xs">h</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <Input
-          type="number"
-          min={0}
-          max={59}
-          value={delayMinutes}
-          onChange={(e) => onDelayMinutesChange(parseInt(e.target.value) || 0)}
-          className="w-16 h-9 bg-input border-border text-center font-bold text-foreground focus:border-primary focus:ring-primary/20"
-          placeholder="MM"
-        />
-        <span className="text-muted-foreground text-xs">m</span>
-      </div>
-    </div>
-  );
-}
-
-function MinutesTabContent({
-  minutes,
-  onMinutesChange,
-}: {
-  minutes: number;
-  onMinutesChange: (value: number) => void;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-3 text-sm font-medium">
-      <span>Every</span>
-      <Input
-        type="number"
-        min={1}
-        max={59}
-        value={minutes}
-        onChange={(e) => onMinutesChange(parseInt(e.target.value))}
-        className="w-20 h-9 bg-input border-border text-center font-bold text-foreground focus:border-primary focus:ring-primary/20"
-      />
-      <span>minutes</span>
-    </div>
-  );
-}
-
-function HourlyTabContent({
-  hourlyMinute,
-  onHourlyMinuteChange,
-}: {
-  hourlyMinute: number;
-  onHourlyMinuteChange: (value: number) => void;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-3 text-sm font-medium">
-      <span>Every hour at</span>
-      <Input
-        type="number"
-        min={0}
-        max={59}
-        value={hourlyMinute}
-        onChange={(e) => onHourlyMinuteChange(parseInt(e.target.value))}
-        className="w-20 h-9 bg-input border-border text-center font-bold text-foreground focus:border-primary focus:ring-primary/20"
-      />
-      <span>past the hour</span>
-    </div>
-  );
-}
-
-function DailyTabContent({
-  dailyTime,
-  onDailyTimeChange,
-}: {
-  dailyTime: string;
-  onDailyTimeChange: (value: string) => void;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-3 text-sm font-medium">
-      <span>Daily at</span>
-      <Input
-        type="time"
-        value={dailyTime}
-        onChange={(e) => onDailyTimeChange(e.target.value)}
-        className="w-32 h-9 bg-input border-border text-center font-bold text-foreground focus:border-primary focus:ring-primary/20"
-      />
     </div>
   );
 }

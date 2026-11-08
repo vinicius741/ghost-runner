@@ -1,11 +1,11 @@
 /**
- * Custom Prism theme matching Ghost Runner's Slate/Dark aesthetic
- * Based on tailwindcss colors and application styling
+ * Prism theme for the task editor — muted, warm, and readable on the
+ * Noir surface. Accent colours are desaturated so code stays the focus.
  */
 
 code[class*='language-'],
 pre[class*='language-'] {
-  color: #f1f5f9; /* slate-100 */
+  color: hsl(36 18% 86%);
   background: none;
   font-family: inherit;
   font-size: inherit;
@@ -15,36 +15,20 @@ pre[class*='language-'] {
   word-break: normal;
   word-wrap: normal;
   line-height: inherit;
-  -moz-tab-size: 4;
-  -o-tab-size: 4;
-  tab-size: 4;
-  -webkit-hyphens: none;
-  -moz-hyphens: none;
-  -ms-hyphens: none;
+  tab-size: 2;
   hyphens: none;
 }
 
-/* Base Editor Overrides */
-.prism-code {
-  caret-color: #f8fafc; /* slate-50 */
-}
-
-.prism-code::selection,
-.prism-code *::selection {
-  background: rgba(56, 189, 248, 0.2); /* sky-400 with opacity */
-}
-
-/* Tokens */
 .token.comment,
 .token.prolog,
 .token.doctype,
 .token.cdata {
-  color: #64748b; /* slate-500 */
+  color: hsl(30 5% 42%);
   font-style: italic;
 }
 
 .token.punctuation {
-  color: #94a3b8; /* slate-400 */
+  color: hsl(32 7% 58%);
 }
 
 .token.namespace {
@@ -58,7 +42,7 @@ pre[class*='language-'] {
 .token.constant,
 .token.symbol,
 .token.deleted {
-  color: #f472b6; /* pink-400 */
+  color: hsl(12 55% 68%);
 }
 
 .token.selector,
@@ -67,42 +51,37 @@ pre[class*='language-'] {
 .token.char,
 .token.builtin,
 .token.inserted {
-  color: #a7f3d0; /* emerald-200 */
+  color: hsl(88 22% 62%);
 }
 
 .token.operator,
 .token.entity,
-.token.url,
-.language-css .token.string,
-.style .token.string {
-  color: #f8fafc; /* slate-50 */
+.token.url {
+  color: hsl(32 10% 70%);
 }
 
 .token.atrule,
 .token.attr-value,
 .token.keyword {
-  color: #38bdf8; /* sky-400 */
+  color: hsl(27 62% 62%);
 }
 
 .token.function,
 .token.class-name {
-  color: #fbd38d; /* orange-200 / yellow */
+  color: hsl(42 55% 70%);
 }
 
 .token.regex,
 .token.important,
 .token.variable {
-  color: #fb923c; /* orange-400 */
+  color: hsl(205 30% 68%);
 }
 
 .token.important,
 .token.bold {
   font-weight: bold;
 }
+
 .token.italic {
   font-style: italic;
-}
-
-.token.entity {
-  cursor: help;
 }

@@ -22,8 +22,8 @@ A stealthy browser automation tool built with Playwright and anti-detection plug
 
 ### Dashboard
 - **Real-Time Logs**: Live execution log streaming via Socket.io
-- **Drag-and-Drop Layout**: Customize dashboard panel arrangement (persisted in localStorage)
-- **Dark/Light Themes**: Toggle between themes with system preference detection
+- **Focused Pages**: Sidebar navigation between Overview, Tasks, Schedule, Failures, Data, Logs, and Settings
+- **Calm Dark Theme**: A single warm, quiet dark theme with no decorative animation
 - **Warnings Panel**: Track task failures with color-coded error types and occurrence counts
 - **Info Gathering**: Dashboard for viewing data collected by info-gathering tasks
 
@@ -168,7 +168,6 @@ ghost-runner/
 │       │   └── ui/               # shadcn/ui primitives
 │       ├── hooks/                # Custom React hooks
 │       ├── lib/                  # Utilities
-│       ├── themes/               # Theme configuration
 │       └── types.ts              # TypeScript types
 ├── tasks/                        # Automation scripts
 │   ├── public/                   # Shared tasks (tracked)

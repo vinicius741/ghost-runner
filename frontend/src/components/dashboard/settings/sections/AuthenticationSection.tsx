@@ -1,71 +1,32 @@
 /**
- * Authentication Section Component for Settings Manager
- *
- * Manages session setup and authentication settings.
- * Extracted from SettingsManager.tsx for reusability.
- *
- * Related: Development Execution Plan Task 2.3.5
+ * Session setup: launches a browser for a one-time manual login whose
+ * cookies are reused by every automation.
  */
 
 import { Button } from '@/components/ui/button';
-import { Lock as LockIcon, RefreshCw } from 'lucide-react';
+import { Loader2, LogIn } from 'lucide-react';
+import { SettingsSection } from '../components/SettingsSection';
 
 export interface AuthenticationSectionProps {
-  /** Whether login setup is in progress */
   isSettingUpLogin: boolean;
-  /** Whether settings are loading */
   isLoading: boolean;
-  /** Callback to start login setup */
   onSetupLogin: () => void;
 }
 
-/**
- * Authentication section with login setup button.
- *
- * @example
- * <AuthenticationSection
- *   isSettingUpLogin={isSettingUpLogin}
- *   isLoading={isLoading}
- *   onSetupLogin={handleSetupLogin}
- *   onLog={logMessage}
- * />
- */
 export function AuthenticationSection({
   isSettingUpLogin,
   isLoading,
   onSetupLogin,
 }: AuthenticationSectionProps) {
   return (
-    <div className="flex flex-col gap-4 p-4 rounded-xl bg-card/50 border border-border/50">
-      <div className="flex items-center gap-2 mb-2">
-        <LockIcon className="w-4 h-4 text-amber-500" />
-        <h3 className="text-foreground font-medium tracking-tight">Authentication</h3>
-      </div>
-
-      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-2">
-        Session Management
-      </p>
-
-      <div className="relative group">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-yellow-400 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-300" />
-        <Button
-          onClick={onSetupLogin}
-          disabled={isSettingUpLogin || isLoading}
-          className="relative w-full h-11 bg-[hsl(var(--secondary))] border-[hsl(var(--border))] hover:bg-[hsl(var(--secondary))]/80 text-[hsl(var(--secondary-foreground))] transition-all duration-300"
-        >
-          {isSettingUpLogin ? (
-            <RefreshCw className="w-4 h-4 mr-2 animate-spin text-amber-500" />
-          ) : (
-            <LockIcon className="w-4 h-4 mr-2 text-amber-500" />
-          )}
-          <span className="font-semibold tracking-wide">Setup Google Login</span>
-        </Button>
-      </div>
-
-      <p className="text-[10px] text-[hsl(var(--muted-foreground))] leading-relaxed">
-        This will launch a browser for manual login.
-        The session will be saved for all automation tasks.
-      </p>
-    </div>
+    <SettingsSection
+      title="Session"
+      description="Opens a browser so you can sign in by hand. The session is saved and reused by all tasks."
+    >
+      <Button variant="secondary" onClick={onSetupLogin} disabled={isSettingUpLogin || isLoading}>
+        {isSettingUpLogin ? <Loader2 className="animate-spin" /> : <LogIn />}
+        Set up Google login
+      </Button>
+    </SettingsSection>
   );
 }

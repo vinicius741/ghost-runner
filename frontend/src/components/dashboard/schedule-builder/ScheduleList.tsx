@@ -1,83 +1,99 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Clock } from 'lucide-react';
-import type { ScheduleItem } from "./types";
+import { useMemo, useState } from 'react';
+import { CalendarClock, X } from 'lucide-react';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/common/EmptyState';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { describeSchedule, formatDayTime, getNextRun, isSameSchedule } from '@/lib/schedule';
+import { useNow } from '@/hooks/useNow';
+import { cn } from '@/lib/utils';
+import type { ScheduleItem } from './types';
 
 interface ScheduleListProps {
   schedule: ScheduleItem[];
   onDeleteSchedule: (index: number) => void;
+  className?: string;
 }
 
-export function ScheduleList({ schedule, onDeleteSchedule }: ScheduleListProps) {
+/** Active schedules, soonest first. Deleting asks for confirmation. */
+export function ScheduleList({ schedule, onDeleteSchedule, className }: ScheduleListProps) {
+  // Hold the entry itself, not its index: the list can change (e.g. a
+  // one-time run completes) while the confirmation is open.
+  const [pendingItem, setPendingItem] = useState<ScheduleItem | null>(null);
+  const now = useNow(30_000);
+
+  const rows = useMemo(() => {
+    return schedule
+      .map((item, index) => ({ item, index, next: getNextRun(item, now) }))
+      .sort((a, b) => (a.next?.getTime() ?? Infinity) - (b.next?.getTime() ?? Infinity));
+  }, [schedule, now]);
+
   return (
-    <div className="space-y-3">
-      <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Active Schedules</h3>
-      <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-        <AnimatePresence mode="popLayout">
-          {schedule.length === 0 ? (
-            <EmptyState />
-          ) : (
-            schedule.map((item, idx) => (
-              <ScheduleItem
-                key={`${item.task}-${idx}`}
-                item={item}
-                onDelete={() => onDeleteSchedule(idx)}
-              />
-            ))
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-}
+    <Card className={cn('overflow-hidden', className)}>
+      <CardHeader>
+        <CardTitle>
+          Active schedules
+          <span className="font-mono text-xs font-normal text-faint tabular-nums">{schedule.length}</span>
+        </CardTitle>
+      </CardHeader>
 
-function EmptyState() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="text-muted-foreground/60 text-center py-8 border border-dashed border-border/50 rounded-2xl bg-card/20"
-    >
-      <p className="text-[10px] font-bold uppercase tracking-widest">No active schedules</p>
-    </motion.div>
-  );
-}
+      {rows.length === 0 ? (
+        <EmptyState
+          icon={CalendarClock}
+          title="Nothing scheduled"
+          description="Pick a task and a rule to add the first schedule."
+        />
+      ) : (
+        <ul className="divide-y divide-border">
+          {rows.map(({ item, index, next }) => (
+            <li key={`${item.task}-${index}`} className="group flex items-center gap-3 px-4 py-2.5">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="truncate text-[13px] font-medium text-foreground">{item.task}</span>
+                  <span className="truncate text-xs text-muted-foreground">{describeSchedule(item)}</span>
+                </div>
+                <div className="mt-0.5 flex items-center gap-2 text-xs text-faint">
+                  {next ? (
+                    <span>Next {formatDayTime(next, now)}</span>
+                  ) : item.executeAt ? (
+                    <span className="text-warning">Overdue</span>
+                  ) : (
+                    <span>No upcoming run</span>
+                  )}
+                  {item.cron && <span className="font-mono">{item.cron}</span>}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setPendingItem(item)}
+                aria-label={`Delete schedule for ${item.task}`}
+                title="Delete schedule"
+                className="hover:text-destructive"
+              >
+                <X />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
 
-interface ScheduleItemProps {
-  item: ScheduleItem;
-  onDelete: () => void;
-}
-
-function ScheduleItem({ item, onDelete }: ScheduleItemProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.98 }}
-      className="group flex items-center justify-between p-4 bg-card/50 border border-border/50 rounded-2xl hover:border-primary/30 transition-all duration-300"
-    >
-      <div className="flex flex-col gap-1">
-        <span className="text-sm font-bold text-foreground uppercase tracking-tight">{item.task}</span>
-        <div className="flex items-center gap-2">
-          {item.cron && (
-            <span className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold font-mono rounded-md border border-primary/10">
-              <Calendar className="w-2.5 h-2.5" />
-              {item.cron}
-            </span>
-          )}
-          {item.executeAt && (
-            <span className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold font-mono rounded-md border border-emerald-500/10">
-              <Clock className="w-2.5 h-2.5" />
-              {new Date(item.executeAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          )}
-        </div>
-      </div>
-      <button
-        onClick={onDelete}
-        className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted border border-border text-muted-foreground hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all duration-300"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
-    </motion.div>
+      <ConfirmDialog
+        open={pendingItem !== null}
+        onOpenChange={(open) => !open && setPendingItem(null)}
+        title="Delete schedule?"
+        description={
+          pendingItem
+            ? `${pendingItem.task} (${describeSchedule(pendingItem).toLowerCase()}) will no longer run.`
+            : ''
+        }
+        confirmLabel="Delete"
+        onConfirm={() => {
+          if (!pendingItem) return;
+          const index = schedule.findIndex((entry) => isSameSchedule(entry, pendingItem));
+          if (index !== -1) onDeleteSchedule(index);
+        }}
+      />
+    </Card>
   );
 }
