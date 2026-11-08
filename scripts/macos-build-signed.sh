@@ -21,6 +21,6 @@ pnpm run build:server
 pnpm run build:electron
 
 # Apple notarization needs a paid Developer ID, so it is turned off here.
-CSC_LINK="$P12" CSC_KEY_PASSWORD="$(cat "$PASSWORD_FILE")" \
+P12_PASSWORD="$(cat "$PASSWORD_FILE")" scripts/macos-with-signing-keychain.sh "$P12" -- \
   pnpm exec electron-builder --mac --publish never \
   --config.mac.forceCodeSigning=true --config.mac.notarize=false "$@"
