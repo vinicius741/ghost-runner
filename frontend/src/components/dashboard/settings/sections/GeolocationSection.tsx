@@ -53,6 +53,9 @@ export function GeolocationSection({
   } = useGeolocation({
     onSave: onSaveSettings,
     onSaved: onSettingsSaved,
+    // Push the detected coordinates into the parent state so the inputs and
+    // map recenter immediately; the hook's internal state is not rendered.
+    onDetected: onGeolocationChange,
     onLog,
   });
 

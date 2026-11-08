@@ -8,8 +8,10 @@ export function createUpdateController(
   enabled: boolean,
   publish: (state: UpdateState) => void,
   prepareToInstall: () => Promise<void>,
+  disabledReason?: UpdateState['disabledReason'],
 ) {
   let state: UpdateState = { currentVersion, status: enabled ? 'idle' : 'disabled' };
+  if (!enabled && disabledReason) state.disabledReason = disabledReason;
   let checking = false;
   let installing = false;
   const update = (next: Omit<UpdateState, 'currentVersion'>) => {

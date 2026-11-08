@@ -64,6 +64,17 @@ it('disables unsupported desktop builds', async () => {
   expect(await screen.findByRole('button', { name: 'Updates unavailable' })).toBeDisabled();
 });
 
+it('explains manual macOS updates without offering a retry or hiding the installed version', async () => {
+  const { desktop } = bridge({ status: 'disabled', currentVersion: '1.1.1', disabledReason: 'unsigned-mac' });
+  render(<UpdateButton />);
+  expect(await screen.findByRole('button', { name: 'Manual updates' })).toBeDisabled();
+  expect(screen.getByRole('status')).toHaveTextContent('Version 1.1.1');
+  fireEvent.click(screen.getByRole('button', { name: 'Update status details' }));
+  expect(await screen.findByRole('dialog')).toHaveTextContent('Install a Developer ID signed release');
+  expect(desktop.checkForUpdates).not.toHaveBeenCalled();
+  expect(screen.queryByRole('button', { name: 'Retry update check' })).not.toBeInTheDocument();
+});
+
 it('keeps raw updater diagnostics out of the header and explains missing release files on demand', async () => {
   const diagnostics = 'Cannot find latest-mac.yml: HttpError: 404 Headers: ' + 'private diagnostics '.repeat(1000);
   const { emit } = bridge({ status: 'error', currentVersion: '1.0.0', errorCode: 'release-unavailable', message: diagnostics });

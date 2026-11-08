@@ -66,6 +66,12 @@ first Developer ID signed build before secure automatic updates can be verified.
 Do not publish ad-hoc builds as macOS update artifacts. A local build can test
 the dashboard, but it cannot validate signed update installation.
 
+Ad-hoc macOS builds show **Manual updates** and the installed version. They do
+not check or download from the update feed. The details button explains the
+signing requirement. Install a Developer ID signed release manually to enable
+automatic updates. Development and non-AppImage Linux builds also explain why
+automatic updates are disabled.
+
 ## Verify a release
 
 Install a signed or supported packaged build, publish a higher version, and use
