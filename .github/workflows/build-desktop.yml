@@ -1,0 +1,155 @@
+name: Build desktop installers
+
+# Shared by "Publish desktop release" and "Signed test build". Builds, tests and
+# packages the app for each target and uploads the installers as artifacts.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit, branch or tag to build
+        required: true
+        type: string
+      version:
+        description: Installer version written to package.json, such as 1.2.3 or 1.2.4-test.7
+        required: true
+        type: string
+      targets:
+        description: Comma-separated targets (linux, windows, macos)
+        required: false
+        type: string
+        default: linux,windows,macos
+      artifact_prefix:
+        required: false
+        type: string
+        default: desktop
+      retention_days:
+        required: false
+        type: number
+        default: 7
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - id: plan
+        env:
+          TARGETS: ${{ inputs.targets }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          node - <<'EOF'
+          const fs = require('fs');
+          const all = {
+            linux: { os: 'ubuntu-22.04', target: 'linux', args: '--linux --x64' },
+            windows: { os: 'windows-latest', target: 'windows', args: '--win --x64' },
+            macos: { os: 'macos-latest', target: 'macos', args: '--mac --universal' },
+          };
+          if (!/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(process.env.VERSION)) {
+            throw new Error(`Invalid installer version: ${process.env.VERSION}`);
+          }
+          const include = process.env.TARGETS.split(',').map((name) => name.trim()).filter(Boolean).map((name) => {
+            if (!all[name]) throw new Error(`Unknown target: ${name}`);
+            return all[name];
+          });
+          if (!include.length) throw new Error('No targets selected');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `matrix=${JSON.stringify({ include })}\n`);
+          EOF
+
+  build:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      # The pnpm version comes from package.json "packageManager".
+      # Do not add a "version" input: pnpm/action-setup fails when both are set.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir frontend install --frozen-lockfile
+      - name: Set installer version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('package.json')); pkg.version = process.env.VERSION; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
+      - run: pnpm run build:frontend:verified
+      - run: pnpm run build:server
+      - run: pnpm run build:electron
+      - run: pnpm test
+      # macOS only installs an update signed with the same certificate as the
+      # installed app. MAC_CSC_LINK is either the project's self-signed
+      # certificate from scripts/macos-create-signing-cert.sh or a Developer ID
+      # certificate (with the APPLE_* secrets for notarization). A release
+      # without macOS files breaks updates for every installed Mac, so missing
+      # secrets fail the build instead of skipping macOS.
+      - name: Check macOS signing configuration
+        id: mac-signing
+        if: matrix.target == 'macos'
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+        run: |
+          if [ -z "$CSC_LINK" ] || [ -z "$CSC_KEY_PASSWORD" ]; then
+            echo "::error::Set the MAC_CSC_LINK and MAC_CSC_KEY_PASSWORD repository secrets. See documentation/auto-updates.md."
+            exit 1
+          elif [ -n "$APPLE_ID" ]; then
+            echo "mode=developer-id" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=self-signed" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Package Windows and Linux
+        if: matrix.target != 'macos'
+        run: pnpm exec electron-builder ${{ matrix.args }} --publish never
+      - name: Package macOS
+        if: matrix.target == 'macos'
+        env:
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          P12_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          SIGNING_MODE: ${{ steps.mac-signing.outputs.mode }}
+        run: |
+          if [ "$SIGNING_MODE" = developer-id ]; then
+            node -e "for (const key of ['APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID']) { if (!process.env[key]) throw new Error('Missing macOS signing secret: ' + key); }"
+          fi
+          p12="$RUNNER_TEMP/mac-signing.p12"
+          printf '%s' "$MAC_CSC_LINK" | base64 --decode > "$p12"
+          notarize=true
+          if [ "$SIGNING_MODE" = self-signed ]; then
+            # electron-builder only signs with identities macOS trusts for code
+            # signing, so trust the self-signed certificate on this runner.
+            /usr/bin/openssl pkcs12 -in "$p12" -clcerts -nokeys -passin env:P12_PASSWORD -out "$RUNNER_TEMP/mac-signing.pem"
+            sudo security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain "$RUNNER_TEMP/mac-signing.pem"
+            notarize=false
+          fi
+          scripts/macos-with-signing-keychain.sh "$p12" -- \
+            pnpm exec electron-builder ${{ matrix.args }} --publish never \
+            --config.mac.forceCodeSigning=true --config.mac.notarize=$notarize
+          rm -f "$p12"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_prefix }}-${{ matrix.target }}
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days }}
+          path: |
+            release/*.AppImage
+            release/*.exe
+            release/*.dmg
+            release/*.zip
+            release/*.blockmap
+            release/latest*.yml

@@ -109,6 +109,7 @@ Open `http://localhost:3333` in your browser.
 | `npm run electron:dev` | Build frontend/server/electron and launch desktop app |
 | `npm run electron:start` | Launch desktop app from existing build artifacts |
 | `npm run electron:dist` | Build a macOS distributable in `release/` |
+| `pnpm release` | Publish the next desktop release through GitHub Actions |
 
 Desktop builds can download and install updates from GitHub Releases. See
 [Desktop updates](documentation/auto-updates.md) for the release workflow and signing setup.
