@@ -73,6 +73,11 @@ When adding new file-based features, use exports from `runtimePaths.ts` rather t
 - Prefer Node's test runner via `npm test`; watch mode is `npm run test:watch`. Coverage is enforced with `npm run test:coverage` (c8, reporters: text/html/lcov); keep new features at or above the touched file's existing branch coverage.
 - Name specs `<feature>.test.js` and mirror the folder layout (`test/server/tasks-controller.test.js`). Stub external HTTP via supertest and avoid touching `user_data/` in tests.
 
+## Releasing
+- `pnpm release` publishes the next patch version of `main` (`minor`, `major` or an exact `X.Y.Z` also work; `--dry-run` previews). It needs only `gh` signed in with push access: GitHub Actions builds, signs and verifies every installer, and publishes the release only after all files are attached.
+- `pnpm release:verify vX.Y.Z` checks an existing release. **Signed test build** in the Actions tab builds signed installers from a branch without releasing.
+- Never sign or publish macOS builds locally. See `documentation/auto-updates.md`.
+
 ## Commit & Pull Request Guidelines
 - Follow the conventional-commit verbs seen in history (`feat:`, `refactor:`, `docs:`). Scope optional but encouraged (e.g., `feat(server): add failure dedupe`).
 - Each PR should describe behavior changes, list affected commands, reference issue IDs, and include UI screenshots or terminal output when touching dashboard or CLI surfaces.

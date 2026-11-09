@@ -1,14 +1,28 @@
 name: Publish desktop release
+run-name: Release ${{ inputs.release_tag || github.event.release.tag_name }}
 
+# Normally started by `pnpm release` (scripts/release.js) or from the Actions
+# tab. A new tag is built into a draft release, which is published only after
+# every installer and update file is attached and verified, so installed apps
+# never see a release they cannot update from.
+#
+# For an existing release, files are rebuilt and attached again. Publishing a
+# release by hand on GitHub still works, but the release is visible to apps
+# while its files build.
 on:
   release:
     types: [published]
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing stable release tag to build and attach files to
+        description: Stable tag such as v1.2.3. A new tag creates a release; an existing one has its files rebuilt.
         required: true
         type: string
+      ref:
+        description: Branch or commit for a new release. Ignored when the release already exists.
+        required: false
+        type: string
+        default: main
 
 permissions:
   contents: read
@@ -18,125 +32,103 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  prepare:
     if: ${{ !github.event.release.prerelease }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-22.04
-            target: linux
-            args: --linux --x64
-          - os: windows-latest
-            target: windows
-            args: --win --x64
-          - os: macos-latest
-            target: macos
-            args: --mac --universal
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.release_tag || github.event.release.tag_name }}
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: |
-            pnpm-lock.yaml
-            frontend/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --dir frontend install --frozen-lockfile
-      - name: Set installer version from release tag
-        env:
-          RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
-        run: |
-          node -e "const fs = require('fs'); const tag = process.env.RELEASE_TAG; const version = tag.replace(/^v/, ''); if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('Use a stable release tag such as v1.2.3'); const pkg = JSON.parse(fs.readFileSync('package.json')); pkg.version = version; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
-      - run: pnpm run build:frontend:verified
-      - run: pnpm run build:server
-      - run: pnpm run build:electron
-      - run: pnpm test
-      # macOS only installs an update signed with the same certificate as the
-      # installed app. MAC_CSC_LINK is either a Developer ID certificate (with
-      # the APPLE_* secrets for notarization) or the project's self-signed
-      # certificate from scripts/macos-create-signing-cert.sh.
-      - name: Check macOS signing configuration
-        id: mac-signing
-        if: matrix.target == 'macos'
-        env:
-          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-        run: |
-          if [ -z "$CSC_LINK" ]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Skipping macOS installers. Configure the signing secrets in documentation/auto-updates.md to enable them."
-          elif [ -n "$APPLE_ID" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-            echo "mode=developer-id" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-            echo "mode=self-signed" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Package Windows and Linux
-        if: matrix.target != 'macos'
-        run: pnpm exec electron-builder ${{ matrix.args }} --publish never
-      - name: Package macOS
-        if: matrix.target == 'macos' && steps.mac-signing.outputs.enabled == 'true'
-        env:
-          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-          P12_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          SIGNING_MODE: ${{ steps.mac-signing.outputs.mode }}
-        run: |
-          if [ "$SIGNING_MODE" = developer-id ]; then
-            node -e "for (const key of ['P12_PASSWORD', 'APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID']) { if (!process.env[key]) throw new Error('Missing macOS signing secret: ' + key); }"
-          elif [ -z "$P12_PASSWORD" ]; then
-            echo "::error::Missing macOS signing secret: MAC_CSC_KEY_PASSWORD"; exit 1
-          fi
-          p12="$RUNNER_TEMP/mac-signing.p12"
-          printf '%s' "$MAC_CSC_LINK" | base64 --decode > "$p12"
-          notarize=true
-          if [ "$SIGNING_MODE" = self-signed ]; then
-            # electron-builder only signs with identities macOS trusts for code
-            # signing, so trust the self-signed certificate on this runner.
-            /usr/bin/openssl pkcs12 -in "$p12" -clcerts -nokeys -passin env:P12_PASSWORD -out "$RUNNER_TEMP/mac-signing.pem"
-            sudo security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain "$RUNNER_TEMP/mac-signing.pem"
-            notarize=false
-          fi
-          scripts/macos-with-signing-keychain.sh "$p12" -- \
-            pnpm exec electron-builder ${{ matrix.args }} --publish never \
-            --config.mac.forceCodeSigning=true --config.mac.notarize=$notarize
-          rm -f "$p12"
-      - uses: actions/upload-artifact@v4
-        if: matrix.target != 'macos' || steps.mac-signing.outputs.enabled == 'true'
-        with:
-          name: desktop-${{ matrix.target }}
-          if-no-files-found: error
-          path: |
-            release/*.AppImage
-            release/*.exe
-            release/*.dmg
-            release/*.zip
-            release/*.blockmap
-            release/latest*.yml
-
-  publish:
-    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      version: ${{ steps.prepare.outputs.version }}
+      ref: ${{ steps.prepare.outputs.ref }}
+      publish: ${{ steps.prepare.outputs.publish }}
     steps:
+      - id: prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
+          TARGET_REF: ${{ inputs.ref || 'main' }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          if ! [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Use a stable release tag such as v1.2.3."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          if [ "$EVENT" = release ]; then
+            state=published
+          else
+            state=$(gh release view "$RELEASE_TAG" --json isDraft --jq 'if .isDraft then "draft" else "published" end' 2>/dev/null || echo missing)
+          fi
+
+          case "$state" in
+            published)
+              echo "Rebuilding files for the published release $RELEASE_TAG."
+              echo "ref=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              ;;
+            draft)
+              ref=$(gh release view "$RELEASE_TAG" --json targetCommitish --jq .targetCommitish)
+              echo "Resuming the draft release $RELEASE_TAG at $ref."
+              echo "ref=$ref" >> "$GITHUB_OUTPUT"
+              echo "publish=true" >> "$GITHUB_OUTPUT"
+              ;;
+            missing)
+              latest=$(gh release list --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // ""')
+              if [ -n "$latest" ]; then
+                highest=$(printf '%s\n%s\n' "${latest#v}" "$version" | sort -V | tail -n 1)
+                if [ "$highest" != "$version" ] || [ "${latest#v}" = "$version" ]; then
+                  echo "::error::$RELEASE_TAG must be higher than the latest release $latest."
+                  exit 1
+                fi
+              fi
+              sha=$(gh api "repos/$GH_REPO/commits/$TARGET_REF" --jq .sha)
+              gh release create "$RELEASE_TAG" --draft --target "$sha" --title "Ghost Runner $RELEASE_TAG" --generate-notes
+              echo "Created the draft release $RELEASE_TAG at $sha."
+              echo "ref=$sha" >> "$GITHUB_OUTPUT"
+              echo "publish=true" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  build:
+    needs: prepare
+    uses: ./.github/workflows/build-desktop.yml
+    with:
+      ref: ${{ needs.prepare.outputs.ref }}
+      version: ${{ needs.prepare.outputs.version }}
+    secrets: inherit
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
+    steps:
+      # The verification script comes from the default branch, so older tags
+      # can be rebuilt with the current checks.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - uses: actions/download-artifact@v4
         with:
           pattern: desktop-*
           merge-multiple: true
           path: release
       - name: Attach installers and update metadata
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
         run: gh release upload "$RELEASE_TAG" release/* --clobber
+      - name: Verify release files
+        run: node scripts/release.js verify "$RELEASE_TAG"
+      # Publishing with the workflow token does not start this workflow again.
+      - name: Publish release
+        if: needs.prepare.outputs.publish == 'true'
+        run: gh release edit "$RELEASE_TAG" --draft=false --latest

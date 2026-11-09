@@ -30,6 +30,8 @@ cd frontend && npm run build # Build frontend for production
 npm run electron:dev       # Build all and launch Electron desktop app (development)
 npm run electron:start     # Start Electron app (requires build first)
 npm run electron:dist      # Build distributable Electron app (.dmg/.zip for macOS)
+pnpm release               # Publish the next patch release (built and signed in GitHub Actions)
+pnpm release:verify v1.2.3 # Check a release has every installer and update file
 ```
 
 > **IMPORTANT: Frontend Changes Require Rebuild**
