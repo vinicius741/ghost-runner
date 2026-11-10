@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/common/PageHeader';
 import { TaskList } from '@/components/dashboard/TaskList';
 import { LogsConsole } from '@/components/dashboard/LogsConsole';
+import { followUpExecuteAt, formatDelay, type FollowUp } from '@/lib/followUp';
+import { formatDayTime } from '@/lib/schedule';
 
 export function TasksPage({ onRecordTask }: { onRecordTask: () => void }) {
   const {
@@ -15,13 +17,30 @@ export function TasksPage({ onRecordTask }: { onRecordTask: () => void }) {
     saveTaskSource,
     logs,
     clearLogs,
+    addLog,
+    schedule,
+    schedulerStatus,
+    addScheduleItem,
+    startScheduler,
   } = useDashboard();
+
+  const runWithFollowUp = async (taskName: string, followUp: FollowUp, runNow: boolean) => {
+    if (runNow) void runTask(taskName);
+    const executeAt = followUpExecuteAt(followUp.delayMinutes);
+    await addScheduleItem(followUp.task, undefined, executeAt.toISOString());
+    addLog(
+      `Follow-up queued: ${followUp.task} in ${formatDelay(followUp.delayMinutes)} (${formatDayTime(executeAt)}).`,
+      'system'
+    );
+    // A one-time run only fires while the scheduler is running.
+    if (!schedulerStatus) await startScheduler();
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Tasks"
-        description="Click a task to run it. Output streams alongside."
+        description="Click a task to run it. The alarm clock runs it and queues a follow-up."
         actions={
           <Button onClick={onRecordTask}>
             <Circle className="fill-current" />
@@ -38,6 +57,9 @@ export function TasksPage({ onRecordTask }: { onRecordTask: () => void }) {
           onUploadTask={uploadTask}
           onLoadTaskSource={loadTaskSource}
           onSaveTaskSource={saveTaskSource}
+          onRunWithFollowUp={(taskName, followUp, runNow) => void runWithFollowUp(taskName, followUp, runNow)}
+          schedule={schedule}
+          schedulerRunning={schedulerStatus}
         />
         <LogsConsole
           title="Output"

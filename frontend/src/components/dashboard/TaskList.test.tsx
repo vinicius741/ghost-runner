@@ -272,4 +272,88 @@ describe('TaskList', () => {
       expect(screen.getByLabelText(/script source/i)).toBeInTheDocument();
     });
   });
+  describe('run with follow-up', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('runs the task and queues the same task in one hour by default', () => {
+      const props = createProps({ onRunWithFollowUp: vi.fn() });
+      render(<TaskList {...props} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Run test-task-1 with a follow-up' }));
+      fireEvent.click(screen.getByRole('button', { name: /run now \+ follow up/i }));
+
+      expect(props.onRunWithFollowUp).toHaveBeenCalledWith(
+        'test-task-1',
+        { task: 'test-task-1', delayMinutes: 60 },
+        true
+      );
+      // The page runs the task as part of the follow-up; the row must not run it a second time.
+      expect(props.onRunTask).not.toHaveBeenCalled();
+    });
+
+    it('remembers the chosen delay for the next run of that task', () => {
+      const onRunWithFollowUp = vi.fn();
+      render(<TaskList {...createProps({ onRunWithFollowUp })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Run test-task-1 with a follow-up' }));
+      fireEvent.click(screen.getByRole('radio', { name: '1h 30m' }));
+      fireEvent.click(screen.getByRole('button', { name: /run now \+ follow up/i }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Run test-task-1 with a follow-up' }));
+      expect(screen.getByRole('radio', { name: '1h 30m' })).toHaveAttribute('aria-checked', 'true');
+      fireEvent.click(screen.getByRole('button', { name: /run now \+ follow up/i }));
+
+      expect(onRunWithFollowUp).toHaveBeenLastCalledWith(
+        'test-task-1',
+        { task: 'test-task-1', delayMinutes: 90 },
+        true
+      );
+    });
+
+    it('only schedules when the task is already running', () => {
+      const onRunWithFollowUp = vi.fn();
+      render(
+        <TaskList {...createProps({ onRunWithFollowUp, runningTasks: new Set(['test-task-2']) })} />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Schedule a follow-up for test-task-2' }));
+      fireEvent.click(screen.getByRole('button', { name: /^schedule follow-up$/i }));
+
+      expect(onRunWithFollowUp).toHaveBeenCalledWith('test-task-2', { task: 'test-task-2', delayMinutes: 60 }, false);
+    });
+
+    it('accepts a custom delay and rejects zero', () => {
+      const onRunWithFollowUp = vi.fn();
+      render(<TaskList {...createProps({ onRunWithFollowUp })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Run test-task-1 with a follow-up' }));
+      fireEvent.click(screen.getByRole('radio', { name: 'Custom' }));
+      fireEvent.change(screen.getByLabelText('Hours from now'), { target: { value: '0' } });
+      fireEvent.change(screen.getByLabelText('Minutes from now'), { target: { value: '0' } });
+      expect(screen.getByRole('button', { name: /run now \+ follow up/i })).toBeDisabled();
+
+      fireEvent.change(screen.getByLabelText('Hours from now'), { target: { value: '2' } });
+      fireEvent.change(screen.getByLabelText('Minutes from now'), { target: { value: '15' } });
+      fireEvent.click(screen.getByRole('button', { name: /run now \+ follow up/i }));
+
+      expect(onRunWithFollowUp).toHaveBeenCalledWith('test-task-1', { task: 'test-task-1', delayMinutes: 135 }, true);
+    });
+
+    it('warns that a stopped scheduler will be started', () => {
+      render(<TaskList {...createProps({ onRunWithFollowUp: vi.fn(), schedulerRunning: false })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Run test-task-1 with a follow-up' }));
+
+      expect(screen.getByText(/scheduler is stopped/i)).toBeInTheDocument();
+    });
+
+    it('shows the next queued run on the task row', () => {
+      const executeAt = new Date(Date.now() + 90 * 60_000).toISOString();
+      render(<TaskList {...createProps({ schedule: [{ task: 'test-task-3', executeAt }] })} />);
+
+      expect(screen.getByTitle(/next scheduled run/i)).toBeInTheDocument();
+    });
+  });
 });

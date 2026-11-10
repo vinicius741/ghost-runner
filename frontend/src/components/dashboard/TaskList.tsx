@@ -1,10 +1,10 @@
 import { useState, useMemo, type ChangeEvent } from 'react';
-import type { Task, TaskSource, TaskSourceSaveType } from '@shared/types';
+import type { ScheduleItem, Task, TaskSource, TaskSourceSaveType } from '@shared/types';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Play, Search, Upload, Loader2, Pencil, Layers } from 'lucide-react';
+import { Play, Search, Upload, Loader2, Pencil, Layers, AlarmClockPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -25,6 +25,10 @@ import { SegmentedControl } from '@/components/common/SegmentedControl';
 import { EmptyState } from '@/components/common/EmptyState';
 import { TaskTypeTag } from '@/components/common/TaskTypeTag';
 import { TaskEditorDialog } from './TaskEditorDialog';
+import { FollowUpDialog } from './FollowUpDialog';
+import { useNow } from '@/hooks/useNow';
+import { formatDayTime, getNextRun } from '@/lib/schedule';
+import { saveFollowUp, type FollowUp } from '@/lib/followUp';
 
 interface TaskListProps {
   tasks: Task[];
@@ -33,6 +37,11 @@ interface TaskListProps {
   onUploadTask: (taskName: string, type: 'private' | 'public', content: string) => Promise<void>;
   onLoadTaskSource: (taskName: string) => Promise<TaskSource>;
   onSaveTaskSource: (taskName: string, type: TaskSourceSaveType, content: string) => Promise<void>;
+  /** Runs `taskName` (unless `runNow` is false) and queues the one-time follow-up. */
+  onRunWithFollowUp?: (taskName: string, followUp: FollowUp, runNow: boolean) => void;
+  /** Used to show each task's next queued run. */
+  schedule?: ScheduleItem[];
+  schedulerRunning?: boolean;
   className?: string;
 }
 
@@ -54,6 +63,9 @@ export function TaskList({
   onUploadTask,
   onLoadTaskSource,
   onSaveTaskSource,
+  onRunWithFollowUp,
+  schedule,
+  schedulerRunning = true,
   className,
 }: TaskListProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,6 +73,8 @@ export function TaskList({
   const [sortBy, setSortBy] = useState<SortOrder>('name_asc');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [followUpSource, setFollowUpSource] = useState<string | null>(null);
+  const now = useNow(30_000);
   const [uploadType, setUploadType] = useState<'public' | 'private'>('private');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -80,6 +94,17 @@ export function TaskList({
         return a.type.localeCompare(b.type) || a.name.localeCompare(b.name);
       });
   }, [tasks, searchQuery, typeFilter, sortBy]);
+
+  // Soonest upcoming run per task, so a queued follow-up is visible in the list.
+  const nextRunByTask = useMemo(() => {
+    const next = new Map<string, Date>();
+    for (const item of schedule ?? []) {
+      const at = getNextRun(item, now);
+      const current = next.get(item.task);
+      if (at && (!current || at < current)) next.set(item.task, at);
+    }
+    return next;
+  }, [schedule, now]);
 
   const onFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     setUploadError(null);
@@ -177,6 +202,7 @@ export function TaskList({
           <ul className="divide-y divide-border">
             {filteredAndSortedTasks.map((task) => {
               const isRunning = runningTasks.has(task.name);
+              const nextRun = nextRunByTask.get(task.name);
               return (
                 <li
                   key={`${task.name}-${task.type}`}
@@ -211,6 +237,15 @@ export function TaskList({
                       <TaskTypeTag type={task.type} className="shrink-0" />
                     </div>
 
+                    {nextRun && (
+                      <span
+                        className="hidden shrink-0 text-xs text-faint sm:inline"
+                        title={`Next scheduled run: ${nextRun.toLocaleString()}`}
+                      >
+                        next <span className="font-mono tabular-nums">{formatDayTime(nextRun, now)}</span>
+                      </span>
+                    )}
+
                     {isRunning ? (
                       <span className="inline-flex h-7 w-[58px] shrink-0 items-center justify-center gap-1 text-xs font-medium text-primary">
                         <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
@@ -227,6 +262,17 @@ export function TaskList({
                     )}
                   </div>
 
+                  {onRunWithFollowUp && (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={isRunning ? `Schedule a follow-up for ${task.name}` : `Run ${task.name} with a follow-up`}
+                      title={isRunning ? 'Schedule a follow-up' : 'Run now and schedule a follow-up'}
+                      onClick={() => setFollowUpSource(task.name)}
+                    >
+                      <AlarmClockPlus />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -301,6 +347,22 @@ export function TaskList({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {onRunWithFollowUp && (
+        <FollowUpDialog
+          sourceTask={followUpSource}
+          tasks={tasks}
+          sourceRunning={followUpSource !== null && runningTasks.has(followUpSource)}
+          schedulerRunning={schedulerRunning}
+          onOpenChange={(open) => {
+            if (!open) setFollowUpSource(null);
+          }}
+          onConfirm={(sourceTask, followUp, runNow) => {
+            saveFollowUp(sourceTask, followUp);
+            onRunWithFollowUp(sourceTask, followUp, runNow);
+          }}
+        />
+      )}
 
       <TaskEditorDialog
         task={editingTask}
