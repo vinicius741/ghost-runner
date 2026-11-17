@@ -78,6 +78,7 @@
       "frontend/dist/**/*",
       "tasks/public/**/*",
       "src/server/public/**/*",
+      "assets/tray/**/*",
       "package.json"
     ],
     "npmRebuild": false,

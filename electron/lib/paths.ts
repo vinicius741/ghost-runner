@@ -53,7 +53,7 @@ export function resolveServerModuleLocation(): { appRoot: string; serverEntry: s
 export function resolveTrayIconPath(): string | null {
     const candidates = toUniquePaths(
         getServerRootCandidates().flatMap((root) => [
-            path.join(root, 'build', 'icon.png'),
+            path.join(root, 'assets', 'tray', 'trayTemplate.png'),
             path.join(root, 'frontend', 'dist', 'favicon.png'),
             path.join(root, 'src', 'server', 'public', 'favicon.png'),
         ])

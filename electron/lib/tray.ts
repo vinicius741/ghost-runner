@@ -11,7 +11,9 @@ export function createTrayIcon() {
     if (iconPath) {
         let icon = nativeImage.createFromPath(iconPath);
         if (!icon.isEmpty()) {
-            if (process.platform === 'darwin') {
+            // A "*Template.png" file is already menu-bar sized, ships an @2x variant,
+            // and is marked as a template by Electron, so it needs no processing.
+            if (process.platform === 'darwin' && !iconPath.endsWith('Template.png')) {
                 icon = icon.resize({ height: TRAY_ICON_HEIGHT_PX, quality: 'best' });
                 icon.setTemplateImage(true);
             }
