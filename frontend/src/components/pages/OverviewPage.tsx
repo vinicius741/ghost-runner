@@ -185,7 +185,7 @@ export function OverviewPage({ onNavigate, onRecordTask }: OverviewPageProps) {
           <Card className="overflow-hidden">
             <CardHeader>
               <CardTitle>Upcoming</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => onNavigate('schedule')}>
+              <Button variant="ghost" size="sm" onClick={() => onNavigate('tasks')}>
                 Schedule
                 <ArrowRight />
               </Button>

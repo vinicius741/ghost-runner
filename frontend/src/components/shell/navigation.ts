@@ -1,7 +1,6 @@
 import {
   LayoutGrid,
   Layers,
-  CalendarClock,
   AlertTriangle,
   Database,
   ScrollText,
@@ -9,7 +8,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export type PageId = 'overview' | 'tasks' | 'schedule' | 'failures' | 'data' | 'logs' | 'settings';
+export type PageId = 'overview' | 'tasks' | 'failures' | 'data' | 'logs' | 'settings';
 
 export interface NavItem {
   id: PageId;
@@ -20,7 +19,6 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutGrid },
   { id: 'tasks', label: 'Tasks', icon: Layers },
-  { id: 'schedule', label: 'Schedule', icon: CalendarClock },
   { id: 'failures', label: 'Failures', icon: AlertTriangle },
   { id: 'data', label: 'Data', icon: Database },
   { id: 'logs', label: 'Logs', icon: ScrollText },
@@ -36,6 +34,8 @@ function isPageId(value: string | null): value is PageId {
 export function getStoredPage(): PageId {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
+    // Schedule was merged into Tasks.
+    if (stored === 'schedule') return 'tasks';
     return isPageId(stored) ? stored : 'overview';
   } catch {
     return 'overview';

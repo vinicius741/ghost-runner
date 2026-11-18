@@ -17,13 +17,12 @@ A stealthy browser automation tool built with Playwright and anti-detection plug
 ### Scheduling
 - **Cron Jobs**: Schedule recurring tasks with preset or custom cron expressions
 - **One-Time Tasks**: Execute tasks at a specific date/time (auto-removed after execution)
-- **Run with Follow-up**: From the Tasks page, run a task now and queue a one-time follow-up (same or another task) in 30m–2h or a custom delay; the choice is remembered per task
 - **Calendar View**: Visualize all scheduled tasks with `react-big-calendar`
 - **Sleep Prevention**: macOS `caffeinate` integration prevents system sleep during scheduled tasks
 
 ### Dashboard
 - **Real-Time Logs**: Live execution log streaming via Socket.io
-- **Focused Pages**: Sidebar navigation between Overview, Tasks, Schedule, Failures, Data, Logs, and Settings
+- **Focused Pages**: Sidebar navigation between Overview, Tasks (run + schedule), Failures, Data, Logs, and Settings
 - **Calm Dark Theme**: A single warm, quiet dark theme with no decorative animation
 - **Warnings Panel**: Track task failures with color-coded error types and occurrence counts
 - **Info Gathering**: Dashboard for viewing data collected by info-gathering tasks

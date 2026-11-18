@@ -41,10 +41,19 @@ interface ScheduleBuilderProps {
   schedule: ScheduleItem[];
   onAddSchedule: (task: string, cron?: string, executeAt?: string) => void;
   onDeleteSchedule: (index: number) => void;
+  /** Set false to render only the "New schedule" form, when the list is shown elsewhere. */
+  showList?: boolean;
   className?: string;
 }
 
-export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedule, className }: ScheduleBuilderProps) {
+export function ScheduleBuilder({
+  tasks,
+  schedule,
+  onAddSchedule,
+  onDeleteSchedule,
+  showList = true,
+  className,
+}: ScheduleBuilderProps) {
   const [selectedTask, setSelectedTask] = useState<string>('');
   const [cronTab, setCronTab] = useState<CronTab>('once');
 
@@ -120,7 +129,13 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
   };
 
   return (
-    <div className={cn('grid min-w-0 gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start', className)}>
+    <div
+      className={cn(
+        'grid min-w-0 gap-4',
+        showList && 'lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start',
+        className
+      )}
+    >
       <Card>
         <CardHeader>
           <CardTitle>New schedule</CardTitle>
@@ -151,7 +166,7 @@ export function ScheduleBuilder({ tasks, schedule, onAddSchedule, onDeleteSchedu
         </CardContent>
       </Card>
 
-      <ScheduleList schedule={schedule} onDeleteSchedule={onDeleteSchedule} />
+      {showList && <ScheduleList schedule={schedule} onDeleteSchedule={onDeleteSchedule} />}
     </div>
   );
 }

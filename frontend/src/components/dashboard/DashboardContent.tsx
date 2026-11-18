@@ -6,7 +6,6 @@ import { getStoredPage, storePage, type PageId } from '@/components/shell/naviga
 import { CreateTaskModal } from './CreateTaskModal';
 import { OverviewPage } from '@/components/pages/OverviewPage';
 import { TasksPage } from '@/components/pages/TasksPage';
-import { SchedulePage } from '@/components/pages/SchedulePage';
 import { DataPage, FailuresPage, LogsPage, SettingsPage } from '@/components/pages/SimplePages';
 
 /**
@@ -18,7 +17,6 @@ export function DashboardContent() {
   const [recordOpen, setRecordOpen] = useState(false);
   const {
     tasks,
-    schedule,
     failures,
     infoGatheringResults,
     schedulerStatus,
@@ -43,7 +41,6 @@ export function DashboardContent() {
           onNavigate={navigate}
           counts={{
             tasks: tasks.length,
-            schedule: schedule.length,
             failures: failures.length,
             data: infoGatheringResults.length,
           }}
@@ -56,7 +53,6 @@ export function DashboardContent() {
           <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
             {page === 'overview' && <OverviewPage onNavigate={navigate} onRecordTask={openRecord} />}
             {page === 'tasks' && <TasksPage onRecordTask={openRecord} />}
-            {page === 'schedule' && <SchedulePage />}
             {page === 'failures' && <FailuresPage />}
             {page === 'data' && <DataPage />}
             {page === 'logs' && <LogsPage />}

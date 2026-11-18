@@ -206,7 +206,7 @@ Centralized TypeScript types shared between frontend and backend:
 | Directory | Purpose |
 |-----------|---------|
 | `components/shell/` | App shell: `Sidebar` (navigation + scheduler control), `navigation.ts` (page ids, persisted last page) |
-| `components/pages/` | One component per page: Overview, Tasks, Schedule, Failures, Data, Logs, Settings |
+| `components/pages/` | One component per page: Overview, Tasks (run + schedule), Failures, Data, Logs, Settings |
 | `components/dashboard/` | Feature widgets used by pages: TaskList, ScheduleBuilder, TaskCalendar, SettingsManager, LogsConsole, WarningsPanel, InfoGathering |
 | `components/common/` | Shared building blocks: PageHeader, EmptyState, SegmentedControl, ConfirmDialog, TaskTypeTag |
 | `components/ui/` | shadcn/ui primitives (Radix UI), restyled for the Noir theme |
@@ -418,7 +418,6 @@ Use `npm run record` to generate task code via Playwright Codegen.
 - **Electron Frontend Bundling**: Electron loads `frontend/dist/` (pre-built), NOT source files. Always run `npm run build:frontend` after frontend changes before testing in Electron.
 - **Theme**: One dark theme defined by CSS variables. Components use token classes (`bg-background`, `bg-card`, `text-muted-foreground`, `text-faint`, etc.), never raw palette colors.
 - **Running Task Feedback**: Active tasks show a spinner in TaskList via `DashboardContext.runningTasks` state.
-- **Run with Follow-up**: Each TaskList row has an alarm-clock button that opens `FollowUpDialog`. Confirming runs the task (skipped when it is already running), adds a one-time `executeAt` entry, and starts the scheduler if it is stopped (`TasksPage.runWithFollowUp`). The last follow-up per task is remembered in localStorage (`ghost-runner-follow-ups`, see `lib/followUp.ts`).
 
 ## File References for Common Tasks
 

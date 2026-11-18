@@ -1,12 +1,18 @@
+import { useState } from 'react';
 import { Circle } from 'lucide-react';
 import { useDashboard } from '@/contexts/DashboardContext';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/common/PageHeader';
+import { SegmentedControl } from '@/components/common/SegmentedControl';
 import { TaskList } from '@/components/dashboard/TaskList';
 import { LogsConsole } from '@/components/dashboard/LogsConsole';
-import { followUpExecuteAt, formatDelay, type FollowUp } from '@/lib/followUp';
-import { formatDayTime } from '@/lib/schedule';
+import { ScheduleBuilder } from '@/components/dashboard/ScheduleBuilder';
+import { ScheduleList } from '@/components/dashboard/schedule-builder';
+import { TaskCalendar } from '@/components/dashboard/TaskCalendar';
 
+type ScheduleView = 'list' | 'calendar';
+
+/** Run tasks and schedule them from one page. */
 export function TasksPage({ onRecordTask }: { onRecordTask: () => void }) {
   const {
     tasks,
@@ -17,30 +23,17 @@ export function TasksPage({ onRecordTask }: { onRecordTask: () => void }) {
     saveTaskSource,
     logs,
     clearLogs,
-    addLog,
     schedule,
-    schedulerStatus,
     addScheduleItem,
-    startScheduler,
+    deleteScheduleItem,
   } = useDashboard();
-
-  const runWithFollowUp = async (taskName: string, followUp: FollowUp, runNow: boolean) => {
-    if (runNow) void runTask(taskName);
-    const executeAt = followUpExecuteAt(followUp.delayMinutes);
-    await addScheduleItem(followUp.task, undefined, executeAt.toISOString());
-    addLog(
-      `Follow-up queued: ${followUp.task} in ${formatDelay(followUp.delayMinutes)} (${formatDayTime(executeAt)}).`,
-      'system'
-    );
-    // A one-time run only fires while the scheduler is running.
-    if (!schedulerStatus) await startScheduler();
-  };
+  const [scheduleView, setScheduleView] = useState<ScheduleView>('list');
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Tasks"
-        description="Click a task to run it. The alarm clock runs it and queues a follow-up."
+        description="Run a task now or schedule one. Scheduled runs fire while the scheduler is running."
         actions={
           <Button onClick={onRecordTask}>
             <Circle className="fill-current" />
@@ -49,7 +42,7 @@ export function TasksPage({ onRecordTask }: { onRecordTask: () => void }) {
         }
       />
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <TaskList
           tasks={tasks}
           runningTasks={runningTasks}
@@ -57,17 +50,41 @@ export function TasksPage({ onRecordTask }: { onRecordTask: () => void }) {
           onUploadTask={uploadTask}
           onLoadTaskSource={loadTaskSource}
           onSaveTaskSource={saveTaskSource}
-          onRunWithFollowUp={(taskName, followUp, runNow) => void runWithFollowUp(taskName, followUp, runNow)}
-          schedule={schedule}
-          schedulerRunning={schedulerStatus}
         />
+        <ScheduleBuilder
+          tasks={tasks}
+          schedule={schedule}
+          onAddSchedule={addScheduleItem}
+          onDeleteSchedule={deleteScheduleItem}
+          showList={false}
+        />
+      </div>
+
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="min-w-0 space-y-3" aria-label="Scheduled runs">
+          <SegmentedControl
+            ariaLabel="Schedule view"
+            size="sm"
+            value={scheduleView}
+            onChange={setScheduleView}
+            options={[
+              { value: 'list', label: 'List' },
+              { value: 'calendar', label: 'Calendar' },
+            ]}
+          />
+          {scheduleView === 'list' ? (
+            <ScheduleList schedule={schedule} onDeleteSchedule={deleteScheduleItem} />
+          ) : (
+            <TaskCalendar schedule={schedule} onDeleteSchedule={deleteScheduleItem} />
+          )}
+        </section>
         <LogsConsole
           title="Output"
           logs={logs}
           onClearLogs={clearLogs}
           limit={300}
-          className="xl:sticky xl:top-8"
-          bodyClassName="h-[360px] xl:h-[calc(100vh-11rem)] xl:max-h-[720px]"
+          className="xl:mt-9"
+          bodyClassName="h-[320px]"
         />
       </div>
     </div>
